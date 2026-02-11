@@ -14,7 +14,7 @@
             padding: 10px;
         }
         .container {
-            max-width: 1000px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -180,25 +180,34 @@
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 15px;
-            font-size: 11px;
+            font-size: 10px;
+            overflow-x: auto;
         }
         .checklist-table th {
             background: #003d82;
             color: white;
             padding: 8px 4px;
             text-align: center;
-            font-size: 10px;
+            font-size: 9px;
+        }
+        .checklist-table th.varada-col {
+            background: #6c757d;
         }
         .checklist-table td {
             padding: 6px 4px;
             border-bottom: 1px solid #dee2e6;
             text-align: center;
         }
+        .checklist-table td.varada-ref {
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: 9px;
+        }
         .checklist-table tr.alert-row { background: #fff3cd !important; border-left: 3px solid #ffc107; }
         .checklist-table tr.problem-row { background: #f8d7da !important; border-left: 3px solid #dc3545; }
         .item-name {
             text-align: left !important;
-            font-size: 11px;
+            font-size: 10px;
             padding-left: 8px !important;
         }
         .item-alert {
@@ -207,18 +216,18 @@
             color: #000;
             padding: 1px 4px;
             border-radius: 2px;
-            font-size: 8px;
+            font-size: 7px;
             font-weight: 700;
             margin-left: 4px;
         }
         .item-alert.problem { background: #dc3545; color: white; }
-        .checkbox-cell input { width: 18px; height: 18px; cursor: pointer; }
+        .checkbox-cell input { width: 16px; height: 16px; cursor: pointer; }
         .gauge-btn, .notes-btn {
-            padding: 4px 8px;
+            padding: 3px 6px;
             border: none;
             border-radius: 3px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 600;
         }
         .gauge-btn { background: #007bff; color: white; }
@@ -389,9 +398,14 @@
             font-size: 9px;
             margin-left: 5px;
         }
+        .table-wrapper {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         @media (max-width: 768px) {
             .info-grid, .date-section, .type-selector, .action-buttons { grid-template-columns: 1fr; }
             .action-btn.clear { grid-column: span 1; }
+            .container { max-width: 100%; }
         }
     </style>
 </head>
@@ -502,17 +516,19 @@
                 <div id="checklist-section" style="display: none;">
                     <div id="alerts-section"></div>
                     
-                    <table class="checklist-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 55%;">VERIFICACIÓN</th>
-                                <th style="width: 15%;">OK</th>
-                                <th style="width: 15%;">MEDIDOR</th>
-                                <th style="width: 15%;">NOTAS</th>
-                            </tr>
-                        </thead>
-                        <tbody id="checklist-body"></tbody>
-                    </table>
+                    <div class="table-wrapper">
+                        <table class="checklist-table" id="checklist-table">
+                            <thead>
+                                <tr id="table-header">
+                                    <th style="width: 30%;">VERIFICACIÓN</th>
+                                    <th style="width: 8%;">OK</th>
+                                    <th style="width: 12%;">MEDIDOR</th>
+                                    <th style="width: 10%;">NOTAS</th>
+                                </tr>
+                            </thead>
+                            <tbody id="checklist-body"></tbody>
+                        </table>
+                    </div>
 
                     <div class="action-buttons">
                         <button class="action-btn save" onclick="saveInsp()">GUARDAR</button>
@@ -585,6 +601,7 @@ var gaugeItems={
 var currentUser=null,curType=null,curGauge=null,curNote=null;
 var data={check:{},gauges:{},notes:{},alerts:{}};
 var lastVarada=null;
+var varadaRef={check:{},gauges:{},notes:{}};
 
 window.addEventListener('DOMContentLoaded',function(){
     var user=localStorage.getItem('tallerUser');
@@ -642,9 +659,26 @@ function selectType(t){
     document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
     event.target.classList.add('selected');
     document.getElementById('checklist-section').style.display='block';
-    if(t==='botadura') checkVarada();
-    else{document.getElementById('import-section').style.display='none';lastVarada=null;data.alerts={};}
+    if(t==='botadura'){
+        checkVarada();
+        updateTableHeader(true);
+    }else{
+        document.getElementById('import-section').style.display='none';
+        lastVarada=null;
+        data.alerts={};
+        varadaRef={check:{},gauges:{},notes:{}};
+        updateTableHeader(false);
+    }
     renderCheck();
+}
+
+function updateTableHeader(showVarada){
+    var header=document.getElementById('table-header');
+    if(showVarada){
+        header.innerHTML='<th style="width:25%;">VERIFICACIÓN</th><th style="width:7%;">OK</th><th style="width:10%;">MEDIDOR</th><th style="width:8%;">NOTAS</th><th class="varada-col" style="width:7%;">✓ VAR</th><th class="varada-col" style="width:10%;">🕐 VAR</th><th class="varada-col" style="width:15%;">📝 VAR</th>';
+    }else{
+        header.innerHTML='<th style="width:30%;">VERIFICACIÓN</th><th style="width:8%;">OK</th><th style="width:12%;">MEDIDOR</th><th style="width:10%;">NOTAS</th>';
+    }
 }
 
 function checkVarada(){
@@ -658,11 +692,16 @@ function checkVarada(){
         if(result.success&&result.data){
             lastVarada=result.data;
             document.getElementById('import-section').style.display='block';
+            varadaRef.check=JSON.parse(lastVarada.checklistJson||'{}');
+            varadaRef.gauges=JSON.parse(lastVarada.gaugesJson||'{}');
+            varadaRef.notes=JSON.parse(lastVarada.notasJson||'{}');
             analyzeAlerts();
         }else{
             document.getElementById('import-section').style.display='none';
             lastVarada=null;
+            varadaRef={check:{},gauges:{},notes:{}};
         }
+        renderCheck();
     })
     .catch(err=>{hideLoading();document.getElementById('import-section').style.display='none';});
 }
@@ -670,14 +709,13 @@ function checkVarada(){
 function analyzeAlerts(){
     if(!lastVarada) return;
     data.alerts={};
-    var checklist=JSON.parse(lastVarada.checklistJson||'{}');
-    var notes=JSON.parse(lastVarada.notasJson||'{}');
+    var checklist=varadaRef.check;
+    var notes=varadaRef.notes;
     for(var key in checklist){
         if(!checklist[key]) data.alerts[key]={type:'problem',message:'NO verificado en varada'};
         else if(notes[key]&&notes[key].trim()) data.alerts[key]={type:'warning',message:'Obs: '+notes[key].substring(0,40)};
     }
     showAlertsSummary();
-    renderCheck();
 }
 
 function showAlertsSummary(){
@@ -690,7 +728,7 @@ function showAlertsSummary(){
     if(problems+warnings===0){
         container.innerHTML='<div class="alert alert-success">Sin alertas</div>';
     }else{
-        var html='<div class="alert alert-warning"><strong>Alertas:</strong><br>';
+        var html='<div class="alert alert-warning"><strong>Alertas de varada:</strong><br>';
         if(problems>0) html+=problems+' items NO verificados<br>';
         if(warnings>0) html+=warnings+' items con observaciones';
         html+='</div>';
@@ -722,6 +760,8 @@ function importVarada(){
 
 function renderCheck(){
     var b=document.getElementById('checklist-body');
+    var isBotadura=curType==='botadura'&&lastVarada;
+    
     b.innerHTML=items.map((it,i)=>{
         var id='i'+i;
         var ch=data.check[id]||false;
@@ -730,17 +770,33 @@ function renderCheck(){
         var hasGauge=gaugeItems[id];
         var gaugeVal=data.gauges[id];
         var rowClass='',alertBadge='';
+        
         if(alert){
             rowClass=alert.type==='problem'?'problem-row':'alert-row';
             alertBadge='<span class="item-alert '+(alert.type==='problem'?'problem':'')+'">!</span>';
         }
+        
         var gaugeBtn='';
         if(hasGauge){
             var btnClass=gaugeVal!==undefined?'gauge-btn has-value':'gauge-btn';
             var btnText=gaugeVal!==undefined?'🕐'+gaugeVal:'🕐';
             gaugeBtn='<button class="'+btnClass+'" onclick="openGauge(\''+id+'\',\''+it.replace(/'/g,'')+'\')">'+btnText+'</button>';
         }
-        return '<tr class="'+rowClass+'"><td class="item-name">'+it+alertBadge+'</td><td class="checkbox-cell"><input type="checkbox" '+(ch?'checked':'')+' onchange="data.check[\''+id+'\']=this.checked"></td><td>'+(gaugeBtn||'-')+'</td><td><button class="notes-btn '+(hn?'has-notes':'')+'" onclick="openNotes(\''+id+'\',\''+it.replace(/'/g,'')+'\')">📝</button></td></tr>';
+        
+        var row='<tr class="'+rowClass+'"><td class="item-name">'+it+alertBadge+'</td><td class="checkbox-cell"><input type="checkbox" '+(ch?'checked':'')+' onchange="data.check[\''+id+'\']=this.checked"></td><td>'+(gaugeBtn||'-')+'</td><td><button class="notes-btn '+(hn?'has-notes':'')+'" onclick="openNotes(\''+id+'\',\''+it.replace(/'/g,'')+'\')">📝</button></td>';
+        
+        if(isBotadura){
+            var vCheck=varadaRef.check[id]?'SI':'NO';
+            var vGauge='';
+            if(hasGauge&&varadaRef.gauges[id]!==undefined){
+                vGauge=varadaRef.gauges[id]+' '+gaugeItems[id].unit;
+            }
+            var vNote=(varadaRef.notes[id]||'').substring(0,20);
+            row+='<td class="varada-ref">'+vCheck+'</td><td class="varada-ref">'+vGauge+'</td><td class="varada-ref">'+vNote+'</td>';
+        }
+        
+        row+='</tr>';
+        return row;
     }).join('');
 }
 
@@ -813,9 +869,9 @@ function openNotes(id,name){
     curNote=id;
     document.getElementById('notes-title').textContent=name;
     document.getElementById('notes-text').value=data.notes[id]||'';
-    if(data.alerts[id]&&data.alerts[id].message){
+    if(varadaRef.notes[id]&&varadaRef.notes[id].trim()&&curType==='botadura'){
         document.getElementById('previous-note').style.display='block';
-        document.getElementById('previous-note-text').textContent=data.alerts[id].message;
+        document.getElementById('previous-note-text').textContent=varadaRef.notes[id];
     }else{
         document.getElementById('previous-note').style.display='none';
     }
@@ -898,12 +954,14 @@ function clearForm(){
     if(!confirm('¿Limpiar formulario?')) return;
     data={check:{},gauges:{},notes:{},alerts:{}};
     lastVarada=null;
+    varadaRef={check:{},gauges:{},notes:{}};
     renderCheck();
     ['boat-name','client-number','motor-fb','motor-br','motor-er','keys-motors','cabin','colas','propeller','date-varada','date-botadura'].forEach(id=>document.getElementById(id).value='');
     document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
     curType=null;
     document.getElementById('import-section').style.display='none';
     document.getElementById('alerts-section').innerHTML='';
+    updateTableHeader(false);
     alert('Formulario limpiado');
 }
 
@@ -988,6 +1046,7 @@ function makePDF(){
             var varadaDate=document.getElementById('date-varada').value;
             var year=varadaDate?varadaDate.split('-')[0]:new Date().getFullYear();
             var fn=boatName+'_'+year+'.pdf';
+            
             doc.save(fn);
             hideLoading();
             alert('PDF generado correctamente');
