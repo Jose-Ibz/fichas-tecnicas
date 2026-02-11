@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taller Naval - Sistema de Inspecciones</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        .header h1 { font-size: 20px; margin-bottom: 5px; }
+        .user-bar {
+            background: #e7f1ff;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #007bff;
+        }
+        .user-name { font-weight: 700; color: #1e3c72; font-size: 13px; }
+        .logout-btn {
+            padding: 5px 10px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .login-screen {
+            padding: 40px;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+        .login-screen h2 { text-align: center; color: #1e3c72; margin-bottom: 20px; }
+        .login-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 12px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .tabs {
+            display: flex;
+            background: #f1f3f5;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px;
+            text-align: center;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #6c757d;
+        }
+        .tab.active { color: #1e3c72; background: white; }
+        .content { padding: 15px; }
+        .view { display: none; }
+        .view.active { display: block; }
+        .info-section {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .info-item label {
+            font-weight: 600;
+            font-size: 11px;
+            color: #495057;
+            display: block;
+            margin-bottom: 3px;
+        }
+        .info-item input {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .date-section {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        .date-item { display: flex; align-items: center; gap: 8px; }
+        .date-item label { font-weight: 700; font-size: 11px; color: #856404; white-space: nowrap; }
+        .date-item input {
+            flex: 1;
+            padding: 6px;
+            border: 2px solid #ffc107;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        .type-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+        .type-btn {
+            padding: 15px;
+            border: 3px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            text-align: center;
+            font-size: 15px;
+            font-weight: 700;
+        }
+        .type-btn.varada { color: #dc3545; border-color: #dc3545; }
+        .type-btn.varada.selected { background: #dc3545; color: white; }
+        .type-btn.botadura { color: #28a745; border-color: #28a745; }
+        .type-btn.botadura.selected { background: #28a745; color: white; }
+        .import-alert {
+            background: #d1ecf1;
+            border: 2px solid #17a2b8;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+        }
+        .import-alert h4 { color: #0c5460; margin-bottom: 8px; font-size: 13px; }
+        .import-alert p { font-size: 12px; margin-bottom: 10px; }
+        .import-btn {
+            width: 100%;
+            padding: 10px;
+            background: #17a2b8;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .checklist-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+        .checklist-table th {
+            background: #1e3c72;
+            color: white;
+            padding: 8px 4px;
+            text-align: center;
+            font-size: 10px;
+        }
+        .checklist-table td {
+            padding: 6px 4px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: center;
+        }
+        .checklist-table tr.alert-row { background: #fff3cd !important; border-left: 3px solid #ffc107; }
+        .checklist-table tr.problem-row { background: #f8d7da !important; border-left: 3px solid #dc3545; }
+        .item-name {
+            text-align: left !important;
+            font-size: 11px;
+            padding-left: 8px !important;
+        }
+        .item-alert {
+            display: inline-block;
+            background: #ffc107;
+            color: #000;
+            padding: 1px 4px;
+            border-radius: 2px;
+            font-size: 8px;
+            font-weight: 700;
+            margin-left: 4px;
+        }
+        .item-alert.problem { background: #dc3545; color: white; }
+        .checkbox-cell input { width: 18px; height: 18px; cursor: pointer; }
+        .photo-btn, .notes-btn {
+            padding: 4px 8px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: 600;
+        }
+        .photo-btn { background: #007bff; color: white; }
+        .notes-btn { background: #ffc107; color: #000; }
+        .notes-btn.has-notes { background: #28a745; color: white; }
+        .photo-count {
+            background: #28a745;
+            color: white;
+            border-radius: 50%;
+            padding: 1px 4px;
+            font-size: 8px;
+            margin-left: 2px;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        .modal-close {
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 25px;
+            height: 25px;
+            cursor: pointer;
+        }
+        .photo-upload {
+            border: 3px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+        }
+        .photo-upload input { display: none; }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+        .photo-item {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 2px solid #dee2e6;
+        }
+        .photo-item img { width: 100%; height: 100%; object-fit: cover; }
+        .photo-delete {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        .notes-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            font-size: 13px;
+            min-height: 100px;
+            resize: vertical;
+        }
+        .previous-note {
+            display: none;
+            background: #fff3cd;
+            padding: 8px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .action-btn {
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            color: white;
+        }
+        .action-btn.save { background: #28a745; }
+        .action-btn.pdf { background: #dc3545; }
+        .action-btn.clear { background: #6c757d; grid-column: span 2; }
+        .loading {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 3000;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+        .loading.active { display: block; }
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1e3c72;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .alert {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+        .alert-success { background: #d4edda; color: #155724; }
+        .alert-error { background: #f8d7da; color: #721c24; }
+        .alert-info { background: #d1ecf1; color: #0c5460; }
+        .alert-warning { background: #fff3cd; color: #856404; }
+        .history-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        .history-card.closed { opacity: 0.7; }
+        .closed-badge {
+            display: inline-block;
+            background: #6c757d;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-size: 9px;
+            margin-left: 5px;
+        }
+        @media (max-width: 768px) {
+            .info-grid, .date-section, .type-selector, .action-buttons { grid-template-columns: 1fr; }
+            .action-btn.clear { grid-column: span 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p id="loading-text">Cargando...</p>
+    </div>
+
+    <div id="login-screen" class="container" style="display: none;">
+        <div class="login-screen">
+            <h2>Iniciar Sesion</h2>
+            <input type="text" id="username" class="login-input" placeholder="Usuario">
+            <input type="password" id="password" class="login-input" placeholder="Contrasena">
+            <button class="login-btn" onclick="login()">ENTRAR</button>
+            <div id="login-error"></div>
+        </div>
+    </div>
+
+    <div id="main-app" class="container" style="display: none;">
+        <div class="header">
+            <h1>TALLER NAVAL - FICHAS TECNICAS</h1>
+            <p>Control de Varada y Botadura</p>
+        </div>
+
+        <div class="user-bar">
+            <div>
+                <span class="user-name" id="current-user">Usuario</span>
+                <span style="margin-left: 8px; color: #6c757d; font-size: 11px;" id="user-role"></span>
+            </div>
+            <button class="logout-btn" onclick="logout()">Salir</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('inspection')">Nueva Inspeccion</button>
+            <button class="tab" onclick="switchTab('history')">Historial</button>
+        </div>
+
+        <div class="content">
+            <div id="inspection-view" class="view active">
+                <div id="message-area"></div>
+
+                <div class="info-section">
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Embarcacion *</label>
+                            <input type="text" id="boat-name" onchange="checkVarada()">
+                        </div>
+                        <div class="info-item">
+                            <label>N° Cliente</label>
+                            <input type="text" id="client-number">
+                        </div>
+                        <div class="info-item">
+                            <label>Motor FB</label>
+                            <input type="text" id="motor-fb">
+                        </div>
+                        <div class="info-item">
+                            <label>Motor BR</label>
+                            <input type="text" id="motor-br">
+                        </div>
+                        <div class="info-item">
+                            <label>Motor ER</label>
+                            <input type="text" id="motor-er">
+                        </div>
+                        <div class="info-item">
+                            <label>Llaves</label>
+                            <input type="text" id="keys-motors">
+                        </div>
+                        <div class="info-item">
+                            <label>Cabina</label>
+                            <input type="text" id="cabin">
+                        </div>
+                        <div class="info-item">
+                            <label>Colas</label>
+                            <input type="text" id="colas">
+                        </div>
+                        <div class="info-item">
+                            <label>Paso Helice</label>
+                            <input type="text" id="propeller">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="date-section">
+                    <div class="date-item">
+                        <label>VARADA:</label>
+                        <input type="date" id="date-varada">
+                    </div>
+                    <div class="date-item">
+                        <label>BOTADURA:</label>
+                        <input type="date" id="date-botadura">
+                    </div>
+                </div>
+
+                <div class="type-selector">
+                    <div class="type-btn varada" onclick="selectType('varada')">VARADA</div>
+                    <div class="type-btn botadura" onclick="selectType('botadura')">BOTADURA</div>
+                </div>
+
+                <div id="import-section" style="display: none;">
+                    <div class="import-alert">
+                        <h4>Importar Varada</h4>
+                        <p>Se encontro varada previa de esta embarcacion</p>
+                        <button class="import-btn" onclick="importVarada()">IMPORTAR DATOS</button>
+                    </div>
+                </div>
+
+                <div id="checklist-section" style="display: none;">
+                    <div id="alerts-section"></div>
+                    
+                    <table class="checklist-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%;">VERIFICACION</th>
+                                <th style="width: 15%;">OK</th>
+                                <th style="width: 20%;">FOTOS</th>
+                                <th style="width: 15%;">NOTAS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="checklist-body"></tbody>
+                    </table>
+
+                    <div class="action-buttons">
+                        <button class="action-btn save" onclick="saveInsp()">GUARDAR</button>
+                        <button class="action-btn pdf" onclick="makePDF()">PDF</button>
+                        <button class="action-btn clear" onclick="clearForm()">LIMPIAR</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="history-view" class="view">
+                <button class="action-btn save" onclick="loadHistory()" style="margin-bottom: 15px;">ACTUALIZAR</button>
+                <div id="history-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="photo-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="photo-title">Fotos</h3>
+                <button class="modal-close" onclick="closePhotos()">X</button>
+            </div>
+            <label class="photo-upload">
+                <input type="file" accept="image/*" multiple onchange="addPhotos(event)">
+                <div style="font-size: 20px;">📷 ANADIR FOTOS</div>
+            </label>
+            <div class="photo-grid" id="photo-grid"></div>
+        </div>
+    </div>
+
+    <div id="notes-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="notes-title">Notas</h3>
+                <button class="modal-close" onclick="closeNotes()">X</button>
+            </div>
+            <div class="previous-note" id="previous-note">
+                <strong>Nota varada:</strong>
+                <p id="previous-note-text"></p>
+            </div>
+            <textarea class="notes-textarea" id="notes-text" placeholder="Escribe observaciones..."></textarea>
+            <button class="action-btn save" style="width: 100%; margin-top: 10px;" onclick="saveNote()">GUARDAR</button>
+        </div>
+    </div>
+
+    <script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYq0fBve3IWQAi-oWpWNKxHTkoZmrjs1A5MpB5jWqf5LdoL1hXhsrI9kaZ_vfa7e39/exec';
+
+var items=['VODIA','ACTUALIZAR SOFTWARE','LIMPIEZA SENTINAS','VERIFICAR SIST DIRECCION','VERIFICAR MANDOS','VERIFICAR PRESION ACEITE','VERIFICAR VOLTIMETRO','VERIFICAR TEMPERATURA','VERIFICAR SIST TRIMADO','VERIFICAR FLAPS','VERIF TOMA TIERRA Y 220V','VERIF RPM MAXIMA ER - BR','VERIF VELOCIDAD NUDOS','VERIF ILUM. INSTRUMENTOS','VERIF INDIC. COMBUSTIBLE','VERIF EXTRACTOR GASES','VERIF MOLINETE','VERIF BOMBAS ACHIQUE','VERIFICAR CORREDERA','VERIF AIRE ACONDICIONADO','VERIFICAR GENERADOR','VERIFICAR BATERIAS','VERIFICAR BANDERA','FOTOS','VERIF OLORES FILTRO PARTIC','ESTADO LIMPIEZA MOTORES','VERIF LIMPIAPARABRISAS','VERIFICAR W.C.','VERIFICAR CLAXON','VERIFICAR GRIFOS DE FONDO','VERIFICAR FUNC DUCHA','VERIFICAR GRIFOS DE AGUA','VERIFICAR NEVERA','VERIFICAR RADIO VHF','VERIFICAR EQUIPO SONIDO','VERIFICAR SIST NAVEGACION','VERIFICAR TV / VIDEO','VERIFICAR MICROONDAS','VERIFICAR COCINA','VERIFICAR ESCOTILLA','VERIFICAR LUCES EXTERIORES','VERIFICAR LUCES INTERIORES','VERIFICAR LIMPIEZA','REPASAR RASGUNNOS BARCO','REVISION TAPIZADOS','REVISION MOQUETAS','REVISION TOLDOS / LONAS'];
+
+var currentUser=null,curType=null,curPhoto=null,curNote=null;
+var data={check:{},photos:{},notes:{},alerts:{}};
+var lastVarada=null;
+
+window.addEventListener('DOMContentLoaded',function(){
+    var user=localStorage.getItem('tallerUser');
+    user?( currentUser=JSON.parse(user),showMainApp()):showLogin();
+});
+
+function showLogin(){
+    document.getElementById('login-screen').style.display='block';
+    document.getElementById('main-app').style.display='none';
+}
+
+function showMainApp(){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='block';
+    document.getElementById('current-user').textContent=currentUser.name;
+    document.getElementById('user-role').textContent='('+currentUser.role+')';
+}
+
+function login(){
+    var u=document.getElementById('username').value.trim();
+    var p=document.getElementById('password').value.trim();
+    if(!u||!p){showMsg('login-error','Introduce usuario y contrasena','error');return;}
+    showLoading('Verificando...');
+    fetch(SCRIPT_URL+'?action=login&username='+encodeURIComponent(u)+'&password='+encodeURIComponent(p))
+    .then(r=>r.json())
+    .then(result=>{
+        hideLoading();
+        if(result.success){
+            currentUser=result.user;
+            localStorage.setItem('tallerUser',JSON.stringify(currentUser));
+            showMainApp();
+        }else showMsg('login-error',result.message||'Error de acceso','error');
+    })
+    .catch(err=>{hideLoading();showMsg('login-error','Error de conexion','error');});
+}
+
+function logout(){
+    if(confirm('Cerrar sesion?')){
+        localStorage.removeItem('tallerUser');
+        currentUser=null;
+        showLogin();
+    }
+}
+
+function switchTab(n){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById(n+'-view').classList.add('active');
+    if(n==='history') loadHistory();
+}
+
+function selectType(t){
+    curType=t;
+    document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+    event.target.classList.add('selected');
+    document.getElementById('checklist-section').style.display='block';
+    if(t==='botadura') checkVarada();
+    else{document.getElementById('import-section').style.display='none';lastVarada=null;data.alerts={};}
+    renderCheck();
+}
+
+function checkVarada(){
+    var boat=document.getElementById('boat-name').value.trim();
+    if(!boat||curType!=='botadura') return;
+    showLoading('Buscando varada...');
+    fetch(SCRIPT_URL+'?action=getLastVarada&boat='+encodeURIComponent(boat))
+    .then(r=>r.json())
+    .then(result=>{
+        hideLoading();
+        if(result.success&&result.data){
+            lastVarada=result.data;
+            document.getElementById('import-section').style.display='block';
+            analyzeAlerts();
+        }else{
+            document.getElementById('import-section').style.display='none';
+            lastVarada=null;
+        }
+    })
+    .catch(err=>{hideLoading();document.getElementById('import-section').style.display='none';});
+}
+
+function analyzeAlerts(){
+    if(!lastVarada) return;
+    data.alerts={};
+    var checklist=JSON.parse(lastVarada.checklistJson||'{}');
+    var notes=JSON.parse(lastVarada.notasJson||'{}');
+    for(var key in checklist){
+        if(!checklist[key]) data.alerts[key]={type:'problem',message:'NO verificado en varada'};
+        else if(notes[key]&&notes[key].trim()) data.alerts[key]={type:'warning',message:'Obs: '+notes[key].substring(0,40)};
+    }
+    showAlertsSummary();
+    renderCheck();
+}
+
+function showAlertsSummary(){
+    var container=document.getElementById('alerts-section');
+    var problems=0,warnings=0;
+    for(var key in data.alerts){
+        if(data.alerts[key].type==='problem') problems++;
+        if(data.alerts[key].type==='warning') warnings++;
+    }
+    if(problems+warnings===0){
+        container.innerHTML='<div class="alert alert-success">Sin alertas</div>';
+    }else{
+        var html='<div class="alert alert-warning"><strong>Alertas:</strong><br>';
+        if(problems>0) html+=problems+' items NO verificados<br>';
+        if(warnings>0) html+=warnings+' items con observaciones';
+        html+='</div>';
+        container.innerHTML=html;
+    }
+}
+
+function importVarada(){
+    if(!lastVarada){alert('No hay varada');return;}
+    if(!confirm('Importar datos de varada?')) return;
+    showLoading('Importando...');
+    setTimeout(()=>{
+        data.check=JSON.parse(lastVarada.checklistJson||'{}');
+        data.notes=JSON.parse(lastVarada.notasJson||'{}');
+        document.getElementById('client-number').value=lastVarada.cliente||'';
+        document.getElementById('motor-fb').value=lastVarada.motorFB||'';
+        document.getElementById('motor-br').value=lastVarada.motorBR||'';
+        document.getElementById('motor-er').value=lastVarada.motorER||'';
+        document.getElementById('keys-motors').value=lastVarada.llaves||'';
+        document.getElementById('cabin').value=lastVarada.cabina||'';
+        document.getElementById('colas').value=lastVarada.colas||'';
+        document.getElementById('propeller').value=lastVarada.helice||'';
+        renderCheck();
+        hideLoading();
+        showMsg('message-area','Datos importados correctamente','success');
+    },500);
+}
+
+function renderCheck(){
+    var b=document.getElementById('checklist-body');
+    b.innerHTML=items.map((it,i)=>{
+        var id='i'+i;
+        var ch=data.check[id]||false;
+        var pc=(data.photos[id]||[]).length;
+        var hn=data.notes[id]&&data.notes[id].trim();
+        var alert=data.alerts[id];
+        var rowClass='',alertBadge='';
+        if(alert){
+            rowClass=alert.type==='problem'?'problem-row':'alert-row';
+            alertBadge='<span class="item-alert '+(alert.type==='problem'?'problem':'')+'">!</span>';
+        }
+        return '<tr class="'+rowClass+'"><td class="item-name">'+it+alertBadge+'</td><td class="checkbox-cell"><input type="checkbox" '+(ch?'checked':'')+' onchange="data.check[\''+id+'\']=this.checked"></td><td><button class="photo-btn" onclick="openPhotos(\''+id+'\',\''+it.replace(/'/g,'')+'\')">📷'+(pc>0?'<span class="photo-count">'+pc+'</span>':'')+'</button></td><td><button class="notes-btn '+(hn?'has-notes':'')+'" onclick="openNotes(\''+id+'\',\''+it.replace(/'/g,'')+'\')">📝</button></td></tr>';
+    }).join('');
+}
+
+function openPhotos(id,name){
+    curPhoto=id;
+    document.getElementById('photo-title').textContent=name;
+    showPhotos();
+    document.getElementById('photo-modal').classList.add('active');
+}
+
+function closePhotos(){
+    document.getElementById('photo-modal').classList.remove('active');
+    curPhoto=null;
+    renderCheck();
+}
+
+function addPhotos(e){
+    if(!curPhoto) return;
+    if(!data.photos[curPhoto]) data.photos[curPhoto]=[];
+    Array.from(e.target.files).forEach(f=>{
+        var r=new FileReader();
+        r.onload=ev=>{
+            data.photos[curPhoto].push(ev.target.result);
+            showPhotos();
+        };
+        r.readAsDataURL(f);
+    });
+    e.target.value='';
+}
+
+function showPhotos(){
+    var g=document.getElementById('photo-grid');
+    var p=data.photos[curPhoto]||[];
+    g.innerHTML=p.map((ph,i)=>'<div class="photo-item"><img src="'+ph+'"><button class="photo-delete" onclick="delPhoto('+i+')">X</button></div>').join('');
+}
+
+function delPhoto(i){
+    data.photos[curPhoto].splice(i,1);
+    showPhotos();
+}
+
+function openNotes(id,name){
+    curNote=id;
+    document.getElementById('notes-title').textContent=name;
+    document.getElementById('notes-text').value=data.notes[id]||'';
+    if(data.alerts[id]&&data.alerts[id].message){
+        document.getElementById('previous-note').style.display='block';
+        document.getElementById('previous-note-text').textContent=data.alerts[id].message;
+    }else{
+        document.getElementById('previous-note').style.display='none';
+    }
+    document.getElementById('notes-modal').classList.add('active');
+}
+
+function closeNotes(){
+    document.getElementById('notes-modal').classList.remove('active');
+    curNote=null;
+    renderCheck();
+}
+
+function saveNote(){
+    data.notes[curNote]=document.getElementById('notes-text').value;
+    closeNotes();
+}
+
+function saveInsp(){
+    if(!currentUser){alert('Inicia sesion');return;}
+    if(!curType){alert('Selecciona tipo');return;}
+    var boat=document.getElementById('boat-name').value.trim();
+    if(!boat){alert('Introduce embarcacion');return;}
+    showLoading('Guardando...');
+    var inspData={
+        fecha:new Date().toISOString(),
+        tecnico:currentUser.name,
+        embarcacion:boat,
+        tipo:curType,
+        clienteNumero:document.getElementById('client-number').value,
+        motorFB:document.getElementById('motor-fb').value,
+        motorBR:document.getElementById('motor-br').value,
+        motorER:document.getElementById('motor-er').value,
+        llaves:document.getElementById('keys-motors').value,
+        cabina:document.getElementById('cabin').value,
+        colas:document.getElementById('colas').value,
+        helice:document.getElementById('propeller').value,
+        fechaVarada:document.getElementById('date-varada').value,
+        fechaBotadura:document.getElementById('date-botadura').value,
+        checklist:data.check,
+        notas:data.notes,
+        fotos:Object.keys(data.photos).reduce((acc,key)=>{acc[key]=data.photos[key].length;return acc;},{}),
+        varadaImportada:lastVarada?lastVarada.id:null
+    };
+    fetch(SCRIPT_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'save',data:inspData})})
+    .then(()=>{
+        hideLoading();
+        showMsg('message-area','Inspeccion guardada correctamente!','success');
+        setTimeout(()=>{if(confirm('Generar PDF ahora?')) makePDF();},1000);
+    })
+    .catch(err=>{hideLoading();showMsg('message-area','Error al guardar','error');});
+}
+
+function loadHistory(){
+    if(!currentUser) return;
+    showLoading('Cargando...');
+    fetch(SCRIPT_URL+'?action=getHistory&user='+encodeURIComponent(currentUser.name))
+    .then(r=>r.json())
+    .then(result=>{
+        hideLoading();
+        if(result.success&&result.data) renderHistory(result.data);
+        else document.getElementById('history-list').innerHTML='<div class="alert alert-info">Sin inspecciones</div>';
+    })
+    .catch(err=>hideLoading());
+}
+
+function renderHistory(data){
+    var h=document.getElementById('history-list');
+    if(!data||data.length===0){
+        h.innerHTML='<div class="alert alert-info">Sin inspecciones</div>';
+        return;
+    }
+    h.innerHTML=data.map(item=>{
+        var fecha=new Date(item.fecha).toLocaleDateString('es-ES');
+        var closedBadge=item.cerrada?'<span class="closed-badge">CERRADA</span>':'';
+        return '<div class="history-card '+(item.cerrada?'closed':'')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:'+(item.tipo==='varada'?'#dc3545':'#28a745')+';font-size:13px;">'+item.tipo.toUpperCase()+' - '+item.embarcacion+closedBadge+'</strong><span style="font-size:11px;">'+fecha+'</span></div><div style="font-size:11px;"><p>Tecnico: '+item.tecnico+'</p><p>Cliente: '+(item.clienteNumero||'N/A')+'</p></div></div>';
+    }).join('');
+}
+
+function clearForm(){
+    if(!confirm('Limpiar formulario?')) return;
+    data={check:{},photos:{},notes:{},alerts:{}};
+    lastVarada=null;
+    renderCheck();
+    ['boat-name','client-number','motor-fb','motor-br','motor-er','keys-motors','cabin','colas','propeller','date-varada','date-botadura'].forEach(id=>document.getElementById(id).value='');
+    document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+    curType=null;
+    document.getElementById('import-section').style.display='none';
+    document.getElementById('alerts-section').innerHTML='';
+    alert('Formulario limpiado');
+}
+
+function makePDF(){
+    if(!curType){alert('Completa inspeccion');return;}
+    showLoading('Generando PDF...');
+    setTimeout(()=>{
+        try{
+            var doc=new jspdf.jsPDF();
+            var w=doc.internal.pageSize.getWidth();
+            var y=20;
+            doc.setFillColor(30,60,114);
+            doc.rect(0,0,w,35,'F');
+            doc.setTextColor(255,255,255);
+            doc.setFontSize(16);
+            doc.text('FICHA TECNICA TALLER NAVAL',w/2,14,{align:'center'});
+            doc.setFontSize(10);
+            doc.text('Control Varada y Botadura',w/2,22,{align:'center'});
+            y=42;
+            doc.setTextColor(0,0,0);
+            doc.setFontSize(12);
+            doc.setFont(undefined,'bold');
+            doc.text('DATOS',15,y);
+            y+=6;
+            doc.setFontSize(9);
+            doc.setFont(undefined,'normal');
+            ['Embarcacion: '+(document.getElementById('boat-name').value||'N/A'),
+             'Tipo: '+(curType?curType.toUpperCase():'N/A'),
+             'Fecha: '+new Date().toLocaleDateString('es-ES'),
+             'Tecnico: '+(currentUser?currentUser.name:'N/A'),
+             'Cliente: '+(document.getElementById('client-number').value||'N/A')
+            ].forEach(l=>{doc.text(l,15,y);y+=5;});
+            y+=3;
+            doc.setFont(undefined,'bold');
+            doc.setFontSize(11);
+            doc.text('CHECKLIST',15,y);
+            y+=6;
+            doc.setFontSize(8);
+            doc.text('Verificacion',15,y);
+            doc.text('OK',125,y);
+            doc.text('Obs',145,y);
+            y+=1;
+            doc.line(15,y,w-15,y);
+            y+=4;
+            doc.setFont(undefined,'normal');
+            items.forEach((it,i)=>{
+                var id='i'+i;
+                var ch=data.check[id];
+                var nt=data.notes[id]||'';
+                var pc=(data.photos[id]||[]).length;
+                var hasAlert=data.alerts[id];
+                if(y>270){doc.addPage();y=20;}
+                if(hasAlert){doc.setTextColor(220,53,69);doc.setFont(undefined,'bold');}
+                doc.text(it.substring(0,45),15,y);
+                doc.text(ch?'SI':'NO',125,y);
+                var obs='';
+                if(nt) obs+=nt.substring(0,18);
+                if(pc>0) obs+=' ['+pc+'F]';
+                doc.text(obs.substring(0,25),145,y);
+                if(hasAlert){doc.setTextColor(0,0,0);doc.setFont(undefined,'normal');}
+                y+=5;
+            });
+            var fn='Insp_'+document.getElementById('boat-name').value.replace(/[^a-zA-Z0-9]/g,'_')+'_'+curType+'_'+new Date().toISOString().split('T')[0]+'.pdf';
+            doc.save(fn);
+            hideLoading();
+            alert('PDF generado!');
+        }catch(err){hideLoading();alert('Error: '+err.message);}
+    },100);
+}
+
+function showLoading(text){
+    document.getElementById('loading-text').textContent=text||'Cargando...';
+    document.getElementById('loading').classList.add('active');
+}
+
+function hideLoading(){
+    document.getElementById('loading').classList.remove('active');
+}
+
+function showMsg(containerId,message,type){
+    var container=document.getElementById(containerId);
+    var alertClass=type==='success'?'alert-success':(type==='error'?'alert-error':'alert-info');
+    container.innerHTML='<div class="alert '+alertClass+'">'+message+'</div>';
+    setTimeout(()=>container.innerHTML='',5000);
+}
+    </script>
+</body>
+</html>
