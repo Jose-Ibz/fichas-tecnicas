@@ -984,7 +984,10 @@ function makePDF(){
             doc.setTextColor(100,100,100);
             doc.text('Documento generado por Náutica Viamar - '+new Date().toLocaleString('es-ES'),w/2,y,{align:'center'});
             
-            var fn='Inspeccion_'+document.getElementById('boat-name').value.replace(/[^a-zA-Z0-9]/g,'_')+'_'+curType+'_'+new Date().toISOString().split('T')[0]+'.pdf';
+            var boatName=document.getElementById('boat-name').value.replace(/[^a-zA-Z0-9]/g,'_')||'Barco';
+            var varadaDate=document.getElementById('date-varada').value;
+            var year=varadaDate?varadaDate.split('-')[0]:new Date().getFullYear();
+            var fn=boatName+'_'+year+'.pdf';
             doc.save(fn);
             hideLoading();
             alert('PDF generado correctamente');
