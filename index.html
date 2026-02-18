@@ -129,6 +129,28 @@
             font-size: 12px;
             margin-bottom: 10px;
         }
+        .observations-section {
+            background: #f0f8ff;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .observations-section h4 {
+            color: #003d82;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .observations-section textarea {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #007bff;
+            border-radius: 6px;
+            font-size: 13px;
+            min-height: 120px;
+            resize: vertical;
+            font-family: Arial, sans-serif;
+        }
         .date-section {
             background: #fff3cd;
             border: 2px solid #ffc107;
@@ -422,6 +444,7 @@
             border-radius: 4px;
             margin-bottom: 10px;
             font-size: 11px;
+            white-space: pre-wrap;
         }
         .action-buttons {
             display: grid;
@@ -608,6 +631,14 @@
                     </div>
                 </div>
 
+                <div class="observations-section">
+                    <h4>OBSERVACIONES GENERALES</h4>
+                    <textarea id="observations-free" maxlength="1000" placeholder="Observaciones generales, incidencias, trabajos pendientes... (máximo 1000 caracteres)"></textarea>
+                    <div style="text-align: right; font-size: 11px; color: #666; margin-top: 5px;">
+                        <span id="char-count">0</span> / 1000 caracteres
+                    </div>
+                </div>
+
                 <div class="date-section">
                     <div class="date-item">
                         <label>VARADA:</label>
@@ -624,13 +655,7 @@
                     <div class="type-btn botadura" onclick="selectType('botadura')">BOTADURA</div>
                 </div>
 
-                <div id="import-section" style="display: none;">
-                    <div class="import-alert">
-                        <h4>Importar Varada</h4>
-                        <p>Se encontró varada previa de esta embarcación</p>
-                        <button class="import-btn" onclick="importVarada()">IMPORTAR DATOS</button>
-                    </div>
-                </div>
+                <div id="import-section" style="display: none;"></div>
 
                 <div id="photo-report-section" style="display: none;">
                     <div class="photo-report-section">
@@ -727,10 +752,8 @@
     <script>
 var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxYq0fBve3IWQAi-oWpWNKxHTkoZmrjs1A5MpB5jWqf5LdoL1hXhsrI9kaZ_vfa7e39/exec';
 
-// Items del checklist (SIN FOTOS, con nuevos al final)
 var items=['VODIA','ACTUALIZAR SOFTWARE','LIMPIEZA SENTINAS','VERIFICAR SIST DIRECCION','VERIFICAR MANDOS','VERIFICAR PRESION ACEITE','VERIFICAR VOLTIMETRO','VERIFICAR TEMPERATURA','VERIFICAR SIST TRIMADO','VERIFICAR FLAPS','VERIF TOMA TIERRA Y 220V','VERIF RPM MAXIMA ER - BR','VERIF VELOCIDAD NUDOS','VERIF ILUM. INSTRUMENTOS','VERIF INDIC. COMBUSTIBLE','VERIF EXTRACTOR GASES','VERIF MOLINETE','VERIF BOMBAS ACHIQUE','VERIFICAR CORREDERA','VERIF AIRE ACONDICIONADO','VERIFICAR GENERADOR','VERIFICAR BATERIAS','VERIFICAR BANDERA','VERIF OLORES FILTRO PARTIC','ESTADO LIMPIEZA MOTORES','VERIF LIMPIAPARABRISAS','VERIFICAR W.C.','VERIFICAR CLAXON','VERIFICAR GRIFOS DE FONDO','VERIFICAR FUNC DUCHA','VERIFICAR GRIFOS DE AGUA','VERIFICAR NEVERA','VERIFICAR RADIO VHF','VERIFICAR EQUIPO SONIDO','VERIFICAR SIST NAVEGACION','VERIFICAR TV / VIDEO','VERIFICAR MICROONDAS','VERIFICAR COCINA','VERIFICAR ESCOTILLA','VERIFICAR LUCES EXTERIORES','VERIFICAR LUCES INTERIORES','VERIFICAR LIMPIEZA','REPASAR RASGUNNOS BARCO','REVISION TAPIZADOS','REVISION MOQUETAS','REVISION TOLDOS / LONAS','CHEQUEO MOTOR AUXILIAR','CHEQUEO NEUMATICA','REVISION BOYAS PANTALAN','REVISION PASARELA','REVISION AMARRE'];
 
-// Items de reportaje fotográfico (solo en VARADA)
 var photoReportItems=['FOTO PROA','FOTO AMURA BABOR','FOTO AMURA ESTRIBOR','FOTO ALETA BABOR','FOTO ALETA ESTRIBOR','FOTO COLAS','FOTO EJES O IPS'];
 
 var gaugeItems={
@@ -750,6 +773,9 @@ var varadaRef={check:{},gauges:{},notes:{}};
 window.addEventListener('DOMContentLoaded',function(){
     var user=localStorage.getItem('tallerUser');
     user?(currentUser=JSON.parse(user),showMainApp()):showLogin();
+    document.getElementById('observations-free').addEventListener('input',function(){
+        document.getElementById('char-count').textContent=this.value.length;
+    });
 });
 
 function showLogin(){
@@ -807,10 +833,7 @@ function selectType(t){
     if(t==='varada'){
         document.getElementById('photo-report-section').style.display='block';
         renderPhotoReport();
-        document.getElementById('import-section').style.display='none';
-        lastVarada=null;
-        data.alerts={};
-        varadaRef={check:{},gauges:{},notes:{}};
+        checkVarada();
         updateTableHeader(false);
     }else if(t==='botadura'){
         document.getElementById('photo-report-section').style.display='none';
@@ -883,25 +906,49 @@ function deletePhotoReport(i){
 
 function checkVarada(){
     var boat=document.getElementById('boat-name').value.trim();
-    if(!boat||curType!=='botadura') return;
+    if(!boat) return;
     showLoading('Buscando varada...');
+    
+    var sixMonthsAgo=new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
+    
     fetch(SCRIPT_URL+'?action=getLastVarada&boat='+encodeURIComponent(boat))
     .then(r=>r.json())
     .then(result=>{
         hideLoading();
         if(result.success&&result.data){
             lastVarada=result.data;
-            document.getElementById('import-section').style.display='block';
             varadaRef.check=JSON.parse(lastVarada.checklistJson||'{}');
             varadaRef.gauges=JSON.parse(lastVarada.gaugesJson||'{}');
             varadaRef.notes=JSON.parse(lastVarada.notasJson||'{}');
-            analyzeAlerts();
+            
+            var varadaDate=new Date(lastVarada.fecha);
+            var isRecent=varadaDate>sixMonthsAgo;
+            var isActive=!lastVarada.cerrada;
+            
+            var importSection=document.getElementById('import-section');
+            var html='<div class="import-alert">';
+            
+            if(curType==='varada'&&isActive&&isRecent){
+                html+='<h4>Varada Incompleta Encontrada</h4>';
+                html+='<p>Fecha: '+lastVarada.fecha+' - Técnico: '+lastVarada.tecnico+'</p>';
+                html+='<button class="import-btn" onclick="continuarVarada()">CONTINUAR VARADA ANTERIOR</button>';
+            }else if(curType==='botadura'){
+                html+='<h4>Importar Varada</h4>';
+                html+='<p>Última varada: '+lastVarada.fecha+' - Estado: '+(isActive?'ACTIVA':'CERRADA')+'</p>';
+                html+='<button class="import-btn" onclick="importVarada()">IMPORTAR DATOS</button>';
+                analyzeAlerts();
+            }
+            
+            html+='</div>';
+            importSection.innerHTML=html;
+            importSection.style.display='block';
         }else{
             document.getElementById('import-section').style.display='none';
             lastVarada=null;
             varadaRef={check:{},gauges:{},notes:{}};
         }
-        renderCheck();
+        if(curType==='botadura') renderCheck();
     })
     .catch(err=>{hideLoading();document.getElementById('import-section').style.display='none';});
 }
@@ -938,10 +985,9 @@ function showAlertsSummary(){
 
 function importVarada(){
     if(!lastVarada){alert('No hay varada');return;}
-    if(!confirm('¿Importar datos de varada?')) return;
+    if(!confirm('¿Importar datos de varada? (Los checks NO se copiarán, debes marcarlos en botadura)')) return;
     showLoading('Importando...');
     setTimeout(()=>{
-        data.check=JSON.parse(lastVarada.checklistJson||'{}');
         data.notes=JSON.parse(lastVarada.notasJson||'{}');
         data.gauges=JSON.parse(lastVarada.gaugesJson||'{}');
         document.getElementById('client-number').value=lastVarada.cliente||'';
@@ -956,9 +1002,41 @@ function importVarada(){
         document.getElementById('hours-estribor').value=lastVarada.hoursEstribor||'';
         document.getElementById('hours-central').value=lastVarada.hoursCentral||'';
         document.getElementById('vaciar-wc').value=lastVarada.vaciarWC||'';
+        document.getElementById('observations-free').value=lastVarada.observationsFree||'';
         renderCheck();
         hideLoading();
-        showMsg('message-area','Datos importados correctamente','success');
+        showMsg('message-area','Datos importados. Marca los checks de botadura.','success');
+    },500);
+}
+
+function continuarVarada(){
+    if(!lastVarada){alert('No hay varada');return;}
+    if(!confirm('¿Continuar con la varada anterior?')) return;
+    showLoading('Cargando varada...');
+    setTimeout(()=>{
+        data.check=JSON.parse(lastVarada.checklistJson||'{}');
+        data.notes=JSON.parse(lastVarada.notasJson||'{}');
+        data.gauges=JSON.parse(lastVarada.gaugesJson||'{}');
+        data.photoReport=JSON.parse(lastVarada.photoReportJson||'{}');
+        
+        document.getElementById('client-number').value=lastVarada.cliente||'';
+        document.getElementById('motor-fb').value=lastVarada.motorFB||'';
+        document.getElementById('motor-br').value=lastVarada.motorBR||'';
+        document.getElementById('motor-er').value=lastVarada.motorER||'';
+        document.getElementById('keys-motors').value=lastVarada.llaves||'';
+        document.getElementById('cabin').value=lastVarada.cabina||'';
+        document.getElementById('colas').value=lastVarada.colas||'';
+        document.getElementById('propeller').value=lastVarada.helice||'';
+        document.getElementById('hours-babor').value=lastVarada.hoursBabor||'';
+        document.getElementById('hours-estribor').value=lastVarada.hoursEstribor||'';
+        document.getElementById('hours-central').value=lastVarada.hoursCentral||'';
+        document.getElementById('vaciar-wc').value=lastVarada.vaciarWC||'';
+        document.getElementById('observations-free').value=lastVarada.observationsFree||'';
+        
+        renderCheck();
+        renderPhotoReport();
+        hideLoading();
+        showMsg('message-area','Varada cargada. Puedes continuar trabajando.','success');
     },500);
 }
 
@@ -1073,9 +1151,14 @@ function openNotes(id,name){
     curNote=id;
     document.getElementById('notes-title').textContent=name;
     document.getElementById('notes-text').value=data.notes[id]||'';
-    if(varadaRef.notes[id]&&varadaRef.notes[id].trim()&&curType==='botadura'){
+    
+    if(curType==='botadura'&&varadaRef.notes[id]){
+        var prevNoteText=varadaRef.notes[id];
+        if(gaugeItems[id]&&varadaRef.gauges[id]!==undefined){
+            prevNoteText+='\n\n[Medidor en varada: '+varadaRef.gauges[id]+' '+gaugeItems[id].unit+']';
+        }
         document.getElementById('previous-note').style.display='block';
-        document.getElementById('previous-note-text').textContent=varadaRef.notes[id];
+        document.getElementById('previous-note-text').textContent=prevNoteText;
     }else{
         document.getElementById('previous-note').style.display='none';
     }
@@ -1117,6 +1200,7 @@ function saveInsp(){
         hoursEstribor:document.getElementById('hours-estribor').value,
         hoursCentral:document.getElementById('hours-central').value,
         vaciarWC:document.getElementById('vaciar-wc').value,
+        observationsFree:document.getElementById('observations-free').value,
         fechaVarada:document.getElementById('date-varada').value,
         fechaBotadura:document.getElementById('date-botadura').value,
         checklist:data.check,
@@ -1157,8 +1241,73 @@ function renderHistory(data){
     h.innerHTML=data.map(item=>{
         var fecha=new Date(item.fecha).toLocaleDateString('es-ES');
         var closedBadge=item.cerrada?'<span class="closed-badge">CERRADA</span>':'';
-        return '<div class="history-card '+(item.cerrada?'closed':'')+'"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><strong style="color:'+(item.tipo==='varada'?'#dc3545':'#28a745')+';font-size:13px;">'+item.tipo.toUpperCase()+' - '+item.embarcacion+closedBadge+'</strong><span style="font-size:11px;">'+fecha+'</span></div><div style="font-size:11px;"><p>Técnico: '+item.tecnico+'</p><p>Cliente: '+(item.clienteNumero||'N/A')+'</p></div></div>';
+        
+        return '<div class="history-card '+(item.cerrada?'closed':'')+'">'+
+               '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'+
+               '<strong style="color:'+(item.tipo==='varada'?'#dc3545':'#28a745')+';font-size:13px;">'+
+               item.tipo.toUpperCase()+' - '+item.embarcacion+closedBadge+'</strong>'+
+               '<span style="font-size:11px;">'+fecha+'</span></div>'+
+               '<div style="font-size:11px;"><p>Técnico: '+item.tecnico+'</p><p>Cliente: '+(item.clienteNumero||'N/A')+'</p></div>'+
+               '<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">'+
+               '<button class="action-btn save" style="padding:6px;font-size:11px;" onclick="verInspeccion(\''+item.id+'\')">VER</button>'+
+               '<button class="action-btn pdf" style="padding:6px;font-size:11px;" onclick="generarPDFHistorial(\''+item.id+'\')">PDF</button>'+
+               '</div></div>';
     }).join('');
+}
+
+function verInspeccion(id){
+    showLoading('Cargando inspección...');
+    fetch(SCRIPT_URL+'?action=getInspection&id='+encodeURIComponent(id))
+    .then(r=>r.json())
+    .then(result=>{
+        hideLoading();
+        if(result.success&&result.data){
+            var insp=result.data;
+            
+            document.getElementById('boat-name').value=insp.embarcacion;
+            document.getElementById('client-number').value=insp.cliente||'';
+            document.getElementById('motor-fb').value=insp.motorFB||'';
+            document.getElementById('motor-br').value=insp.motorBR||'';
+            document.getElementById('motor-er').value=insp.motorER||'';
+            document.getElementById('keys-motors').value=insp.llaves||'';
+            document.getElementById('cabin').value=insp.cabina||'';
+            document.getElementById('colas').value=insp.colas||'';
+            document.getElementById('propeller').value=insp.helice||'';
+            document.getElementById('hours-babor').value=insp.hoursBabor||'';
+            document.getElementById('hours-estribor').value=insp.hoursEstribor||'';
+            document.getElementById('hours-central').value=insp.hoursCentral||'';
+            document.getElementById('vaciar-wc').value=insp.vaciarWC||'';
+            document.getElementById('observations-free').value=insp.observationsFree||'';
+            document.getElementById('date-varada').value=insp.fechaVarada||'';
+            document.getElementById('date-botadura').value=insp.fechaBotadura||'';
+            
+            data.check=JSON.parse(insp.checklistJson||'{}');
+            data.notes=JSON.parse(insp.notasJson||'{}');
+            data.gauges=JSON.parse(insp.gaugesJson||'{}');
+            data.photoReport=JSON.parse(insp.photoReportJson||'{}');
+            
+            curType=insp.tipo;
+            document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
+            document.querySelector('.type-btn.'+insp.tipo).classList.add('selected');
+            
+            document.getElementById('checklist-section').style.display='block';
+            if(insp.tipo==='varada'){
+                document.getElementById('photo-report-section').style.display='block';
+                renderPhotoReport();
+            }
+            
+            renderCheck();
+            switchTab('inspection');
+            
+            showMsg('message-area','Inspección cargada. Puedes generar el PDF.','info');
+        }
+    })
+    .catch(err=>{hideLoading();alert('Error cargando inspección');});
+}
+
+function generarPDFHistorial(id){
+    verInspeccion(id);
+    setTimeout(()=>makePDF(),1000);
 }
 
 function clearForm(){
@@ -1168,7 +1317,8 @@ function clearForm(){
     varadaRef={check:{},gauges:{},notes:{}};
     renderCheck();
     renderPhotoReport();
-    ['boat-name','client-number','motor-fb','motor-br','motor-er','keys-motors','cabin','colas','propeller','hours-babor','hours-estribor','hours-central','vaciar-wc','date-varada','date-botadura'].forEach(id=>document.getElementById(id).value='');
+    ['boat-name','client-number','motor-fb','motor-br','motor-er','keys-motors','cabin','colas','propeller','hours-babor','hours-estribor','hours-central','vaciar-wc','observations-free','date-varada','date-botadura'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('char-count').textContent='0';
     document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
     curType=null;
     document.getElementById('import-section').style.display='none';
@@ -1220,7 +1370,26 @@ function makePDF(){
              'Horas Central: '+(document.getElementById('hours-central').value||'-'),
              'Vaciar WC: '+(document.getElementById('vaciar-wc').value||'-')
             ].forEach(l=>{doc.text(l,15,y);y+=5;});
+            
             y+=3;
+            var obsText=document.getElementById('observations-free').value;
+            if(obsText&&obsText.trim()){
+                doc.setFont(undefined,'bold');
+                doc.setFontSize(10);
+                doc.text('OBSERVACIONES GENERALES',15,y);
+                y+=6;
+                doc.setFont(undefined,'normal');
+                doc.setFontSize(8);
+                
+                var lines=doc.splitTextToSize(obsText,w-30);
+                lines.forEach(line=>{
+                    if(y>270){doc.addPage();y=20;}
+                    doc.text(line,15,y);
+                    y+=4;
+                });
+                y+=3;
+            }
+            
             doc.setFont(undefined,'bold');
             doc.setFontSize(10);
             doc.text('CHECKLIST',15,y);
