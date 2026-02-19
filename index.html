@@ -1014,10 +1014,30 @@ function continuarVarada(){
     if(!confirm('¿Continuar con la varada anterior?')) return;
     showLoading('Cargando varada...');
     setTimeout(()=>{
-        data.check=JSON.parse(lastVarada.checklistJson||'{}');
-        data.notes=JSON.parse(lastVarada.notasJson||'{}');
-        data.gauges=JSON.parse(lastVarada.gaugesJson||'{}');
-        data.photoReport=JSON.parse(lastVarada.photoReportJson||'{}');
+        try{
+            data.check=JSON.parse(lastVarada.checklistJson||'{}');
+        }catch(e){
+            console.log('Error parsing checklist:',e);
+            data.check={};
+        }
+        try{
+            data.notes=JSON.parse(lastVarada.notasJson||'{}');
+        }catch(e){
+            console.log('Error parsing notas:',e);
+            data.notes={};
+        }
+        try{
+            data.gauges=JSON.parse(lastVarada.gaugesJson||'{}');
+        }catch(e){
+            console.log('Error parsing gauges:',e);
+            data.gauges={};
+        }
+        try{
+            data.photoReport=JSON.parse(lastVarada.photoReportJson||'{}');
+        }catch(e){
+            console.log('Error parsing photoReport:',e);
+            data.photoReport={};
+        }
         
         document.getElementById('client-number').value=lastVarada.cliente||'';
         document.getElementById('motor-fb').value=lastVarada.motorFB||'';
@@ -1032,11 +1052,21 @@ function continuarVarada(){
         document.getElementById('hours-central').value=lastVarada.hoursCentral||'';
         document.getElementById('vaciar-wc').value=lastVarada.vaciarWC||'';
         document.getElementById('observations-free').value=lastVarada.observationsFree||'';
+        document.getElementById('date-varada').value=lastVarada.fechaVarada||'';
+        
+        document.getElementById('char-count').textContent=(lastVarada.observationsFree||'').length;
         
         renderCheck();
         renderPhotoReport();
         hideLoading();
         showMsg('message-area','Varada cargada. Puedes continuar trabajando.','success');
+        
+        console.log('Varada cargada:',{
+            checks: Object.keys(data.check).length,
+            notes: Object.keys(data.notes).length,
+            gauges: Object.keys(data.gauges).length,
+            photos: Object.keys(data.photoReport).length
+        });
     },500);
 }
 
@@ -1264,7 +1294,7 @@ function verInspeccion(id){
         if(result.success&&result.data){
             var insp=result.data;
             
-            document.getElementById('boat-name').value=insp.embarcacion;
+            document.getElementById('boat-name').value=insp.embarcacion||'';
             document.getElementById('client-number').value=insp.cliente||'';
             document.getElementById('motor-fb').value=insp.motorFB||'';
             document.getElementById('motor-br').value=insp.motorBR||'';
@@ -1281,28 +1311,50 @@ function verInspeccion(id){
             document.getElementById('date-varada').value=insp.fechaVarada||'';
             document.getElementById('date-botadura').value=insp.fechaBotadura||'';
             
-            data.check=JSON.parse(insp.checklistJson||'{}');
-            data.notes=JSON.parse(insp.notasJson||'{}');
-            data.gauges=JSON.parse(insp.gaugesJson||'{}');
-            data.photoReport=JSON.parse(insp.photoReportJson||'{}');
+            document.getElementById('char-count').textContent=(insp.observationsFree||'').length;
+            
+            try{
+                data.check=JSON.parse(insp.checklistJson||'{}');
+            }catch(e){data.check={};}
+            try{
+                data.notes=JSON.parse(insp.notasJson||'{}');
+            }catch(e){data.notes={};}
+            try{
+                data.gauges=JSON.parse(insp.gaugesJson||'{}');
+            }catch(e){data.gauges={};}
+            try{
+                data.photoReport=JSON.parse(insp.photoReportJson||'{}');
+            }catch(e){data.photoReport={};}
             
             curType=insp.tipo;
             document.querySelectorAll('.type-btn').forEach(b=>b.classList.remove('selected'));
-            document.querySelector('.type-btn.'+insp.tipo).classList.add('selected');
+            var btn=document.querySelector('.type-btn.'+insp.tipo);
+            if(btn) btn.classList.add('selected');
             
             document.getElementById('checklist-section').style.display='block';
+            document.getElementById('import-section').style.display='none';
             if(insp.tipo==='varada'){
                 document.getElementById('photo-report-section').style.display='block';
                 renderPhotoReport();
+                updateTableHeader(false);
+            }else{
+                document.getElementById('photo-report-section').style.display='none';
+                updateTableHeader(false);
             }
             
             renderCheck();
             switchTab('inspection');
             
-            showMsg('message-area','Inspección cargada. Puedes generar el PDF.','info');
+            showMsg('message-area','Inspección cargada. Puedes continuar trabajando o generar PDF.','info');
+        }else{
+            alert('No se pudo cargar la inspección: '+(result.message||'Error desconocido'));
         }
     })
-    .catch(err=>{hideLoading();alert('Error cargando inspección');});
+    .catch(err=>{
+        hideLoading();
+        alert('Error de conexión al cargar inspección. Verifica que el Google Apps Script está actualizado.');
+        console.error(err);
+    });
 }
 
 function generarPDFHistorial(id){
