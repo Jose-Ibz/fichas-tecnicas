@@ -3,2179 +3,1083 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Náutica Viamar - Sistema de Inspecciones v3.0</title>
+<title>Náutica Viamar - Panel PC v3.0</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:Arial,sans-serif;background:#f5f5f5;padding:20px}
-.container{max-width:1400px;margin:0 auto;background:white;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
-h1{color:#003d82;margin-bottom:20px;text-align:center}
-.tabs{display:flex;gap:10px;margin-bottom:30px;border-bottom:2px solid #ddd}
-.tab{padding:15px 30px;cursor:pointer;border:none;background:none;font-size:16px;color:#666;border-bottom:3px solid transparent;transition:all 0.3s}
-.tab.active{color:#003d82;border-bottom-color:#003d82;font-weight:bold}
-.tab-content{display:none}
-.tab-content.active{display:block}
-.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:20px;margin-bottom:20px}
-.form-group{display:flex;flex-direction:column}
-.form-group label{font-weight:bold;margin-bottom:5px;color:#333;font-size:14px}
-.form-group input,.form-group select,.form-group textarea{padding:10px;border:1px solid #ddd;border-radius:4px;font-size:14px}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#003d82}
-.section{margin-bottom:30px;padding:20px;background:#f9f9f9;border-radius:8px}
-.section-title{font-size:18px;color:#003d82;margin-bottom:15px;font-weight:bold;border-bottom:2px solid #003d82;padding-bottom:10px}
-.checklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:15px}
-.check-item{display:flex;align-items:center;padding:10px;background:white;border-radius:4px;border:1px solid #ddd}
-.check-item input[type="checkbox"]{margin-right:10px;width:20px;height:20px;cursor:pointer}
-.check-item label{cursor:pointer;flex:1;font-size:14px}
-.check-item.with-note{border-left:3px solid #ffa500}
-.check-item.imported{background:#e8f5e9;border-left:3px solid #4caf50}
-.note-btn,.gauge-btn{padding:5px 10px;font-size:12px;background:#003d82;color:white;border:none;border-radius:4px;cursor:pointer;margin-left:10px}
-.note-btn:hover,.gauge-btn:hover{background:#002656}
-.buttons{display:flex;gap:15px;margin-top:30px;justify-content:center}
-.btn{padding:15px 40px;font-size:16px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;transition:all 0.3s}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh}
+
+/* ---- SIDEBAR ---- */
+.sidebar{position:fixed;left:0;top:0;width:260px;height:100vh;background:#003d82;color:white;display:flex;flex-direction:column;z-index:100}
+.sidebar-logo{padding:20px;border-bottom:1px solid rgba(255,255,255,.15);text-align:center}
+.sidebar-logo h2{font-size:18px;font-weight:700;letter-spacing:1px}
+.sidebar-logo p{font-size:11px;opacity:.7;margin-top:4px}
+.sidebar-nav{flex:1;padding:20px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:12px;padding:13px 22px;cursor:pointer;font-size:14px;transition:background .2s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.1)}
+.nav-item.active{background:rgba(255,255,255,.15);border-left-color:#ffc107}
+.nav-icon{font-size:18px;width:24px;text-align:center}
+.sidebar-user{padding:16px 22px;border-top:1px solid rgba(255,255,255,.15);font-size:13px;opacity:.8}
+
+/* ---- MAIN ---- */
+.main{margin-left:260px;min-height:100vh;padding:30px}
+.page{display:none}
+.page.active{display:block}
+
+/* ---- TOPBAR ---- */
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px}
+.topbar h1{font-size:22px;color:#1a2e4a;font-weight:700}
+.topbar-actions{display:flex;gap:10px;align-items:center}
+
+/* ---- STAT CARDS ---- */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px}
+.stat-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:16px}
+.stat-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.stat-icon.blue{background:#e3f0ff}
+.stat-icon.green{background:#e8f5e9}
+.stat-icon.orange{background:#fff3e0}
+.stat-icon.purple{background:#f3e5f5}
+.stat-value{font-size:28px;font-weight:700;color:#1a2e4a}
+.stat-label{font-size:12px;color:#888;margin-top:2px}
+
+/* ---- FILTERS ---- */
+.filters-bar{background:white;border-radius:10px;padding:18px 20px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:22px;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.filter-group{display:flex;flex-direction:column;gap:4px;min-width:160px}
+.filter-group label{font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.5px}
+.filter-group select,.filter-group input{padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:white;color:#333}
+.filter-group select:focus,.filter-group input:focus{outline:none;border-color:#003d82}
+.btn{padding:10px 20px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
 .btn-primary{background:#003d82;color:white}
 .btn-primary:hover{background:#002656}
-.btn-secondary{background:#666;color:white}
-.btn-secondary:hover{background:#444}
 .btn-success{background:#4caf50;color:white}
-.btn-success:hover{background:#45a049}
-.message-area{margin:20px 0;padding:15px;border-radius:4px;display:none}
-.message-area.success{background:#d4edda;color:#155724;border:1px solid #c3e6cb}
-.message-area.error{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb}
-.loading{display:none;text-align:center;padding:20px;font-size:18px;color:#003d82}
-.import-section{margin:20px 0;padding:20px;background:#fff3cd;border:2px solid #ffc107;border-radius:8px;display:none}
-.import-alert h4{color:#856404;margin-bottom:10px}
-.import-btn{background:#ffc107;color:#000;padding:10px 20px;border:none;border-radius:4px;cursor:pointer;font-weight:bold;margin-top:10px}
-.import-btn:hover{background:#e0a800}
-.history-list{display:grid;gap:15px}
-.history-item{padding:15px;background:white;border:1px solid #ddd;border-radius:4px;display:grid;grid-template-columns:auto 1fr auto auto;gap:15px;align-items:center}
-.history-item.cerrada{opacity:0.6;background:#f5f5f5}
-.history-date{font-weight:bold;color:#003d82}
-.history-info{font-size:14px;color:#666}
-.history-btn{padding:8px 15px;font-size:14px;background:#003d82;color:white;border:none;border-radius:4px;cursor:pointer}
-.history-btn:hover{background:#002656}
-.photo-section{margin-top:20px}
-.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:15px;margin-top:15px}
-.photo-item{border:2px dashed #ddd;border-radius:8px;padding:15px;text-align:center;position:relative}
-.photo-item.has-photo{border-color:#4caf50;background:#f1f8f4}
-.photo-item input[type="file"]{display:none}
-.photo-item label{cursor:pointer;display:block;color:#003d82;font-size:14px;font-weight:bold}
-.photo-preview{max-width:100%;max-height:150px;margin-top:10px;border-radius:4px}
-.photo-remove{position:absolute;top:5px;right:5px;background:#f44336;color:white;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;font-size:12px}
-.medidores-section{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
-.medidor-group{background:white;padding:15px;border-radius:8px;border:1px solid #ddd}
-.medidor-group h4{color:#003d82;margin-bottom:15px;text-align:center;border-bottom:2px solid #003d82;padding-bottom:10px}
-.medidor-item{margin-bottom:10px}
-.medidor-item label{font-size:13px;color:#666;display:block;margin-bottom:5px}
-.medidor-item input{width:100%;padding:8px;border:1px solid #ddd;border-radius:4px}
-.char-counter{font-size:12px;color:#666;text-align:right;margin-top:5px}
-.modal{display:none;position:fixed;z-index:1000;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,0.5)}
-.modal-content{background:white;margin:50px auto;padding:30px;width:90%;max-width:600px;border-radius:8px;max-height:80vh;overflow-y:auto}
-.modal-close{float:right;font-size:28px;font-weight:bold;color:#666;cursor:pointer}
-.modal-close:hover{color:#000}
-@media(max-width:768px){
-.form-row{grid-template-columns:1fr}
-.medidores-section{grid-template-columns:1fr}
-.history-item{grid-template-columns:1fr;text-align:center}
-.buttons{flex-direction:column;align-items:stretch}
-.buttons .btn{width:100%;margin:5px 0}
+.btn-success:hover{background:#388e3c}
+.btn-danger{background:#f44336;color:white}
+.btn-danger:hover{background:#c62828}
+.btn-secondary{background:#eee;color:#333}
+.btn-secondary:hover{background:#ddd}
+.btn-outline{background:white;color:#003d82;border:1.5px solid #003d82}
+.btn-outline:hover{background:#003d82;color:white}
+.btn-sm{padding:6px 14px;font-size:12px}
+.btn-xs{padding:4px 10px;font-size:11px}
+
+/* ---- TABLE ---- */
+.table-card{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);overflow:hidden}
+.table-header{padding:16px 22px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+.table-header h3{font-size:15px;color:#1a2e4a;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{background:#f8f9fb;padding:11px 16px;text-align:left;font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid #eee}
+td{padding:13px 16px;font-size:13px;color:#333;border-bottom:1px solid #f0f0f0;vertical-align:middle}
+tr:hover td{background:#fafbff}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase}
+.badge-completed{background:#d4edda;color:#155724}
+.badge-partial{background:#fff3cd;color:#856404}
+.badge-varada{background:#e3f0ff;color:#003d82}
+.badge-botadura{background:#e8f5e9;color:#1b5e20}
+.badge-closed{background:#f5f5f5;color:#888}
+
+/* ---- DETAIL MODAL ---- */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;overflow-y:auto;padding:30px}
+.modal-overlay.active{display:flex;align-items:flex-start;justify-content:center}
+.modal-box{background:white;border-radius:14px;width:100%;max-width:900px;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden}
+.modal-top{background:#003d82;color:white;padding:22px 28px;display:flex;justify-content:space-between;align-items:center}
+.modal-top h2{font-size:18px;font-weight:700}
+.modal-close{background:none;border:none;color:white;font-size:26px;cursor:pointer;line-height:1}
+.modal-body{padding:28px;max-height:80vh;overflow-y:auto}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:24px}
+.detail-section{background:#f8f9fb;border-radius:10px;padding:18px}
+.detail-section h4{font-size:13px;font-weight:700;color:#003d82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e0e8f5}
+.detail-row{display:flex;justify-content:space-between;padding:5px 0;font-size:13px;border-bottom:1px solid #eee}
+.detail-row:last-child{border-bottom:none}
+.detail-label{color:#888;font-weight:600}
+.detail-value{color:#333;text-align:right;max-width:60%}
+
+/* ---- VERIFICACIONES GRID ---- */
+.verif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+.verif-item{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:6px;font-size:12px;background:white;border:1px solid #eee}
+.verif-item.checked{background:#e8f5e9;border-color:#a5d6a7}
+.verif-item.unchecked{opacity:.55}
+.verif-check{font-size:14px;flex-shrink:0}
+
+/* ---- PHOTOS GALLERY ---- */
+.photos-section{margin-top:22px}
+.photos-title{font-size:13px;font-weight:700;color:#003d82;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e0e8f5}
+.photos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px}
+.photo-card{border-radius:8px;overflow:hidden;border:1px solid #eee;box-shadow:0 2px 6px rgba(0,0,0,.07)}
+.photo-card img{width:100%;height:130px;object-fit:cover;display:block}
+.photo-card-label{padding:7px 10px;font-size:11px;font-weight:600;color:#555;background:#f8f9fb;text-align:center}
+.photo-drive-link{display:flex;align-items:center;justify-content:center;height:130px;background:#e3f0ff;gap:8px;cursor:pointer;text-decoration:none;transition:background .2s}
+.photo-drive-link:hover{background:#bbdefb}
+.photo-drive-link span{font-size:13px;color:#003d82;font-weight:600}
+
+/* ---- CHART / STATS PAGE ---- */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:24px}
+.chart-card{background:white;border-radius:12px;padding:22px;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+.chart-card h3{font-size:14px;font-weight:700;color:#1a2e4a;margin-bottom:18px}
+.bar-chart{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:flex;align-items:center;gap:10px;font-size:13px}
+.bar-label{width:140px;color:#555;text-align:right;font-size:12px;flex-shrink:0}
+.bar-track{flex:1;background:#eee;border-radius:6px;height:22px;overflow:hidden}
+.bar-fill{height:100%;border-radius:6px;transition:width .5s;display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:white}
+.bar-count{width:30px;color:#555;font-size:12px;font-weight:700}
+.pie-legend{margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:12px;color:#555}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+
+/* ---- LOGIN ---- */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#003d82 0%,#0063c5 100%)}
+.login-card{background:white;border-radius:16px;padding:44px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.25);text-align:center}
+.login-logo{font-size:48px;margin-bottom:16px}
+.login-card h1{font-size:22px;color:#003d82;font-weight:800;margin-bottom:6px}
+.login-card p{font-size:13px;color:#888;margin-bottom:30px}
+.login-input{width:100%;padding:13px 16px;border:1.5px solid #ddd;border-radius:8px;font-size:14px;margin-bottom:14px;transition:border-color .2s}
+.login-input:focus{outline:none;border-color:#003d82}
+.login-btn{width:100%;padding:14px;background:#003d82;color:white;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:background .2s}
+.login-btn:hover{background:#002656}
+.login-error{color:#f44336;font-size:13px;margin-top:10px;display:none}
+
+/* ---- LOADING / EMPTY ---- */
+.loading-overlay{position:fixed;inset:0;background:rgba(255,255,255,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:900;font-size:18px;color:#003d82;gap:14px}
+.spinner{width:42px;height:42px;border:4px solid #e3f0ff;border-top-color:#003d82;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:60px 20px;color:#aaa}
+.empty-state .empty-icon{font-size:52px;margin-bottom:16px}
+.empty-state p{font-size:15px}
+
+/* ---- MEDIDORES ---- */
+.medidores-table{width:100%;border-collapse:collapse;font-size:12px}
+.medidores-table th{background:#f0f4fa;padding:7px 12px;color:#555;font-weight:700;text-align:center}
+.medidores-table td{padding:7px 12px;border-bottom:1px solid #eee;text-align:center}
+.medidores-table tr:last-child td{border-bottom:none}
+
+/* ---- NOTAS ---- */
+.notas-list{display:flex;flex-direction:column;gap:8px}
+.nota-item{background:white;border-left:3px solid #ffa500;padding:10px 14px;border-radius:0 6px 6px 0;font-size:13px}
+.nota-label{font-weight:700;color:#333;font-size:11px;text-transform:uppercase;margin-bottom:4px}
+.nota-text{color:#555}
+
+/* RESPOSIVE */
+@media(max-width:1200px){
+.stats-grid{grid-template-columns:repeat(2,1fr)}
+.charts-grid{grid-template-columns:1fr}
+.verif-grid{grid-template-columns:repeat(2,1fr)}
 }
-.check-photo-btn{padding:5px 10px;font-size:12px;background:#4caf50;color:white;border:none;border-radius:4px;cursor:pointer;margin-left:5px}
-.check-photo-btn:hover{background:#45a049}
-.check-item-photo{max-width:100px;max-height:100px;margin-top:10px;border-radius:4px;display:block}
-.check-item-photo-container{margin-top:10px;position:relative}
-.check-item-photo-remove{position:absolute;top:0;right:0;background:#f44336;color:white;border:none;border-radius:50%;width:20px;height:20px;cursor:pointer;font-size:10px}
-.varada-info{font-size:12px;color:#666;font-style:italic;margin-top:5px;padding-left:30px;background:#f0f8ff;padding:5px 10px;border-left:3px solid #2196f3;margin-top:5px}
-.sync-status{position:fixed;top:20px;right:20px;padding:10px 15px;border-radius:20px;font-size:12px;font-weight:bold;z-index:1000;display:flex;align-items:center;gap:8px;box-shadow:0 2px 10px rgba(0,0,0,0.2)}
-.sync-status.online{background:#4caf50;color:white}
-.sync-status.offline{background:#ff9800;color:white}
-.sync-status.error{background:#f44336;color:white}
-.sync-status.syncing{background:#2196f3;color:white}
-.pending-count{background:rgba(255,255,255,0.3);padding:2px 8px;border-radius:10px;font-size:11px}
-.sync-btn{background:rgba(255,255,255,0.2);border:none;color:white;padding:5px 10px;border-radius:4px;cursor:pointer;font-size:11px;margin-left:10px}
-.sync-btn:hover{background:rgba(255,255,255,0.3)}
-.pending-list{margin-top:20px;padding:15px;background:#fff3cd;border:2px solid #ffc107;border-radius:8px}
-.pending-item{padding:10px;background:white;margin-bottom:10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center}
 </style>
 </head>
 <body>
-<div class="container">
-<h1>🚤 NÁUTICA VIAMAR - SISTEMA DE INSPECCIONES <span style="font-size:14px;background:#4caf50;color:white;padding:3px 8px;border-radius:10px;vertical-align:middle">v3.0 Drive</span></h1>
 
-<div id="sync-status" class="sync-status online">
-<span id="sync-indicator">🟢</span>
-<span id="sync-text">Conectado</span>
-<span id="pending-count" class="pending-count" style="display:none">0 pendientes</span>
-<button id="sync-btn" class="sync-btn" style="display:none" onclick="syncPendingInspections()">SINCRONIZAR</button>
+<!-- LOGIN -->
+<div id="login-page">
+<div class="login-wrap">
+<div class="login-card">
+<div class="login-logo">🚤</div>
+<h1>NÁUTICA VIAMAR</h1>
+<p>Panel de Control v3.0 — Google Drive</p>
+<input class="login-input" type="text" id="pc-username" placeholder="Usuario" onkeydown="if(event.key==='Enter')pcLogin()">
+<input class="login-input" type="password" id="pc-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter')pcLogin()">
+<button class="login-btn" onclick="pcLogin()">ENTRAR AL PANEL</button>
+<div id="login-error" class="login-error"></div>
 </div>
-
-<div id="login-section">
-<div class="section">
-<div class="section-title">Iniciar Sesión</div>
-<div class="form-row">
-<div class="form-group">
-<label>Usuario:</label>
-<input type="text" id="username" placeholder="Usuario">
-</div>
-<div class="form-group">
-<label>Contraseña:</label>
-<input type="password" id="password" placeholder="Contraseña">
-</div>
-</div>
-<div class="buttons">
-<button class="btn btn-primary" onclick="login()">ENTRAR</button>
-</div>
-<div id="login-message" class="message-area"></div>
 </div>
 </div>
 
-<div id="main-section" style="display:none">
-<div style="text-align:right;margin-bottom:20px">
-<span style="color:#003d82;font-weight:bold">Usuario: <span id="current-user"></span></span>
-<button class="btn btn-secondary" onclick="logout()" style="margin-left:20px;padding:10px 20px">CERRAR SESIÓN</button>
+<!-- LOADING -->
+<div id="loading-overlay" class="loading-overlay" style="display:none">
+<div class="spinner"></div>
+<div id="loading-msg">Cargando...</div>
 </div>
 
-<div class="tabs">
-<button class="tab active" onclick="showTab('nueva')">NUEVA INSPECCIÓN</button>
-<button class="tab" onclick="showTab('historial')">HISTORIAL</button>
+<!-- APP (hidden until login) -->
+<div id="app" style="display:none">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+<div class="sidebar-logo">
+<h2>🚤 VIAMAR</h2>
+<p>Panel PC v3.0 · Drive</p>
+</div>
+<div class="sidebar-nav">
+<div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+<span class="nav-icon">📊</span><span>Dashboard</span>
+</div>
+<div class="nav-item" onclick="showPage('inspecciones')" id="nav-inspecciones">
+<span class="nav-icon">🔍</span><span>Inspecciones</span>
+</div>
+<div class="nav-item" onclick="showPage('fotos')" id="nav-fotos">
+<span class="nav-icon">📷</span><span>Galería Drive</span>
+</div>
+<div class="nav-item" onclick="showPage('estadisticas')" id="nav-estadisticas">
+<span class="nav-icon">📈</span><span>Estadísticas</span>
+</div>
+</div>
+<div class="sidebar-user">
+<div>👤 <span id="sidebar-user"></span></div>
+<div style="margin-top:6px"><button class="btn btn-secondary btn-xs" onclick="pcLogout()" style="width:100%">Cerrar Sesión</button></div>
+</div>
 </div>
 
-<div id="tab-nueva" class="tab-content active">
-<div class="section">
-<div class="section-title">Datos Generales</div>
-<div class="form-row">
-<div class="form-group">
-<label>Embarcación *</label>
-<input type="text" id="boat-name" required>
+<!-- MAIN -->
+<div class="main">
+
+<!-- DASHBOARD -->
+<div id="page-dashboard" class="page active">
+<div class="topbar">
+<h1>📊 Dashboard</h1>
+<div class="topbar-actions">
+<button class="btn btn-outline" onclick="loadAllData()">🔄 Actualizar</button>
 </div>
-<div class="form-group">
-<label>Modelo</label>
-<input type="text" id="modelo">
 </div>
-<div class="form-group">
-<label>Tipo de Inspección *</label>
-<select id="inspection-type" onchange="checkVarada()">
-<option value="">Seleccionar...</option>
-<option value="varada">VARADA</option>
-<option value="botadura">BOTADURA</option>
+<div class="stats-grid">
+<div class="stat-card">
+<div class="stat-icon blue">🔍</div>
+<div><div class="stat-value" id="stat-total">-</div><div class="stat-label">Total Inspecciones</div></div>
+</div>
+<div class="stat-card">
+<div class="stat-icon green">⚓</div>
+<div><div class="stat-value" id="stat-varadas">-</div><div class="stat-label">Varadas</div></div>
+</div>
+<div class="stat-card">
+<div class="stat-icon orange">🌊</div>
+<div><div class="stat-value" id="stat-botaduras">-</div><div class="stat-label">Botaduras</div></div>
+</div>
+<div class="stat-card">
+<div class="stat-icon purple">📷</div>
+<div><div class="stat-value" id="stat-fotos">-</div><div class="stat-label">Fotos en Drive</div></div>
+</div>
+</div>
+<div class="charts-grid">
+<div class="chart-card">
+<h3>📅 Inspecciones por Mes (últimos 6 meses)</h3>
+<div id="chart-monthly" class="bar-chart"></div>
+</div>
+<div class="chart-card">
+<h3>🚤 Top Embarcaciones</h3>
+<div id="chart-boats" class="bar-chart"></div>
+</div>
+</div>
+<div class="table-card">
+<div class="table-header">
+<h3>🕐 Últimas 10 Inspecciones</h3>
+<button class="btn btn-outline btn-sm" onclick="showPage('inspecciones')">Ver Todas →</button>
+</div>
+<table>
+<thead><tr>
+<th>ID</th><th>Fecha</th><th>Embarcación</th><th>Tipo</th><th>Técnico</th><th>Estado</th><th>Fotos</th><th></th>
+</tr></thead>
+<tbody id="recent-table"></tbody>
+</table>
+</div>
+</div>
+
+<!-- INSPECCIONES -->
+<div id="page-inspecciones" class="page">
+<div class="topbar">
+<h1>🔍 Inspecciones</h1>
+<div class="topbar-actions">
+<button class="btn btn-outline" onclick="loadAllData()">🔄 Actualizar</button>
+</div>
+</div>
+<div class="filters-bar">
+<div class="filter-group">
+<label>Embarcación</label>
+<input type="text" id="filter-boat" placeholder="Buscar..." oninput="applyFilters()">
+</div>
+<div class="filter-group">
+<label>Tipo</label>
+<select id="filter-type" onchange="applyFilters()">
+<option value="">Todos</option>
+<option value="varada">Varada</option>
+<option value="botadura">Botadura</option>
 </select>
 </div>
-<div class="form-group">
-<label>Nº Cliente</label>
-<input type="text" id="cliente">
+<div class="filter-group">
+<label>Estado</label>
+<select id="filter-estado" onchange="applyFilters()">
+<option value="">Todos</option>
+<option value="COMPLETADO">Completado</option>
+<option value="PARCIAL">Parcial</option>
+</select>
 </div>
+<div class="filter-group">
+<label>Año</label>
+<select id="filter-year" onchange="applyFilters()">
+<option value="">Todos</option>
+</select>
 </div>
-
-<div id="import-section" class="import-section"></div>
-
-<div class="form-row">
-<div class="form-group">
-<label>Motores (descripción)</label>
-<input type="text" id="motores">
-</div>
-<div class="form-group">
-<label>Colas</label>
-<input type="text" id="colas">
-</div>
-<div class="form-group">
-<label>Paso Hélice</label>
-<input type="text" id="paso-helice">
-</div>
-<div class="form-group">
-<label>Amarre</label>
-<input type="text" id="amarre">
-</div>
-</div>
-
-<div class="form-row">
-<div class="form-group">
-<label>Nº Motor Babor</label>
-<input type="text" id="motor-babor">
-</div>
-<div class="form-group">
-<label>Nº Motor Estribor</label>
-<input type="text" id="motor-estribor">
-</div>
-<div class="form-group">
-<label>Nº Motor Central</label>
-<input type="text" id="motor-central">
-</div>
-</div>
-
-<div class="form-row">
-<div class="form-group">
-<label>Motor Auxiliar Nº</label>
-<input type="text" id="motor-aux-num">
-</div>
-<div class="form-group">
-<label>Motor Auxiliar Modelo</label>
-<input type="text" id="motor-aux-modelo">
-</div>
-<div class="form-group">
-<label>Nº Llaves</label>
-<input type="text" id="llaves">
-</div>
-<div class="form-group">
-<label>Cabina</label>
-<input type="text" id="cabina">
-</div>
-</div>
-
-<div class="form-row">
-<div class="form-group">
-<label>Fecha Varada</label>
-<input type="date" id="date-varada">
-</div>
-<div class="form-group">
-<label>Fecha Botadura</label>
-<input type="date" id="date-botadura">
-</div>
-</div>
-</div>
-
-<div id="checklist-previo-section" class="section" style="display:none">
-<div class="section-title">Checklist Previo (Solo Varada)</div>
-<div class="checklist">
-
-<div class="check-item" id="cp0-item">
-<input type="checkbox" id="cp0" onchange="updateCheck('cp0')">
-<label for="cp0">Pasar motores por agua dulce</label>
-</div>
-
-<div class="check-item" id="cp1-item">
-<input type="checkbox" id="cp1" onchange="updateCheck('cp1')">
-<label for="cp1">Pasar motor auxiliar por agua dulce</label>
-</div>
-
-<div class="check-item" id="cp2-item">
-<input type="checkbox" id="cp2" onchange="updateCheck('cp2')">
-<label for="cp2">Cambiar aceite motor</label>
-</div>
-
-<div class="check-item" id="cp3-item">
-<input type="checkbox" id="cp3" onchange="updateCheck('cp3')">
-<label for="cp3">Cambiar aceite colas</label>
-</div>
-
-<div class="check-item" id="cp4-item">
-<input type="checkbox" id="cp4" onchange="updateCheck('cp4')">
-<label for="cp4">Invernar generador</label>
-</div>
-
-<div class="check-item" id="cp5-item">
-<input type="checkbox" id="cp5" onchange="updateCheck('cp5')">
-<label for="cp5">Invernar aire acondicionado</label>
-</div>
-
-<div class="check-item" id="cp6-item">
-<input type="checkbox" id="cp6" onchange="updateCheck('cp6')">
-<label for="cp6">Tensión correas</label>
-</div>
-
-<div class="check-item" id="cp7-item">
-<input type="checkbox" id="cp7" onchange="updateCheck('cp7')">
-<label for="cp7">Revisar combustible</label>
-</div>
-
-<div class="check-item" id="cp8-item">
-<input type="checkbox" id="cp8" onchange="updateCheck('cp8')">
-<label for="cp8">Revisar niveles agua</label>
-</div>
-
-<div class="check-item" id="cp9-item">
-<input type="checkbox" id="cp9" onchange="updateCheck('cp9')">
-<label for="cp9">Revisar niveles aceite</label>
-</div>
-
-<div class="check-item" id="cp10-item">
-<input type="checkbox" id="cp10" onchange="updateCheck('cp10')">
-<label for="cp10">Vaciar tanque aguas negras</label>
-</div>
-
-</div>
-</div>
-
-<div class="section">
-<div class="section-title">Verificaciones (52 items)</div>
-<div class="checklist">
-
-<div class="check-item" id="v0-item">
-<input type="checkbox" id="v0" onchange="updateCheck('v0')">
-<label for="v0">Fotos, sobre todo lo defectuoso</label>
-<button class="note-btn" onclick="openNoteModal('v0')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v0')">📷</button>
-<div id="v0-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v0-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v1-item">
-<input type="checkbox" id="v1" onchange="updateCheck('v1')">
-<label for="v1">Limpieza de sentinas</label>
-<button class="note-btn" onclick="openNoteModal('v1')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v1')">📷</button>
-<div id="v1-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v1-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v2-item">
-<input type="checkbox" id="v2" onchange="updateCheck('v2')">
-<label for="v2">Sistema dirección</label>
-<button class="note-btn" onclick="openNoteModal('v2')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v2')">📷</button>
-<div id="v2-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v2-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v3-item">
-<input type="checkbox" id="v3" onchange="updateCheck('v3')">
-<label for="v3">Mandos</label>
-<button class="note-btn" onclick="openNoteModal('v3')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v3')">📷</button>
-<div id="v3-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v3-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v4-item">
-<input type="checkbox" id="v4" onchange="updateCheck('v4')">
-<label for="v4">Presión aceite motor</label>
-<button class="note-btn" onclick="openNoteModal('v4')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v4')">📷</button>
-<div id="v4-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v4-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v5-item">
-<input type="checkbox" id="v5" onchange="updateCheck('v5')">
-<label for="v5">Presión IPS</label>
-<button class="note-btn" onclick="openNoteModal('v5')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v5')">📷</button>
-<div id="v5-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v5-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v6-item">
-<input type="checkbox" id="v6" onchange="updateCheck('v6')">
-<label for="v6">Amperímetro</label>
-<button class="note-btn" onclick="openNoteModal('v6')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v6')">📷</button>
-<div id="v6-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v6-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v7-item">
-<input type="checkbox" id="v7" onchange="updateCheck('v7')">
-<label for="v7">Voltímetro</label>
-<button class="note-btn" onclick="openNoteModal('v7')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v7')">📷</button>
-<div id="v7-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v7-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v8-item">
-<input type="checkbox" id="v8" onchange="updateCheck('v8')">
-<label for="v8">Temperatura motor</label>
-<button class="note-btn" onclick="openNoteModal('v8')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v8')">📷</button>
-<div id="v8-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v8-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v9-item">
-<input type="checkbox" id="v9" onchange="updateCheck('v9')">
-<label for="v9">Temperatura IPS</label>
-<button class="note-btn" onclick="openNoteModal('v9')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v9')">📷</button>
-<div id="v9-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v9-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v10-item">
-<input type="checkbox" id="v10" onchange="updateCheck('v10')">
-<label for="v10">Indicador trim</label>
-<button class="note-btn" onclick="openNoteModal('v10')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v10')">📷</button>
-<div id="v10-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v10-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v11-item">
-<input type="checkbox" id="v11" onchange="updateCheck('v11')">
-<label for="v11">Power trim</label>
-<button class="note-btn" onclick="openNoteModal('v11')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v11')">📷</button>
-<div id="v11-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v11-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v12-item">
-<input type="checkbox" id="v12" onchange="updateCheck('v12')">
-<label for="v12">Flaps hidráulicos</label>
-<button class="note-btn" onclick="openNoteModal('v12')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v12')">📷</button>
-<div id="v12-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v12-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v13-item">
-<input type="checkbox" id="v13" onchange="updateCheck('v13')">
-<label for="v13">Toma tierra y cableado</label>
-<button class="note-btn" onclick="openNoteModal('v13')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v13')">📷</button>
-<div id="v13-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v13-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v14-item">
-<input type="checkbox" id="v14" onchange="updateCheck('v14')">
-<label for="v14">Instalación 220V</label>
-<button class="note-btn" onclick="openNoteModal('v14')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v14')">📷</button>
-<div id="v14-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v14-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v15-item">
-<input type="checkbox" id="v15" onchange="updateCheck('v15')">
-<label for="v15">Funcionamiento generador</label>
-<button class="note-btn" onclick="openNoteModal('v15')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v15')">📷</button>
-<div id="v15-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v15-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v16-item">
-<input type="checkbox" id="v16" onchange="updateCheck('v16')">
-<label for="v16">Velocidad nudos</label>
-<button class="note-btn" onclick="openNoteModal('v16')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v16')">📷</button>
-<div id="v16-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v16-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v17-item">
-<input type="checkbox" id="v17" onchange="updateCheck('v17')">
-<label for="v17">Iluminación instrumentos</label>
-<button class="note-btn" onclick="openNoteModal('v17')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v17')">📷</button>
-<div id="v17-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v17-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v18-item">
-<input type="checkbox" id="v18" onchange="updateCheck('v18')">
-<label for="v18">Indicador combustible</label>
-<button class="note-btn" onclick="openNoteModal('v18')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v18')">📷</button>
-<div id="v18-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v18-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v19-item">
-<input type="checkbox" id="v19" onchange="updateCheck('v19')">
-<label for="v19">Extractor gases</label>
-<button class="note-btn" onclick="openNoteModal('v19')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v19')">📷</button>
-<div id="v19-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v19-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v20-item">
-<input type="checkbox" id="v20" onchange="updateCheck('v20')">
-<label for="v20">Molinete</label>
-<button class="note-btn" onclick="openNoteModal('v20')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v20')">📷</button>
-<div id="v20-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v20-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v21-item">
-<input type="checkbox" id="v21" onchange="updateCheck('v21')">
-<label for="v21">Bombas achique y automáticos</label>
-<button class="note-btn" onclick="openNoteModal('v21')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v21')">📷</button>
-<div id="v21-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v21-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v22-item">
-<input type="checkbox" id="v22" onchange="updateCheck('v22')">
-<label for="v22">Corredera</label>
-<button class="note-btn" onclick="openNoteModal('v22')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v22')">📷</button>
-<div id="v22-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v22-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v23-item">
-<input type="checkbox" id="v23" onchange="updateCheck('v23')">
-<label for="v23">Funcionamiento aire acondicionado</label>
-<button class="note-btn" onclick="openNoteModal('v23')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v23')">📷</button>
-<div id="v23-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v23-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v24-item">
-<input type="checkbox" id="v24" onchange="updateCheck('v24')">
-<label for="v24">Baterías</label>
-<button class="note-btn" onclick="openNoteModal('v24')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v24')">📷</button>
-<div id="v24-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v24-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v25-item">
-<input type="checkbox" id="v25" onchange="updateCheck('v25')">
-<label for="v25">Limpieza motores</label>
-<button class="note-btn" onclick="openNoteModal('v25')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v25')">📷</button>
-<div id="v25-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v25-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v26-item">
-<input type="checkbox" id="v26" onchange="updateCheck('v26')">
-<label for="v26">Limpiaparabrisas</label>
-<button class="note-btn" onclick="openNoteModal('v26')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v26')">📷</button>
-<div id="v26-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v26-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v27-item">
-<input type="checkbox" id="v27" onchange="updateCheck('v27')">
-<label for="v27">Funcionamiento WC</label>
-<button class="note-btn" onclick="openNoteModal('v27')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v27')">📷</button>
-<div id="v27-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v27-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v28-item">
-<input type="checkbox" id="v28" onchange="updateCheck('v28')">
-<label for="v28">Claxon</label>
-<button class="note-btn" onclick="openNoteModal('v28')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v28')">📷</button>
-<div id="v28-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v28-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v29-item">
-<input type="checkbox" id="v29" onchange="updateCheck('v29')">
-<label for="v29">Grifos de fondo</label>
-<button class="note-btn" onclick="openNoteModal('v29')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v29')">📷</button>
-<div id="v29-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v29-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v30-item">
-<input type="checkbox" id="v30" onchange="updateCheck('v30')">
-<label for="v30">Grifos y duchas</label>
-<button class="note-btn" onclick="openNoteModal('v30')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v30')">📷</button>
-<div id="v30-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v30-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v31-item">
-<input type="checkbox" id="v31" onchange="updateCheck('v31')">
-<label for="v31">Nevera/s</label>
-<button class="note-btn" onclick="openNoteModal('v31')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v31')">📷</button>
-<div id="v31-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v31-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v32-item">
-<input type="checkbox" id="v32" onchange="updateCheck('v32')">
-<label for="v32">Microondas</label>
-<button class="note-btn" onclick="openNoteModal('v32')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v32')">📷</button>
-<div id="v32-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v32-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v33-item">
-<input type="checkbox" id="v33" onchange="updateCheck('v33')">
-<label for="v33">VHF, música y navegación</label>
-<button class="note-btn" onclick="openNoteModal('v33')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v33')">📷</button>
-<div id="v33-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v33-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v34-item">
-<input type="checkbox" id="v34" onchange="updateCheck('v34')">
-<label for="v34">Televisor</label>
-<button class="note-btn" onclick="openNoteModal('v34')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v34')">📷</button>
-<div id="v34-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v34-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v35-item">
-<input type="checkbox" id="v35" onchange="updateCheck('v35')">
-<label for="v35">Cocina</label>
-<button class="note-btn" onclick="openNoteModal('v35')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v35')">📷</button>
-<div id="v35-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v35-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v36-item">
-<input type="checkbox" id="v36" onchange="updateCheck('v36')">
-<label for="v36">Escotillas</label>
-<button class="note-btn" onclick="openNoteModal('v36')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v36')">📷</button>
-<div id="v36-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v36-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v37-item">
-<input type="checkbox" id="v37" onchange="updateCheck('v37')">
-<label for="v37">Luces navegación</label>
-<button class="note-btn" onclick="openNoteModal('v37')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v37')">📷</button>
-<div id="v37-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v37-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v38-item">
-<input type="checkbox" id="v38" onchange="updateCheck('v38')">
-<label for="v38">Luces interior/exterior</label>
-<button class="note-btn" onclick="openNoteModal('v38')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v38')">📷</button>
-<div id="v38-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v38-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v39-item">
-<input type="checkbox" id="v39" onchange="updateCheck('v39')">
-<label for="v39">Rasguños casco</label>
-<button class="note-btn" onclick="openNoteModal('v39')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v39')">📷</button>
-<div id="v39-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v39-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v40-item">
-<input type="checkbox" id="v40" onchange="updateCheck('v40')">
-<label for="v40">Moquetas</label>
-<button class="note-btn" onclick="openNoteModal('v40')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v40')">📷</button>
-<div id="v40-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v40-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v41-item">
-<input type="checkbox" id="v41" onchange="updateCheck('v41')">
-<label for="v41">Toldos y lonas</label>
-<button class="note-btn" onclick="openNoteModal('v41')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v41')">📷</button>
-<div id="v41-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v41-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v42-item">
-<input type="checkbox" id="v42" onchange="updateCheck('v42')">
-<label for="v42">¿Lleva motor auxiliar?</label>
-<button class="note-btn" onclick="openNoteModal('v42')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v42')">📷</button>
-<div id="v42-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v42-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v43-item">
-<input type="checkbox" id="v43" onchange="updateCheck('v43')">
-<label for="v43">¿Lleva neumática?</label>
-<button class="note-btn" onclick="openNoteModal('v43')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v43')">📷</button>
-<div id="v43-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v43-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v44-item">
-<input type="checkbox" id="v44" onchange="updateCheck('v44')">
-<label for="v44">Número de boyas</label>
-<button class="note-btn" onclick="openNoteModal('v44')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v44')">📷</button>
-<div id="v44-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v44-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v45-item">
-<input type="checkbox" id="v45" onchange="updateCheck('v45')">
-<label for="v45">Detallar cabos amarre/muelles</label>
-<button class="note-btn" onclick="openNoteModal('v45')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v45')">📷</button>
-<div id="v45-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v45-varada-info" class="varada-info" style="display:none"></div>
+<div class="filter-group">
+<label>Con Fotos</label>
+<select id="filter-fotos" onchange="applyFilters()">
+<option value="">Todos</option>
+<option value="si">Con fotos Drive</option>
+<option value="no">Sin fotos</option>
+</select>
 </div>
-
-<div class="check-item" id="v46-item">
-<input type="checkbox" id="v46" onchange="updateCheck('v46')">
-<label for="v46">Escalón pantalán</label>
-<button class="note-btn" onclick="openNoteModal('v46')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v46')">📷</button>
-<div id="v46-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v46-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v47-item">
-<input type="checkbox" id="v47" onchange="updateCheck('v47')">
-<label for="v47">Pasarela</label>
-<button class="note-btn" onclick="openNoteModal('v47')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v47')">📷</button>
-<div id="v47-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v47-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v48-item">
-<input type="checkbox" id="v48" onchange="updateCheck('v48')">
-<label for="v48">Pérdidas aceite/agua</label>
-<button class="note-btn" onclick="openNoteModal('v48')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v48')">📷</button>
-<div id="v48-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v48-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v49-item">
-<input type="checkbox" id="v49" onchange="updateCheck('v49')">
-<label for="v49">Hélice proa</label>
-<button class="note-btn" onclick="openNoteModal('v49')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v49')">📷</button>
-<div id="v49-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v49-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v50-item">
-<input type="checkbox" id="v50" onchange="updateCheck('v50')">
-<label for="v50">Comprobar próxima ITB</label>
-<button class="note-btn" onclick="openNoteModal('v50')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v50')">📷</button>
-<div id="v50-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v50-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-<div class="check-item" id="v51-item">
-<input type="checkbox" id="v51" onchange="updateCheck('v51')">
-<label for="v51">Hacer protocolo de servicio</label>
-<button class="note-btn" onclick="openNoteModal('v51')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v51')">📷</button>
-<div id="v51-photo-container" class="check-item-photo-container" style="display:none"></div>
-<div id="v51-varada-info" class="varada-info" style="display:none"></div>
-</div>
-
-</div>
-</div>
-
-<div class="section">
-<div class="section-title">Medidores</div>
-<div class="medidores-section">
-
-<div class="medidor-group">
-<h4>⚓ MOTOR BABOR</h4>
-<div class="medidor-item">
-<label>RPM Babor</label>
-<input type="text" id="mb0" placeholder="RPM">
-<div id="mb0-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Aceite Babor</label>
-<input type="text" id="mb1" placeholder="Aceite">
-<div id="mb1-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Temperatura Babor</label>
-<input type="text" id="mb2" placeholder="°C">
-<div id="mb2-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Voltaje Babor</label>
-<input type="text" id="mb3" placeholder="V">
-<div id="mb3-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Tank Babor</label>
-<input type="text" id="mb4" placeholder="Combustible">
-<div id="mb4-varada-info" class="varada-info" style="display:none"></div>
-</div>
-</div>
-
-<div class="medidor-group">
-<h4>⚓ MOTOR ESTRIBOR</h4>
-<div class="medidor-item">
-<label>RPM Estribor</label>
-<input type="text" id="me0" placeholder="RPM">
-<div id="me0-varada-info" class="varada-info" style="display:none"></div>
 </div>
-<div class="medidor-item">
-<label>Aceite Estribor</label>
-<input type="text" id="me1" placeholder="Aceite">
-<div id="me1-varada-info" class="varada-info" style="display:none"></div>
+<div class="table-card">
+<div class="table-header">
+<h3>Lista de Inspecciones (<span id="table-count">0</span>)</h3>
+<div style="display:flex;gap:8px">
+<button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Exportar CSV</button>
 </div>
-<div class="medidor-item">
-<label>Temperatura Estribor</label>
-<input type="text" id="me2" placeholder="°C">
-<div id="me2-varada-info" class="varada-info" style="display:none"></div>
 </div>
-<div class="medidor-item">
-<label>Voltaje Estribor</label>
-<input type="text" id="me3" placeholder="V">
-<div id="me3-varada-info" class="varada-info" style="display:none"></div>
+<table>
+<thead><tr>
+<th>ID</th><th>Fecha</th><th>Embarcación</th><th>Modelo</th><th>Tipo</th><th>Técnico</th><th>Estado</th><th>Fotos</th><th>Acciones</th>
+</tr></thead>
+<tbody id="insp-table"></tbody>
+</table>
 </div>
-<div class="medidor-item">
-<label>Tank Estribor</label>
-<input type="text" id="me4" placeholder="Combustible">
-<div id="me4-varada-info" class="varada-info" style="display:none"></div>
 </div>
-</div>
-
-<div class="medidor-group">
-<h4>⚓ MOTOR CENTRAL</h4>
-<div class="medidor-item">
-<label>RPM Central</label>
-<input type="text" id="mc0" placeholder="RPM">
-<div id="mc0-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Aceite Central</label>
-<input type="text" id="mc1" placeholder="Aceite">
-<div id="mc1-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Temperatura Central</label>
-<input type="text" id="mc2" placeholder="°C">
-<div id="mc2-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Voltaje Central</label>
-<input type="text" id="mc3" placeholder="V">
-<div id="mc3-varada-info" class="varada-info" style="display:none"></div>
-</div>
-<div class="medidor-item">
-<label>Tank Central</label>
-<input type="text" id="mc4" placeholder="Combustible">
-<div id="mc4-varada-info" class="varada-info" style="display:none"></div>
-</div>
-</div>
-
-</div>
-</div>
 
-<div class="section">
-<div class="section-title">Horas de Navegación</div>
-<div class="form-row">
-<div class="form-group">
-<label>Horas Motor Babor</label>
-<input type="text" id="horas-babor" placeholder="Horas">
-</div>
-<div class="form-group">
-<label>Horas Motor Estribor</label>
-<input type="text" id="horas-estribor" placeholder="Horas">
+<!-- GALERÍA DRIVE -->
+<div id="page-fotos" class="page">
+<div class="topbar">
+<h1>📷 Galería Google Drive</h1>
 </div>
-<div class="form-group">
-<label>Horas Motor Central</label>
-<input type="text" id="horas-central" placeholder="Horas">
+<div class="filters-bar">
+<div class="filter-group">
+<label>Embarcación</label>
+<input type="text" id="gallery-boat" placeholder="Buscar..." oninput="applyGalleryFilter()">
 </div>
-<div class="form-group">
-<label>Horas Generador</label>
-<input type="text" id="horas-generador" placeholder="Horas">
+<div class="filter-group">
+<label>Tipo</label>
+<select id="gallery-type" onchange="applyGalleryFilter()">
+<option value="">Todos</option>
+<option value="varada">Varada</option>
+<option value="botadura">Botadura</option>
+</select>
 </div>
 </div>
+<div id="gallery-container"></div>
 </div>
 
-<div class="section">
-<div class="section-title">Observaciones Generales</div>
-<textarea id="observaciones" maxlength="1000" rows="5" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-family:Arial,sans-serif" placeholder="Escribe observaciones generales aquí..." oninput="updateCharCounter()"></textarea>
-<div class="char-counter"><span id="char-count">0</span> / 1000 caracteres</div>
+<!-- ESTADÍSTICAS -->
+<div id="page-estadisticas" class="page">
+<div class="topbar">
+<h1>📈 Estadísticas</h1>
 </div>
-
-<div id="photo-report-section" class="photo-section" style="display:none">
-<div class="section">
-<div class="section-title">Reportaje Fotográfico (Solo Varada)</div>
-<div class="photo-grid">
-<div class="photo-item" id="photo-f0-item">
-<input type="file" id="photo-f0" accept="image/*" onchange="handlePhoto('f0')">
-<label for="photo-f0">📷 Foto Proa</label>
-<div id="preview-f0"></div>
-</div>
-<div class="photo-item" id="photo-f1-item">
-<input type="file" id="photo-f1" accept="image/*" onchange="handlePhoto('f1')">
-<label for="photo-f1">📷 Foto Amura Babor</label>
-<div id="preview-f1"></div>
-</div>
-<div class="photo-item" id="photo-f2-item">
-<input type="file" id="photo-f2" accept="image/*" onchange="handlePhoto('f2')">
-<label for="photo-f2">📷 Foto Amura Estribor</label>
-<div id="preview-f2"></div>
-</div>
-<div class="photo-item" id="photo-f3-item">
-<input type="file" id="photo-f3" accept="image/*" onchange="handlePhoto('f3')">
-<label for="photo-f3">📷 Foto Aleta Babor</label>
-<div id="preview-f3"></div>
-</div>
-<div class="photo-item" id="photo-f4-item">
-<input type="file" id="photo-f4" accept="image/*" onchange="handlePhoto('f4')">
-<label for="photo-f4">📷 Foto Aleta Estribor</label>
-<div id="preview-f4"></div>
-</div>
-<div class="photo-item" id="photo-f5-item">
-<input type="file" id="photo-f5" accept="image/*" onchange="handlePhoto('f5')">
-<label for="photo-f5">📷 Foto Colas</label>
-<div id="preview-f5"></div>
+<div class="charts-grid">
+<div class="chart-card">
+<h3>📊 Distribución por Tipo</h3>
+<canvas id="pie-tipo" width="260" height="260" style="display:block;margin:0 auto"></canvas>
+<div id="pie-legend" class="pie-legend"></div>
 </div>
-<div class="photo-item" id="photo-f6-item">
-<input type="file" id="photo-f6" accept="image/*" onchange="handlePhoto('f6')">
-<label for="photo-f6">📷 Foto Ejes/IPS</label>
-<div id="preview-f6"></div>
+<div class="chart-card">
+<h3>✅ Verificaciones más Fallidas</h3>
+<div id="chart-verif-fails" class="bar-chart"></div>
 </div>
 </div>
+<div class="charts-grid">
+<div class="chart-card">
+<h3>🚤 Inspecciones por Embarcación</h3>
+<div id="chart-boats-full" class="bar-chart"></div>
 </div>
+<div class="chart-card">
+<h3>👷 Actividad por Técnico</h3>
+<div id="chart-tecnicos" class="bar-chart"></div>
 </div>
-
-<div id="upload-progress" style="display:none;margin:15px 0;padding:15px;background:#e3f2fd;border:1px solid #90caf9;border-radius:8px"></div>
-<div id="message-area" class="message-area"></div>
-<div class="loading" id="loading">⏳ Procesando...</div>
-
-<div class="buttons">
-<button class="btn btn-primary" onclick="saveInspection()">💾 GUARDAR INSPECCIÓN</button>
-<button class="btn btn-secondary" onclick="clearForm()">🗑️ LIMPIAR FORMULARIO</button>
-<button class="btn btn-success" onclick="generatePartialReport()">📊 GENERAR INFORME PARCIAL</button>
-<button class="btn btn-success" id="pdf-btn" style="display:none" onclick="generatePDF()">📄 GENERAR PDF</button>
 </div>
-
 </div>
 
-<div id="tab-historial" class="tab-content">
-<div class="section">
-<div class="section-title">Historial de Inspecciones</div>
-<div id="history-list" class="history-list"></div>
-</div>
-</div>
+</div><!-- /main -->
+</div><!-- /app -->
 
+<!-- DETAIL MODAL -->
+<div id="detail-modal" class="modal-overlay">
+<div class="modal-box">
+<div class="modal-top">
+<h2 id="modal-title">Inspección</h2>
+<div style="display:flex;gap:10px;align-items:center">
+<button class="btn btn-success btn-sm" id="modal-pdf-btn" onclick="generateInspPDF()">📄 PDF</button>
+<button class="modal-close" onclick="closeModal()">×</button>
 </div>
 </div>
-
-<div id="noteModal" class="modal">
-<div class="modal-content">
-<span class="modal-close" onclick="closeNoteModal()">&times;</span>
-<h2 id="modal-title"></h2>
-<textarea id="modal-note" rows="5" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;margin:20px 0"></textarea>
-<button class="btn btn-primary" onclick="saveNote()">Guardar</button>
-<button class="btn btn-secondary" onclick="closeNoteModal()">Cancelar</button>
+<div class="modal-body" id="modal-body"></div>
 </div>
 </div>
 
 <script>
 var SCRIPT_URL='https://script.google.com/macros/s/AKfycbwFFeLOkABE1SqXsnEd37Hq5dPeqSd7f46dNPQVS3mF2VdzNFbyRDmBUtVkAa-jjpvsFA/exec';
-var currentUser=null;
-var currentInspType='';
-var lastVarada=null;
-var varadaRef={check:{},gauges:{},notes:{}};
-// v3.0: photoReport ahora guarda {file: File, previewUrl: string} en lugar de base64
-var data={checklistPrevio:{},verificaciones:{},notas:{},medidoresBabor:{},medidoresEstribor:{},medidoresCentral:{},photoReport:{},photoFiles:{},verificationPhotoFiles:{},alerts:{}};
-var currentNoteId='';
-var isOnline=navigator.onLine;
-var syncInterval=null;
+var allInspections=[];
+var filteredInspections=[];
+var currentInspDetail=null;
+var pcUser=null;
 
-// ========== UPLOAD STATUS TRACKING ==========
-var uploadStatus = {}; // {photoId: 'pending'|'uploading'|'done'|'error', url: string}
-
-function showUploadProgress(total, done, errors) {
-  var el = document.getElementById('upload-progress');
-  if (!el) return;
-  if (total === 0) { el.style.display='none'; return; }
-  el.style.display = 'block';
-  var pct = Math.round((done/total)*100);
-  el.innerHTML = '<div style="font-weight:bold;color:#003d82;margin-bottom:6px">📤 Subiendo fotos a Drive... '+done+'/'+total+'</div>'
-    + '<div style="background:#ddd;border-radius:10px;height:12px;overflow:hidden"><div style="background:'+(errors>0?'#f44336':'#4caf50')+';height:100%;width:'+pct+'%;transition:width .3s"></div></div>'
-    + (errors>0 ? '<div style="color:#f44336;font-size:12px;margin-top:4px">⚠️ '+errors+' foto(s) no se pudieron subir - se guardará inspección sin ellas</div>' : '');
-}
-
-// ========== SISTEMA OFFLINE ==========
-
-function initOfflineSystem(){
-// Detectar cambios de conexión
-window.addEventListener('online',function(){
-isOnline=true;
-updateSyncStatus();
-syncPendingInspections();
-});
-window.addEventListener('offline',function(){
-isOnline=false;
-updateSyncStatus();
-});
-// Iniciar sincronización automática cada 30 segundos
-syncInterval=setInterval(syncPendingInspections,30000);
-updateSyncStatus();
-}
-
-function updateSyncStatus(){
-var statusDiv=document.getElementById('sync-status');
-var indicator=document.getElementById('sync-indicator');
-var text=document.getElementById('sync-text');
-var pendingCountEl=document.getElementById('pending-count');
-var syncBtn=document.getElementById('sync-btn');
-
-var pending=getPendingInspections();
-var count=pending.length;
-
-if(!isOnline){
-statusDiv.className='sync-status offline';
-indicator.textContent='🟡';
-text.textContent='Sin conexión';
-}else if(count>0){
-statusDiv.className='sync-status offline';
-indicator.textContent='🟡';
-text.textContent='Pendiente sincronizar';
-pendingCountEl.textContent=count+' pendiente'+(count>1?'s':'');
-pendingCountEl.style.display='inline-block';
-syncBtn.style.display='inline-block';
-}else{
-statusDiv.className='sync-status online';
-indicator.textContent='🟢';
-text.textContent='Sincronizado';
-pendingCountEl.style.display='none';
-syncBtn.style.display='none';
-}
-}
-
-function getPendingInspections(){
-try{
-var pending=localStorage.getItem('pendingInspections');
-return pending?JSON.parse(pending):[];
-}catch(e){
-return[];
-}
-}
-
-function savePendingInspection(inspData){
-var pending=getPendingInspections();
-var id='PENDING_'+Date.now();
-pending.push({id:id,data:inspData,timestamp:new Date().toISOString()});
-localStorage.setItem('pendingInspections',JSON.stringify(pending));
-updateSyncStatus();
-return id;
-}
-
-function removePendingInspection(id){
-var pending=getPendingInspections();
-pending=pending.filter(function(item){return item.id!==id});
-localStorage.setItem('pendingInspections',JSON.stringify(pending));
-updateSyncStatus();
-}
-
-function syncPendingInspections(){
-if(!isOnline)return;
-var pending=getPendingInspections();
-if(pending.length===0)return;
-
-var statusDiv=document.getElementById('sync-status');
-var indicator=document.getElementById('sync-indicator');
-var text=document.getElementById('sync-text');
-statusDiv.className='sync-status syncing';
-indicator.textContent='🔄';
-text.textContent='Sincronizando...';
-
-var promises=pending.map(function(item){
-return fetch(SCRIPT_URL,{
-method:'POST',
-body:JSON.stringify({action:'save',data:item.data})
-})
-.then(r=>r.json())
-.then(result=>{
-if(result.success){
-removePendingInspection(item.id);
-return{success:true,id:item.id};
-}
-return{success:false,id:item.id};
-})
-.catch(()=>({success:false,id:item.id}));
-});
-
-Promise.all(promises).then(function(results){
-var synced=results.filter(r=>r.success).length;
-updateSyncStatus();
-if(synced>0){
-showMsg('message-area','✅ '+synced+' inspección'+(synced>1?'es':'')+' sincronizada'+(synced>1?'s':''),'success');
-}
-});
-}
-
-// ========== FUNCIONES PRINCIPALES ==========
-
-function login(){
-var user=document.getElementById('username').value;
-var pass=document.getElementById('password').value;
-if(!user||!pass){showMsg('login-message','Usuario y contraseña requeridos','error');return}
+// ====== LOGIN ======
+function pcLogin(){
+var u=document.getElementById('pc-username').value.trim();
+var p=document.getElementById('pc-password').value;
+if(!u||!p){showLoginError('Usuario y contraseña requeridos');return}
 showLoading('Iniciando sesión...');
-fetch(SCRIPT_URL+'?action=login&username='+encodeURIComponent(user)+'&password='+encodeURIComponent(pass))
+fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIComponent(p))
 .then(r=>r.json())
-.then(result=>{
-hideLoading();
-if(result.success){
-currentUser=result.user.name;
-document.getElementById('current-user').textContent=currentUser;
-document.getElementById('login-section').style.display='none';
-document.getElementById('main-section').style.display='block';
-loadHistory();
-}else{
-showMsg('login-message',result.message||'Error de login','error');
-}
-}).catch(err=>{hideLoading();showMsg('login-message','Error de conexión','error')});
-}
-
-function logout(){
-currentUser=null;
-document.getElementById('login-section').style.display='block';
-document.getElementById('main-section').style.display='none';
-document.getElementById('username').value='';
-document.getElementById('password').value='';
-clearForm();
+.then(res=>{
+  hideLoading();
+  if(res.success){
+    pcUser={nombre: res.user||u, rol: res.role||'Usuario'};
+    document.getElementById('login-page').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('sidebar-user').textContent=pcUser.nombre||u;
+    loadAllData();
+  }else{
+    showLoginError(res.message||'Credenciales incorrectas');
+  }
+}).catch(()=>{hideLoading();showLoginError('Error de conexión con el servidor');});
 }
 
-function showTab(tab){
-document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-event.target.classList.add('active');
-document.getElementById('tab-'+tab).classList.add('active');
-if(tab==='historial')loadHistory();
+function pcLogout(){
+pcUser=null; allInspections=[];
+document.getElementById('app').style.display='none';
+document.getElementById('login-page').style.display='block';
+document.getElementById('pc-password').value='';
 }
 
-function checkVarada(){
-var type=document.getElementById('inspection-type').value;
-var boat=document.getElementById('boat-name').value.trim();
-currentInspType=type;
-document.getElementById('checklist-previo-section').style.display=type==='varada'?'block':'none';
-document.getElementById('photo-report-section').style.display=type==='varada'?'block':'none';
-if(!boat||!type)return;
-showLoading('Buscando varada...');
-fetch(SCRIPT_URL+'?action=getLastVarada&boat='+encodeURIComponent(boat))
+function showLoginError(msg){
+var el=document.getElementById('login-error');
+el.textContent=msg; el.style.display='block';
+}
+
+// ====== DATA LOADING ======
+function loadAllData(){
+showLoading('Cargando inspecciones...');
+fetch(SCRIPT_URL+'?action=getHistory&user='+(pcUser?pcUser.nombre:'admin'))
 .then(r=>r.json())
-.then(result=>{
-hideLoading();
-if(result.success&&result.data){
-lastVarada=result.data;
-try{varadaRef.check=JSON.parse(lastVarada.verificacionesJson||'{}');}catch(e){varadaRef.check={};}
-try{varadaRef.notes=JSON.parse(lastVarada.notasJson||'{}');}catch(e){varadaRef.notes={};}
-try{varadaRef.gaugesBabor=JSON.parse(lastVarada.medidoresBaborJson||'{}');}catch(e){varadaRef.gaugesBabor={};}
-try{varadaRef.gaugesEstribor=JSON.parse(lastVarada.medidoresEstribOrJson||'{}');}catch(e){varadaRef.gaugesEstribor={};}
-try{varadaRef.gaugesCentral=JSON.parse(lastVarada.medidoresCentralJson||'{}');}catch(e){varadaRef.gaugesCentral={};}
-var varadaDate=new Date(lastVarada.fecha);
-var sixMonthsAgo=new Date();sixMonthsAgo.setMonth(sixMonthsAgo.getMonth()-6);
-var isRecent=varadaDate>sixMonthsAgo;
-var isActive=!lastVarada.cerrada;
-var importSection=document.getElementById('import-section');
-var html='<div class="import-alert">';
-if(type==='varada'&&isActive&&isRecent){
-html+='<h4>Varada Incompleta Encontrada</h4>';
-html+='<p>Fecha: '+lastVarada.fecha+' - Técnico: '+lastVarada.tecnico+'</p>';
-html+='<button class="import-btn" onclick="continuarVarada()">CONTINUAR VARADA ANTERIOR</button>';
-}else if(type==='botadura'){
-html+='<h4>Importar Varada</h4>';
-html+='<p>Última varada: '+lastVarada.fecha+' - Estado: '+(isActive?'ACTIVA':'CERRADA')+'</p>';
-html+='<button class="import-btn" onclick="importVarada()">IMPORTAR DATOS</button>';
-}
-html+='</div>';
-importSection.innerHTML=html;
-importSection.style.display='block';
-}else{
-document.getElementById('import-section').style.display='none';
-lastVarada=null;
-}
-}).catch(err=>{hideLoading();document.getElementById('import-section').style.display='none'});
+.then(res=>{
+  hideLoading();
+  if(res.success){
+    allInspections=res.inspections||res.data||[];
+    // Normalize field names
+    allInspections=allInspections.map(normalizeInsp);
+    buildYearFilter();
+    applyFilters();
+    renderDashboard();
+    renderGallery(allInspections);
+    renderStats();
+  }else{
+    alert('Error cargando datos: '+(res.message||''));
+  }
+}).catch(err=>{hideLoading();alert('Error de conexión: '+err.message);});
 }
 
-function continuarVarada(){
-if(!lastVarada)return;
-try{
-var checkPrev=JSON.parse(lastVarada.checklistPrevioJson||'{}');
-for(var k in checkPrev){if(checkPrev[k])document.getElementById(k).checked=true;}
-}catch(e){}
-try{
-var verif=JSON.parse(lastVarada.verificacionesJson||'{}');
-for(var k in verif){if(verif[k])document.getElementById(k).checked=true;}
-}catch(e){}
-try{
-var notas=JSON.parse(lastVarada.notasJson||'{}');
-data.notas=notas;
-for(var k in notas){
-if(notas[k]){
-var item=document.getElementById(k+'-item');
-if(item)item.classList.add('with-note');
-}
-}
-}catch(e){}
-try{
-var medB=JSON.parse(lastVarada.medidoresBaborJson||'{}');
-for(var k in medB){var el=document.getElementById(k);if(el)el.value=medB[k]||'';}
-}catch(e){}
-try{
-var medE=JSON.parse(lastVarada.medidoresEstribOrJson||'{}');
-for(var k in medE){var el=document.getElementById(k);if(el)el.value=medE[k]||'';}
-}catch(e){}
-try{
-var medC=JSON.parse(lastVarada.medidoresCentralJson||'{}');
-for(var k in medC){var el=document.getElementById(k);if(el)el.value=medC[k]||'';}
-}catch(e){}
-document.getElementById('modelo').value=lastVarada.modelo||'';
-document.getElementById('cliente').value=lastVarada.cliente||'';
-document.getElementById('motores').value=lastVarada.motores||'';
-document.getElementById('colas').value=lastVarada.colas||'';
-document.getElementById('motor-babor').value=lastVarada.motorBabor||'';
-document.getElementById('motor-estribor').value=lastVarada.motorEstribor||'';
-document.getElementById('motor-central').value=lastVarada.motorCentral||'';
-document.getElementById('motor-aux-num').value=lastVarada.motorAuxiliarNum||'';
-document.getElementById('motor-aux-modelo').value=lastVarada.motorAuxiliarModelo||'';
-document.getElementById('llaves').value=lastVarada.llaves||'';
-document.getElementById('cabina').value=lastVarada.cabina||'';
-document.getElementById('amarre').value=lastVarada.amarre||'';
-document.getElementById('paso-helice').value=lastVarada.pasoHelice||'';
-document.getElementById('horas-babor').value=lastVarada.horasBabor||'';
-document.getElementById('horas-estribor').value=lastVarada.horasEstribor||'';
-document.getElementById('horas-central').value=lastVarada.horasCentral||'';
-document.getElementById('horas-generador').value=lastVarada.horasGenerador||'';
-document.getElementById('observaciones').value=lastVarada.observaciones||'';
-updateCharCounter();
-showMsg('message-area','Varada cargada. Puedes continuar trabajando.','success');
-document.getElementById('import-section').style.display='none';
-}
-
-function importVarada(){
-if(!lastVarada)return;
-// Importar notas y mostrarlas debajo de cada item
-try{
-var notas=JSON.parse(lastVarada.notasJson||'{}');
-data.notas=notas;
-for(var k in notas){
-if(notas[k]){
-var item=document.getElementById(k+'-item');
-if(item)item.classList.add('imported');
-}
-}
-}catch(e){}
-
-// Importar medidores y mostrar información de varada debajo de items
-try{
-var medB=JSON.parse(lastVarada.medidoresBaborJson||'{}');
-var medE=JSON.parse(lastVarada.medidoresEstribOrJson||'{}');
-var medC=JSON.parse(lastVarada.medidoresCentralJson||'{}');
-var notas=JSON.parse(lastVarada.notasJson||'{}');
-
-// Mostrar info de varada debajo de cada verificación
-for(var i=0;i<52;i++){
-var id='v'+i;
-var infoDiv=document.getElementById(id+'-varada-info');
-if(infoDiv){
-var infoHtml='';
-if(medB[id])infoHtml+='<strong>[VARADA]</strong> Medidor Babor: '+medB[id]+'<br>';
-if(medE[id])infoHtml+='<strong>[VARADA]</strong> Medidor Estribor: '+medE[id]+'<br>';
-if(medC[id])infoHtml+='<strong>[VARADA]</strong> Medidor Central: '+medC[id]+'<br>';
-if(notas[id])infoHtml+='<strong>[VARADA]</strong> Nota: '+notas[id];
-if(infoHtml){
-infoDiv.innerHTML=infoHtml;
-infoDiv.style.display='block';
-}
-}
-}
-
-// NO poner medidores en los campos (dejarlos vacíos para botadura)
-// En su lugar, mostrar como texto informativo al lado
-for(var k in medB){
-var infoDiv=document.getElementById(k+'-varada-info');
-if(infoDiv){
-infoDiv.innerHTML='📊 <strong>[VARADA]</strong> '+medB[k];
-infoDiv.style.display='block';
-}
-}
-for(var k in medE){
-var infoDiv=document.getElementById(k+'-varada-info');
-if(infoDiv){
-infoDiv.innerHTML='📊 <strong>[VARADA]</strong> '+medE[k];
-infoDiv.style.display='block';
-}
-}
-for(var k in medC){
-var infoDiv=document.getElementById(k+'-varada-info');
-if(infoDiv){
-infoDiv.innerHTML='📊 <strong>[VARADA]</strong> '+medC[k];
-infoDiv.style.display='block';
-}
-}
-
-// Mostrar medidores de varada al lado de los campos (como texto informativo)
-var medidoresInfo='<div style="font-size:11px;color:#666;margin-top:3px;">';
-if(medB['mb0'])medidoresInfo+='📊 <strong>[VARADA]</strong> '+medB['mb0']+' | ';
-if(medE['me0'])medidoresInfo+='📊 <strong>[VARADA]</strong> '+medE['me0']+' | ';
-if(medC['mc0'])medidoresInfo+='📊 <strong>[VARADA]</strong> '+medC['mc0'];
-medidoresInfo+='</div>';
-// Este código se puede mejorar para mostrar al lado de cada campo específico
-}catch(e){console.error('Error importando medidores:',e);}
-
-document.getElementById('modelo').value=lastVarada.modelo||'';
-document.getElementById('cliente').value=lastVarada.cliente||'';
-document.getElementById('motores').value=lastVarada.motores||'';
-document.getElementById('colas').value=lastVarada.colas||'';
-document.getElementById('motor-babor').value=lastVarada.motorBabor||'';
-document.getElementById('motor-estribor').value=lastVarada.motorEstribor||'';
-document.getElementById('motor-central').value=lastVarada.motorCentral||'';
-document.getElementById('motor-aux-num').value=lastVarada.motorAuxiliarNum||'';
-document.getElementById('motor-aux-modelo').value=lastVarada.motorAuxiliarModelo||'';
-document.getElementById('llaves').value=lastVarada.llaves||'';
-document.getElementById('cabina').value=lastVarada.cabina||'';
-document.getElementById('amarre').value=lastVarada.amarre||'';
-document.getElementById('paso-helice').value=lastVarada.pasoHelice||'';
-
-// PRE-RELLENAR HORAS DE NAVEGACIÓN
-document.getElementById('horas-babor').value=lastVarada.horasBabor||'';
-document.getElementById('horas-estribor').value=lastVarada.horasEstribor||'';
-document.getElementById('horas-central').value=lastVarada.horasCentral||'';
-document.getElementById('horas-generador').value=lastVarada.horasGenerador||'';
-
-showMsg('message-area','Datos de varada importados. Horas pre-rellenadas. Notas y medidores visibles.','success');
-document.getElementById('import-section').style.display='none';
-}
-
-function updateCheck(id){
-data[id.startsWith('cp')?'checklistPrevio':'verificaciones'][id]=document.getElementById(id).checked;
-}
-
-function openNoteModal(id){
-currentNoteId=id;
-var itemText=document.querySelector('label[for="'+id+'"]').textContent;
-document.getElementById('modal-title').textContent='Nota: '+itemText;
-document.getElementById('modal-note').value=data.notas[id]||'';
-if(varadaRef.gaugesBabor&&varadaRef.gaugesBabor[id]){
-document.getElementById('modal-note').value+='\n[VARADA] Medidor Babor: '+varadaRef.gaugesBabor[id];
-}
-if(varadaRef.gaugesEstribor&&varadaRef.gaugesEstribor[id]){
-document.getElementById('modal-note').value+='\n[VARADA] Medidor Estribor: '+varadaRef.gaugesEstribor[id];
-}
-if(varadaRef.gaugesCentral&&varadaRef.gaugesCentral[id]){
-document.getElementById('modal-note').value+='\n[VARADA] Medidor Central: '+varadaRef.gaugesCentral[id];
-}
-document.getElementById('noteModal').style.display='block';
-}
-
-function closeNoteModal(){
-document.getElementById('noteModal').style.display='none';
-}
-
-function saveNote(){
-var note=document.getElementById('modal-note').value.trim();
-data.notas[currentNoteId]=note;
-var item=document.getElementById(currentNoteId+'-item');
-if(note){item.classList.add('with-note');}else{item.classList.remove('with-note');}
-closeNoteModal();
-}
-
-function handlePhoto(id){
-var input=document.getElementById('photo-'+id);
-var file=input.files[0];
-if(!file)return;
-// v3.0: Comprimir y guardar como previewUrl + File para subir a Drive
-compressImage(file, 1200, 0.8, function(blob, previewUrl) {
-  data.photoReport[id]=[previewUrl]; // preview en memoria
-  data.photoFiles[id]=blob;          // blob para subir a Drive
-  var preview=document.getElementById('preview-'+id);
-  preview.innerHTML='<img src="'+previewUrl+'" class="photo-preview"><div style="font-size:11px;color:#4caf50;margin-top:4px">📤 Listo para Drive</div><button class="photo-remove" onclick="removePhoto(\''+id+'\')">×</button>';
-  document.getElementById('photo-'+id+'-item').classList.add('has-photo');
-});
-}
-
-function removePhoto(id){
-data.photoReport[id]=[];
-delete data.photoFiles[id];
-document.getElementById('preview-'+id).innerHTML='';
-document.getElementById('photo-'+id).value='';
-document.getElementById('photo-'+id+'-item').classList.remove('has-photo');
-}
-
-function openCheckPhotoModal(id){
-var input=document.createElement('input');
-input.type='file';
-input.accept='image/*';
-input.onchange=function(e){handleCheckPhoto(id,e.target.files[0])};
-input.click();
-}
-
-function handleCheckPhoto(id,file){
-if(!file)return;
-compressImage(file, 800, 0.75, function(blob, previewUrl) {
-  if(!data.verificaciones)data.verificaciones={};
-  data.verificaciones[id+'_photo']=[previewUrl];
-  data.verificationPhotoFiles[id]=blob;
-  var container=document.getElementById(id+'-photo-container');
-  container.innerHTML='<img src="'+previewUrl+'" class="check-item-photo"><div style="font-size:10px;color:#4caf50">📤 Drive</div><button class="check-item-photo-remove" onclick="removeCheckPhoto(\''+id+'\')">×</button>';
-  container.style.display='block';
-});
-}
-
-function removeCheckPhoto(id){
-if(data.verificaciones)delete data.verificaciones[id+'_photo'];
-delete data.verificationPhotoFiles[id];
-var container=document.getElementById(id+'-photo-container');
-container.innerHTML='';
-container.style.display='none';
-}
-
-// ========== COMPRESIÓN DE IMÁGENES ==========
-function compressImage(file, maxSize, quality, callback) {
-var reader = new FileReader();
-reader.onload = function(e) {
-  var img = new Image();
-  img.onload = function() {
-    var canvas = document.createElement('canvas');
-    var ratio = Math.min(maxSize/img.width, maxSize/img.height, 1);
-    canvas.width = Math.round(img.width * ratio);
-    canvas.height = Math.round(img.height * ratio);
-    var ctx = canvas.getContext('2d');
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    canvas.toBlob(function(blob) {
-      callback(blob, canvas.toDataURL('image/jpeg', quality));
-    }, 'image/jpeg', quality);
-  };
-  img.src = e.target.result;
+function normalizeInsp(i){
+// Safely parse JSON fields
+function safeJson(v){ try{ return (v&&v!=='{}'&&v!=='')?JSON.parse(v):{} }catch(e){return {}} }
+return {
+  id: i.id||'',
+  fecha: i.fecha||'',
+  hora: i.hora||'',
+  embarcacion: i.embarcacion||'',
+  modelo: i.modelo||'',
+  tipo: i.tipo||'',
+  cliente: i.cliente||'',
+  tecnico: i.tecnico||'',
+  estado: i.estado||'',
+  cerrada: i.cerrada||'NO',
+  // JSON fields - stored as strings from GAS
+  fotosUrlsJson: i.fotosUrlsJson||'{}',
+  checklistPrevioJson: i.checklistPrevioJson||'{}',
+  checklistVerificacionesJson: i.checklistVerificacionesJson||i.verificacionesJson||'{}',
+  notasJson: i.notasJson||'{}',
+  medidoresBaborJson: i.medidoresBaborJson||'{}',
+  medidoresEstribOrJson: i.medidoresEstribOrJson||i.medidoresEstribor||'{}',
+  medidoresCentralJson: i.medidoresCentralJson||'{}',
+  // Parsed versions for quick access
+  _verif: safeJson(i.checklistVerificacionesJson||i.verificacionesJson),
+  _cp: safeJson(i.checklistPrevioJson),
+  _notas: safeJson(i.notasJson),
+  _medB: safeJson(i.medidoresBaborJson),
+  _medE: safeJson(i.medidoresEstribOrJson||i.medidoresEstribor),
+  _medC: safeJson(i.medidoresCentralJson),
+  _fotos: safeJson(i.fotosUrlsJson),
+  // Plain fields
+  observaciones: i.observaciones||'',
+  horasBabor: i.horasBabor||'',
+  horasEstribor: i.horasEstribor||'',
+  horasCentral: i.horasCentral||'',
+  horasGenerador: i.horasGenerador||'',
+  motores: i.motores||'',
+  colas: i.colas||'',
+  amarre: i.amarre||'',
+  pasoHelice: i.pasoHelice||'',
+  fechaVarada: i.fechaVarada||'',
+  fechaBotadura: i.fechaBotadura||'',
+  motorBabor: i.motorBabor||'',
+  motorEstribor: i.motorEstribor||'',
+  motorCentral: i.motorCentral||'',
+  motorAuxiliarNum: i.motorAuxiliarNum||'',
+  motorAuxiliarModelo: i.motorAuxiliarModelo||'',
+  llaves: i.llaves||'',
+  cabina: i.cabina||'',
+  itemsPrevio: i.itemsPrevio||0,
+  itemsVerificaciones: i.itemsVerificaciones||0,
+  totalNotas: i.totalNotas||0,
+  totalFotos: i.totalFotos||0,
+  varadaImportada: i.varadaImportada||'',
+  carpetaDriveId: i.carpetaDriveId||''
 };
-reader.readAsDataURL(file);
 }
 
-// ========== SUBIR FOTO A DRIVE VÍA GAS ==========
-function uploadPhotoToDrive(blob, inspData, photoId) {
-return new Promise(function(resolve, reject) {
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var base64 = e.target.result.split(',')[1];
-    fetch(SCRIPT_URL, {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'uploadPhoto',
-        base64Data: base64,
-        inspectionData: {
-          embarcacion: inspData.embarcacion,
-          tipo: inspData.tipo,
-          fecha: inspData.fecha
-        },
-        photoId: photoId
-      })
-    })
-    .then(function(r){ return r.json(); })
-    .then(function(result){
-      if(result.success) resolve({photoId: photoId, url: result.url});
-      else reject(new Error(result.message||'Error subiendo foto'));
-    })
-    .catch(reject);
-  };
-  reader.readAsDataURL(blob);
+function getFotosCount(insp){
+try{ return Object.keys(insp._fotos||{}).length; }catch(e){return 0;}
+}
+
+// ====== DASHBOARD ======
+function renderDashboard(){
+var varadas=allInspections.filter(i=>i.tipo==='varada').length;
+var botaduras=allInspections.filter(i=>i.tipo==='botadura').length;
+var totalFotos=allInspections.reduce((s,i)=>s+getFotosCount(i),0);
+document.getElementById('stat-total').textContent=allInspections.length;
+document.getElementById('stat-varadas').textContent=varadas;
+document.getElementById('stat-botaduras').textContent=botaduras;
+document.getElementById('stat-fotos').textContent=totalFotos;
+
+// Monthly chart (last 6 months)
+var now=new Date();
+var months=[];
+for(var m=5;m>=0;m--){
+  var d=new Date(now.getFullYear(),now.getMonth()-m,1);
+  months.push({key:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'),label:['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][d.getMonth()]});
+}
+var monthlyCounts={};
+months.forEach(m=>{monthlyCounts[m.key]=0;});
+allInspections.forEach(i=>{
+  var d=parseDate(i.fecha);
+  if(d){var k=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(monthlyCounts.hasOwnProperty(k))monthlyCounts[k]++;}
 });
+var maxM=Math.max(...months.map(m=>monthlyCounts[m.key]),1);
+var monthHtml=months.map(m=>`
+  <div class="bar-row">
+    <div class="bar-label">${m.label}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(monthlyCounts[m.key]/maxM*100)}%;background:#003d82">${monthlyCounts[m.key]||''}</div></div>
+    <div class="bar-count">${monthlyCounts[m.key]}</div>
+  </div>`).join('');
+document.getElementById('chart-monthly').innerHTML=monthHtml;
+
+// Top boats
+var boatCounts={};
+allInspections.forEach(i=>{if(i.embarcacion)boatCounts[i.embarcacion]=(boatCounts[i.embarcacion]||0)+1;});
+var topBoats=Object.entries(boatCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+var maxB=topBoats.length?topBoats[0][1]:1;
+document.getElementById('chart-boats').innerHTML=topBoats.map(([b,c])=>`
+  <div class="bar-row">
+    <div class="bar-label">${b.length>18?b.substr(0,16)+'...':b}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxB*100)}%;background:#4caf50">${c}</div></div>
+    <div class="bar-count">${c}</div>
+  </div>`).join('');
+
+// Recent table
+var recent=allInspections.slice(-10).reverse();
+document.getElementById('recent-table').innerHTML=recent.map(i=>rowHtml(i)).join('');
 }
 
-function updateCharCounter(){
-var count=document.getElementById('observaciones').value.length;
-document.getElementById('char-count').textContent=count;
+function rowHtml(i){
+var fotos=getFotosCount(i);
+var fechaStr=formatDate(i.fecha);
+return `<tr>
+<td style="font-family:monospace;font-size:11px;color:#888">${(i.id||'').substr(0,12)}</td>
+<td>${fechaStr}</td>
+<td><strong>${i.embarcacion||'—'}</strong>${i.modelo?'<br><span style="font-size:11px;color:#aaa">'+i.modelo+'</span>':''}</td>
+<td><span class="badge badge-${i.tipo}">${(i.tipo||'').toUpperCase()}</span></td>
+<td>${i.tecnico||'—'}</td>
+<td><span class="badge ${i.estado==='COMPLETADO'?'badge-completed':'badge-partial'}">${i.estado||'—'}</span></td>
+<td>${fotos>0?'<span style="color:#4caf50;font-weight:700">📷 '+fotos+'</span>':'<span style="color:#ccc">—</span>'}</td>
+<td><button class="btn btn-outline btn-xs" onclick="openInspDetail('${i.id}')">Ver</button></td>
+</tr>`;
 }
 
-function saveInspection(){
-var boat=document.getElementById('boat-name').value.trim();
-var type=document.getElementById('inspection-type').value;
-if(!boat||!type){showMsg('message-area','Embarcación y tipo son obligatorios','error');return}
-
-// Calcular estado
-var totalVerif=52,marcadosVerif=0;
-for(var i=0;i<52;i++){
-if(document.getElementById('v'+i)&&document.getElementById('v'+i).checked)marcadosVerif++;
-}
-var pctCompleto=Math.round((marcadosVerif/totalVerif)*100);
-var estado=pctCompleto>=80?'COMPLETADO':'PARCIAL';
-
-// Recoger medidores
-data.medidoresBabor={};data.medidoresEstribor={};data.medidoresCentral={};
-for(var i=0;i<5;i++){
-var mb=document.getElementById('mb'+i);if(mb&&mb.value)data.medidoresBabor['mb'+i]=mb.value;
-var me=document.getElementById('me'+i);if(me&&me.value)data.medidoresEstribor['me'+i]=me.value;
-var mc=document.getElementById('mc'+i);if(mc&&mc.value)data.medidoresCentral['mc'+i]=mc.value;
+// ====== FILTERS ======
+function buildYearFilter(){
+var years=new Set();
+allInspections.forEach(i=>{var d=parseDate(i.fecha);if(d)years.add(d.getFullYear());});
+var sel=document.getElementById('filter-year');
+sel.innerHTML='<option value="">Todos</option>';
+Array.from(years).sort((a,b)=>b-a).forEach(y=>{sel.innerHTML+=`<option value="${y}">${y}</option>`;});
 }
 
-var inspData={
-fecha:new Date().toISOString(),
-tecnico:currentUser,
-embarcacion:boat,
-modelo:document.getElementById('modelo').value,
-tipo:type,
-cliente:document.getElementById('cliente').value,
-motores:document.getElementById('motores').value,
-colas:document.getElementById('colas').value,
-motorBabor:document.getElementById('motor-babor').value,
-motorEstribor:document.getElementById('motor-estribor').value,
-motorCentral:document.getElementById('motor-central').value,
-motorAuxiliarNum:document.getElementById('motor-aux-num').value,
-motorAuxiliarModelo:document.getElementById('motor-aux-modelo').value,
-llaves:document.getElementById('llaves').value,
-cabina:document.getElementById('cabina').value,
-amarre:document.getElementById('amarre').value,
-pasoHelice:document.getElementById('paso-helice').value,
-fechaVarada:document.getElementById('date-varada').value,
-fechaBotadura:document.getElementById('date-botadura').value,
-horasBabor:document.getElementById('horas-babor').value,
-horasEstribor:document.getElementById('horas-estribor').value,
-horasCentral:document.getElementById('horas-central').value,
-horasGenerador:document.getElementById('horas-generador').value,
-observaciones:document.getElementById('observaciones').value,
-checklistPrevio:data.checklistPrevio,
-verificaciones:data.verificaciones,
-notas:data.notas,
-medidoresBabor:data.medidoresBabor,
-medidoresEstribor:data.medidoresEstribor,
-medidoresCentral:data.medidoresCentral,
-photoReport:{}, // v3.0: sin base64
-fotosUrls:{},   // v3.0: URLs de Drive, se rellenan abajo
-varadaImportada:lastVarada?lastVarada.id:'',
-estadoInspeccion:estado,
-porcentajeCompleto:pctCompleto
-};
-
-// Guardar backup local (sin fotos para no llenar storage)
-try{
-var backupData=Object.assign({},inspData);
-backupData._localTimestamp=new Date().toISOString();
-localStorage.setItem('lastInspection_'+boat,JSON.stringify(backupData));
-}catch(e){console.warn('No se pudo guardar backup local');}
-
-// Si NO hay internet
-if(!isOnline){
-hideLoading();
-savePendingInspection(inspData);
-showMsg('message-area','⚠️ SIN CONEXIÓN - Datos guardados localmente. Las fotos se subirán cuando haya internet.','success');
-document.getElementById('pdf-btn').style.display='inline-block';
-return;
+function applyFilters(){
+var boat=(document.getElementById('filter-boat').value||'').toLowerCase();
+var type=document.getElementById('filter-type').value;
+var estado=document.getElementById('filter-estado').value;
+var year=document.getElementById('filter-year').value;
+var fotos=document.getElementById('filter-fotos').value;
+filteredInspections=allInspections.filter(i=>{
+  if(boat && !(i.embarcacion||'').toLowerCase().includes(boat)) return false;
+  if(type && i.tipo!==type) return false;
+  if(estado && i.estado!==estado) return false;
+  if(year){var d=parseDate(i.fecha);if(!d||String(d.getFullYear())!==year)return false;}
+  if(fotos==='si' && getFotosCount(i)===0) return false;
+  if(fotos==='no' && getFotosCount(i)>0) return false;
+  return true;
+});
+document.getElementById('table-count').textContent=filteredInspections.length;
+document.getElementById('insp-table').innerHTML=filteredInspections.map(i=>rowHtml(i)).join('')||'<tr><td colspan="9" style="text-align:center;padding:40px;color:#aaa">No se encontraron inspecciones</td></tr>';
 }
 
-// FLUJO CON INTERNET: primero subir fotos, luego guardar
-var photoBlobs = {}; // photoId -> blob
-// Fotos reportaje
-for(var k in data.photoFiles){ if(data.photoFiles[k]) photoBlobs[k]=data.photoFiles[k]; }
-// Fotos verificaciones
-for(var k in data.verificationPhotoFiles){ if(data.verificationPhotoFiles[k]) photoBlobs[k+'_verif']=data.verificationPhotoFiles[k]; }
-
-var photoIds = Object.keys(photoBlobs);
-var totalPhotos = photoIds.length;
-
-if(totalPhotos === 0) {
-  // Sin fotos: guardar directo
-  _doSaveInspection(inspData, estado, pctCompleto);
+// ====== GALLERY ======
+function renderGallery(insps){
+var withPhotos=insps.filter(i=>getFotosCount(i)>0);
+if(withPhotos.length===0){
+  document.getElementById('gallery-container').innerHTML='<div class="empty-state"><div class="empty-icon">📷</div><p>No hay fotos en Drive todavía.<br>Las fotos aparecerán aquí cuando se guarden inspecciones con el móvil v3.0.</p></div>';
   return;
 }
-
-// Con fotos: mostrar progreso y subir
-showLoading('Subiendo fotos a Drive (0/'+totalPhotos+')...');
-var progressEl = document.getElementById('upload-progress');
-showUploadProgress(totalPhotos, 0, 0);
-
-var doneCount=0, errorCount=0;
-var uploadPromises = photoIds.map(function(photoId){
-  return uploadPhotoToDrive(photoBlobs[photoId], inspData, photoId)
-    .then(function(result){
-      doneCount++;
-      inspData.fotosUrls[result.photoId] = result.url;
-      showLoading('Subiendo fotos a Drive ('+doneCount+'/'+totalPhotos+')...');
-      showUploadProgress(totalPhotos, doneCount, errorCount);
-    })
-    .catch(function(err){
-      errorCount++;
-      doneCount++;
-      console.warn('Error subiendo foto '+photoId+':', err);
-      showUploadProgress(totalPhotos, doneCount, errorCount);
-    });
-});
-
-Promise.all(uploadPromises).then(function(){
-  showLoading('Guardando inspección...');
-  _doSaveInspection(inspData, estado, pctCompleto);
-});
-}
-
-function _doSaveInspection(inspData, estado, pctCompleto){
-fetch(SCRIPT_URL,{
-method:'POST',
-body:JSON.stringify({action:'save',data:inspData})
-})
-.then(r=>r.json())
-.then(result=>{
-hideLoading();
-document.getElementById('upload-progress').style.display='none';
-if(result.success){
-var fotosCount=Object.keys(inspData.fotosUrls||{}).length;
-showMsg('message-area','✅ Inspección guardada en Drive. '+fotosCount+' foto(s) subida(s). ('+estado+' - '+pctCompleto+'%).','success');
-document.getElementById('pdf-btn').style.display='inline-block';
-}else{
-savePendingInspection(inspData);
-showMsg('message-area','⚠️ Error del servidor. Guardado LOCAL, se reintentará.','success');
-}
-}).catch(err=>{
-hideLoading();
-document.getElementById('upload-progress').style.display='none';
-savePendingInspection(inspData);
-showMsg('message-area','⚠️ Error de conexión. Guardado LOCAL.','success');
-});
-}
-
-function clearForm(){
-document.querySelectorAll('input[type="text"],input[type="date"],textarea,select').forEach(e=>e.value='');
-document.querySelectorAll('input[type="checkbox"]').forEach(e=>e.checked=false);
-document.querySelectorAll('.check-item').forEach(e=>e.classList.remove('with-note','imported'));
-for(var i=0;i<7;i++)removePhoto('f'+i);
-
-// Limpiar divs de info de varada en verificaciones
-for(var i=0;i<52;i++){
-var infoDiv=document.getElementById('v'+i+'-varada-info');
-if(infoDiv){infoDiv.innerHTML='';infoDiv.style.display='none';}
-}
-
-// Limpiar divs de info de varada en medidores
-var medidores=['mb0','mb1','mb2','mb3','mb4','me0','me1','me2','me3','me4','mc0','mc1','mc2','mc3','mc4'];
-medidores.forEach(function(id){
-var infoDiv=document.getElementById(id+'-varada-info');
-if(infoDiv){infoDiv.innerHTML='';infoDiv.style.display='none';}
-});
-
-// Limpiar fotos de verificaciones
-for(var i=0;i<52;i++){
-var container=document.getElementById('v'+i+'-photo-container');
-if(container){container.innerHTML='';container.style.display='none';}
-}
-
-data={checklistPrevio:{},verificaciones:{},notas:{},medidoresBabor:{},medidoresEstribor:{},medidoresCentral:{},photoReport:{},photoFiles:{},verificationPhotoFiles:{},alerts:{}};
-lastVarada=null;
-document.getElementById('import-section').style.display='none';
-document.getElementById('pdf-btn').style.display='none';
-updateCharCounter();
-}
-
-function loadHistory(){
-showLoading('Cargando historial...');
-fetch(SCRIPT_URL+'?action=getHistory&user='+currentUser)
-.then(r=>r.json())
-.then(result=>{
-hideLoading();
-if(result.success){
 var html='';
-result.data.forEach(item=>{
-html+='<div class="history-item '+(item.cerrada?'cerrada':'')+'">';
-html+='<div class="history-date">'+item.fecha+'</div>';
-html+='<div class="history-info">'+item.embarcacion+' - '+item.tipo.toUpperCase()+'<br>Cliente: '+(item.cliente||'N/A')+'</div>';
-html+='<button class="history-btn" onclick="verInspeccion(\''+item.id+'\')">VER</button>';
-html+='<button class="history-btn" onclick="generatePDFFromHistory(\''+item.id+'\')">PDF</button>';
-html+='</div>';
+withPhotos.forEach(i=>{
+  var fotos=i._fotos||{};
+  var fotoKeys=Object.keys(fotos);
+  if(fotoKeys.length===0)return;
+  html+=`<div style="margin-bottom:24px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div>
+        <strong style="font-size:15px;color:#1a2e4a">${i.embarcacion}</strong>
+        <span class="badge badge-${i.tipo}" style="margin-left:8px">${(i.tipo||'').toUpperCase()}</span>
+        <span style="font-size:12px;color:#aaa;margin-left:8px">${formatDate(i.fecha)}</span>
+      </div>
+      <button class="btn btn-outline btn-sm" onclick="openInspDetail('${i.id}')">Ver Inspección</button>
+    </div>
+    <div class="photos-grid">`;
+  fotoKeys.forEach(k=>{
+    var url=fotos[k];
+    var label=getPhotoLabel(k);
+    // Convert Drive view URL to thumbnail
+    var fileId=url.match(/\/d\/([^\/]+)\//);
+    var thumbUrl=fileId?'https://drive.google.com/thumbnail?id='+fileId[1]+'&sz=w300':null;
+    html+=`<div class="photo-card">
+      ${thumbUrl?`<a href="${url}" target="_blank"><img src="${thumbUrl}" onerror="this.parentElement.outerHTML='<a href=\\'${url}\\' target=\\'_blank\\' class=\\'photo-drive-link\\'><span>📷 ${label}</span></a>'" alt="${label}"></a>`
+      :`<a href="${url}" target="_blank" class="photo-drive-link"><span>🔗 Ver en Drive</span></a>`}
+      <div class="photo-card-label">${label}</div>
+    </div>`;
+  });
+  html+='</div></div>';
 });
-document.getElementById('history-list').innerHTML=html||'<p>No hay inspecciones</p>';
-}
-}).catch(err=>{hideLoading();});
+document.getElementById('gallery-container').innerHTML=html||'<div class="empty-state"><div class="empty-icon">📷</div><p>No hay fotos aún</p></div>';
 }
 
-function verInspeccion(id){
-showLoading('Cargando...');
-fetch(SCRIPT_URL+'?action=getInspection&id='+id)
-.then(r=>r.json())
-.then(result=>{
-hideLoading();
-if(result.success){
-var insp=result.data;
-document.getElementById('boat-name').value=insp.embarcacion;
-document.getElementById('modelo').value=insp.modelo||'';
-document.getElementById('inspection-type').value=insp.tipo;
-document.getElementById('cliente').value=insp.cliente||'';
-document.getElementById('motores').value=insp.motores||'';
-document.getElementById('colas').value=insp.colas||'';
-document.getElementById('motor-babor').value=insp.motorBabor||'';
-document.getElementById('motor-estribor').value=insp.motorEstribor||'';
-document.getElementById('motor-central').value=insp.motorCentral||'';
-document.getElementById('motor-aux-num').value=insp.motorAuxiliarNum||'';
-document.getElementById('motor-aux-modelo').value=insp.motorAuxiliarModelo||'';
-document.getElementById('llaves').value=insp.llaves||'';
-document.getElementById('cabina').value=insp.cabina||'';
-document.getElementById('amarre').value=insp.amarre||'';
-document.getElementById('paso-helice').value=insp.pasoHelice||'';
-document.getElementById('date-varada').value=insp.fechaVarada||'';
-document.getElementById('date-botadura').value=insp.fechaBotadura||'';
-document.getElementById('horas-babor').value=insp.horasBabor||'';
-document.getElementById('horas-estribor').value=insp.horasEstribor||'';
-document.getElementById('horas-central').value=insp.horasCentral||'';
-document.getElementById('horas-generador').value=insp.horasGenerador||'';
-document.getElementById('observaciones').value=insp.observaciones||'';
-try{var cp=JSON.parse(insp.checklistPrevioJson||'{}');for(var k in cp){var el=document.getElementById(k);if(el)el.checked=cp[k];}}catch(e){}
-try{var v=JSON.parse(insp.verificacionesJson||'{}');for(var k in v){var el=document.getElementById(k);if(el)el.checked=v[k];}}catch(e){}
-try{var n=JSON.parse(insp.notasJson||'{}');data.notas=n;for(var k in n){if(n[k])document.getElementById(k+'-item').classList.add('with-note');}}catch(e){}
-try{var mb=JSON.parse(insp.medidoresBaborJson||'{}');for(var k in mb){var el=document.getElementById(k);if(el)el.value=mb[k];}}catch(e){}
-try{var me=JSON.parse(insp.medidoresEstribOrJson||'{}');for(var k in me){var el=document.getElementById(k);if(el)el.value=me[k];}}catch(e){}
-try{var mc=JSON.parse(insp.medidoresCentralJson||'{}');for(var k in mc){var el=document.getElementById(k);if(el)el.value=mc[k];}}catch(e){}
-updateCharCounter();
-showTab('nueva');
-showMsg('message-area','Inspección cargada','success');
-}else{
-showMsg('message-area','Error: '+result.message,'error');
-}
-}).catch(err=>{hideLoading();showMsg('message-area','Error de conexión','error')});
-}
-
-function generatePartialReport(){
-var boat=document.getElementById('boat-name').value.trim();
-var type=document.getElementById('inspection-type').value;
-if(!boat||!type){alert('Necesitas al menos Embarcación y Tipo para generar un informe');return;}
-
-// Contar checks marcados
-var totalPrevio=0,marcadosPrevio=0;
-for(var i=0;i<11;i++){
-totalPrevio++;
-if(document.getElementById('cp'+i)&&document.getElementById('cp'+i).checked)marcadosPrevio++;
-}
-var totalVerif=0,marcadosVerif=0;
-for(var i=0;i<52;i++){
-totalVerif++;
-if(document.getElementById('v'+i)&&document.getElementById('v'+i).checked)marcadosVerif++;
-}
-
-var pctPrevio=totalPrevio>0?Math.round((marcadosPrevio/totalPrevio)*100):0;
-var pctVerif=Math.round((marcadosVerif/totalVerif)*100);
-
-var report='INFORME PARCIAL - '+boat.toUpperCase()+'\\n';
-report+='Tipo: '+type.toUpperCase()+'\\n';
-report+='Técnico: '+currentUser+'\\n';
-report+='Fecha: '+new Date().toLocaleString('es-ES')+'\\n\\n';
-report+='PROGRESO:\\n';
-if(type==='varada'){
-report+='- Checklist Previo: '+marcadosPrevio+'/'+totalPrevio+' ('+pctPrevio+'%)\\n';
-}
-report+='- Verificaciones: '+marcadosVerif+'/'+totalVerif+' ('+pctVerif+'%)\\n\\n';
-
-var notas=0;
-for(var k in data.notas){if(data.notas[k])notas++;}
-report+='- Notas añadidas: '+notas+'\\n';
-
-var fotos=0;
-for(var k in data.photoFiles){if(data.photoFiles[k])fotos++;}
-for(var k in data.verificationPhotoFiles){if(data.verificationPhotoFiles[k])fotos++;}
-report+='- Fotos reportaje: '+fotos+'\\n\\n';
-
-report+='Estado: '+(pctVerif>=100?'COMPLETADO':'PARCIAL ('+pctVerif+'% completado)');
-
-alert(report);
-}
-
-// Logo Viamar en base64
-const LOGO_VIAMAR = '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';
-
-function generatePDF(){
-const {jsPDF} = window.jspdf;
-
-// Verificar que hay datos
-var boat=document.getElementById('boat-name').value.trim();
-var type=document.getElementById('inspection-type').value;
-if(!boat||!type){
-alert('Necesitas al menos Embarcación y Tipo para generar PDF');
-return;
-}
-
-showLoading('Generando PDF...');
-
-try{
-// Crear PDF A4 vertical
-const doc = new jsPDF('p', 'mm', 'a4');
-const pageWidth = 210;
-const pageHeight = 297;
-let y = 20; // Posición Y actual
-
-// ===== ENCABEZADO CON LOGO =====
-// Logo (pequeño, arriba izquierda)
-try{
-doc.addImage(LOGO_VIAMAR, 'JPEG', 15, 10, 50, 15);
-}catch(e){
-console.warn('No se pudo añadir logo');
-}
-
-// Título
-doc.setFontSize(18);
-doc.setTextColor(0, 61, 130); // Azul Viamar
-doc.text('INSPECCIÓN NÁUTICA', pageWidth/2, y, {align:'center'});
-y += 10;
-
-doc.setFontSize(12);
-doc.setTextColor(0, 0, 0);
-doc.text(type.toUpperCase(), pageWidth/2, y, {align:'center'});
-y += 8;
-
-doc.setFontSize(10);
-doc.text(boat.toUpperCase(), pageWidth/2, y, {align:'center'});
-y += 3;
-doc.line(15, y, pageWidth-15, y); // Línea separadora
-y += 10;
-
-// ===== DATOS GENERALES =====
-doc.setFontSize(11);
-doc.setFont(undefined, 'bold');
-doc.text('DATOS GENERALES', 15, y);
-y += 6;
-
-doc.setFont(undefined, 'normal');
-doc.setFontSize(9);
-
-const datosGenerales = [
-['Embarcación:', boat],
-['Modelo:', document.getElementById('modelo').value || '-'],
-['Cliente:', document.getElementById('cliente').value || '-'],
-['Técnico:', currentUser],
-['Fecha:', new Date().toLocaleDateString('es-ES')],
-['Motores:', document.getElementById('motores').value || '-'],
-['Colas:', document.getElementById('colas').value || '-'],
-['Motor Babor Nº:', document.getElementById('motor-babor').value || '-'],
-['Motor Estribor Nº:', document.getElementById('motor-estribor').value || '-'],
-['Motor Central Nº:', document.getElementById('motor-central').value || '-'],
-['Amarre:', document.getElementById('amarre').value || '-'],
-['Paso Hélice:', document.getElementById('paso-helice').value || '-']
-];
-
-datosGenerales.forEach(([label, value]) => {
-if(y > pageHeight - 20){
-doc.addPage();
-y = 20;
-}
-doc.setFont(undefined, 'bold');
-doc.text(label, 15, y);
-doc.setFont(undefined, 'normal');
-doc.text(value, 65, y);
-y += 5;
+function applyGalleryFilter(){
+var boat=(document.getElementById('gallery-boat').value||'').toLowerCase();
+var type=document.getElementById('gallery-type').value;
+var filtered=allInspections.filter(i=>{
+  if(boat && !(i.embarcacion||'').toLowerCase().includes(boat))return false;
+  if(type && i.tipo!==type)return false;
+  return true;
 });
-
-y += 5;
-
-// ===== CHECKLIST PREVIO (solo varada) =====
-if(type === 'varada'){
-if(y > pageHeight - 40){
-doc.addPage();
-y = 20;
+renderGallery(filtered);
 }
 
-doc.setFontSize(11);
-doc.setFont(undefined, 'bold');
-doc.text('CHECKLIST PREVIO', 15, y);
-y += 6;
-
-doc.setFontSize(9);
-doc.setFont(undefined, 'normal');
-
-const checklistLabels = [
-'Pasar motores por agua dulce',
-'Pasar motor auxiliar por agua dulce',
-'Cambiar aceite motor',
-'Cambiar aceite colas',
-'Invernar generador',
-'Invernar aire acondicionado',
-'Tensión correas',
-'Revisar combustible',
-'Revisar niveles agua',
-'Revisar niveles aceite',
-'Vaciar tanque aguas negras'
-];
-
-for(let i=0; i<11; i++){
-if(y > pageHeight - 15){
-doc.addPage();
-y = 20;
+function getPhotoLabel(k){
+var map={f0:'Proa',f1:'Amura Babor',f2:'Amura Estribor',f3:'Aleta Babor',f4:'Aleta Estribor',f5:'Colas',f6:'Ejes/IPS'};
+if(map[k])return map[k];
+if(k.endsWith('_verif')){
+  var idx=k.replace('_photo_verif','').replace('_verif','').replace('v','');
+  var verLabels=['Sentinas','Foto Proa','Foto Ab','Foto Ae','Foto AlB','Foto AlE','Foto Colas','Foto Ejes','Limpieza','Dirección','Aceite'];
+  return 'V'+(parseInt(idx)+1)+': '+(verLabels[parseInt(idx)]||'Verificación');
 }
-const checked = data.checklistPrevio['cp'+i] || false;
-doc.text(checked ? '[X]' : '[ ]', 15, y);
-doc.text(checklistLabels[i], 22, y);
-y += 5;
+return k;
 }
 
-y += 5;
+// ====== STATS ======
+function renderStats(){
+// Pie tipo
+var varadas=allInspections.filter(i=>i.tipo==='varada').length;
+var botaduras=allInspections.filter(i=>i.tipo==='botadura').length;
+renderPie('pie-tipo', [
+  {label:'Varadas',value:varadas,color:'#003d82'},
+  {label:'Botaduras',value:botaduras,color:'#4caf50'}
+]);
+document.getElementById('pie-legend').innerHTML=`
+  <div class="legend-item"><div class="legend-dot" style="background:#003d82"></div>Varadas (${varadas})</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>Botaduras (${botaduras})</div>`;
+
+// Verification failures
+var verifCounts=new Array(52).fill(0);
+var verifTotal=new Array(52).fill(0);
+var verifLabels=['Fotos de sentinas','Foto proa','Foto amura babor','Foto amura estribor','Foto aleta babor','Foto aleta estribor','Foto colas','Foto ejes/IPS','Limpieza sentinas','Sistema dirección','Presión aceite motor','Amperímetro','Voltímetro','Cuenta horas','Temperatura motor','Temperatura agua','Nivel de aceite','Nivel de agua','Bombas de achique','Funcionamiento WC','Estado baterías','Luces navegación','Luces señal','Pulsador start','Inversor','Alarma sentinas','Bocina','Extintores','Aros salvavidas','Chalecos','Bengalas','Cabo remolque','Pérdidas aceite/agua','Desgaste escobillas','Comprobar próxima ITB','Revisión casco','Revisión hélice','Revisión timón','Ánodos','Soportes motor','Silentbloks','Gomas escape','Fuelles cola','Sonda','Válvulas fondo','Cierres eje','Tobera proa','Filtros agua','Filtros gas-oil','Refrigerante','Aceite hidráulico'];
+allInspections.forEach(i=>{
+  try{
+    var v=i._verif||{};
+    for(var j=0;j<52;j++){
+      verifTotal[j]++;
+      if(!v['v'+j])verifCounts[j]++;
+    }
+  }catch(e){}
+});
+var failRates=verifLabels.map((l,j)=>({label:l,rate:verifTotal[j]?Math.round(verifCounts[j]/verifTotal[j]*100):0}));
+failRates.sort((a,b)=>b.rate-a.rate);
+var top8=failRates.slice(0,8);
+document.getElementById('chart-verif-fails').innerHTML=top8.map(x=>`
+  <div class="bar-row">
+    <div class="bar-label">${x.label.length>20?x.label.substr(0,18)+'...':x.label}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${x.rate}%;background:#f44336">${x.rate>10?x.rate+'%':''}</div></div>
+    <div class="bar-count" style="color:#f44336">${x.rate}%</div>
+  </div>`).join('');
+
+// Boats full
+var boatCounts={};
+allInspections.forEach(i=>{if(i.embarcacion)boatCounts[i.embarcacion]=(boatCounts[i.embarcacion]||0)+1;});
+var boats=Object.entries(boatCounts).sort((a,b)=>b[1]-a[1]);
+var maxB=boats.length?boats[0][1]:1;
+document.getElementById('chart-boats-full').innerHTML=boats.map(([b,c])=>`
+  <div class="bar-row">
+    <div class="bar-label">${b.length>20?b.substr(0,18)+'...':b}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxB*100)}%;background:#9c27b0">${c}</div></div>
+    <div class="bar-count">${c}</div>
+  </div>`).join('');
+
+// Tecnicos
+var tecCounts={};
+allInspections.forEach(i=>{if(i.tecnico)tecCounts[i.tecnico]=(tecCounts[i.tecnico]||0)+1;});
+var tecs=Object.entries(tecCounts).sort((a,b)=>b[1]-a[1]);
+var maxT=tecs.length?tecs[0][1]:1;
+document.getElementById('chart-tecnicos').innerHTML=tecs.map(([t,c])=>`
+  <div class="bar-row">
+    <div class="bar-label">${t}</div>
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(c/maxT*100)}%;background:#ff9800">${c}</div></div>
+    <div class="bar-count">${c}</div>
+  </div>`).join('');
 }
 
-// ===== VERIFICACIONES =====
-if(y > pageHeight - 40){
-doc.addPage();
-y = 20;
+function renderPie(canvasId, data){
+var canvas=document.getElementById(canvasId);
+if(!canvas)return;
+var ctx=canvas.getContext('2d');
+var total=data.reduce((s,d)=>s+d.value,0);
+if(total===0)return;
+var cx=canvas.width/2,cy=canvas.height/2,r=100;
+var start=0;
+ctx.clearRect(0,0,canvas.width,canvas.height);
+data.forEach(d=>{
+  var angle=(d.value/total)*Math.PI*2;
+  ctx.beginPath();ctx.moveTo(cx,cy);
+  ctx.arc(cx,cy,r,start,start+angle);
+  ctx.closePath();ctx.fillStyle=d.color;ctx.fill();
+  start+=angle;
+});
+// Center text
+ctx.fillStyle='#1a2e4a';ctx.font='bold 22px Segoe UI';ctx.textAlign='center';ctx.textBaseline='middle';
+ctx.fillText(total,cx,cy-8);
+ctx.font='13px Segoe UI';ctx.fillStyle='#888';
+ctx.fillText('total',cx,cy+14);
 }
 
-doc.setFontSize(11);
-doc.setFont(undefined, 'bold');
-doc.text('VERIFICACIONES', 15, y);
-y += 6;
-
-doc.setFontSize(8);
-doc.setFont(undefined, 'normal');
-
-const verificacionesLabels = [
-'Fotos de sentinas','Foto proa','Foto amura babor','Foto amura estribor',
-'Foto aleta babor','Foto aleta estribor','Foto colas','Foto ejes/IPS',
-'Limpieza sentinas','Sistema dirección','Presión aceite motor',
-'Amperímetro','Voltímetro','Cuenta horas','Temperatura motor',
-'Temperatura agua','Nivel de aceite','Nivel de agua','Bombas de achique',
-'Funcionamiento WC','Estado baterías','Luces navegación',
-'Luces señal','Pulsador start','Inversor','Alarma sentinas',
-'Bocina','Extintores','Aros salvavidas','Chalecos','Bengalas',
-'Cabo remolque','Perdidas aceite/agua','Desgaste escobillas',
-'Comprobar próxima ITB','Revisión casco','Revisión hélice',
-'Revisión timón','Ánodos','Soportes motor','Silentbloks',
-'Gomas escape','Fuelles cola','Sonda','Válvulas fondo',
-'Cierres eje','Tobera proa','Filtros agua','Filtros gas-oil',
-'Refrigerante','Aceite hidráulico'
-];
-
-let col = 0;
-const colWidth = 90;
-
-for(let i=0; i<52; i++){
-if(y > pageHeight - 15){
-doc.addPage();
-y = 20;
-col = 0;
+// ====== DETAIL MODAL ======
+function openInspDetail(id){
+var insp=allInspections.find(i=>i.id===id);
+if(!insp){
+  // Try fetching from server
+  showLoading('Cargando inspección...');
+  fetch(SCRIPT_URL+'?action=getInspection&id='+id)
+  .then(r=>r.json())
+  .then(res=>{hideLoading();if(res.success)_renderDetail(normalizeInsp(res.inspection||res.data));else alert('Error: '+(res.message||''));})
+  .catch(()=>{hideLoading();alert('Error de conexión');});
+  return;
+}
+_renderDetail(insp);
 }
 
-const checked = data.verificaciones['v'+i] || false;
-const x = 15 + (col * colWidth);
+function _renderDetail(insp){
+currentInspDetail=insp;
+document.getElementById('modal-title').textContent=insp.embarcacion+' — '+(insp.tipo||'').toUpperCase()+' · '+formatDate(insp.fecha);
+var fotos=insp._fotos||{};
+var cp=insp._cp||{};
+var verif=insp._verif||{};
+var notas=insp._notas||{};
+var medB=insp._medB||{};
+var medE=insp._medE||{};
+var medC=insp._medC||{};
 
-doc.text(checked ? '[X]' : '[ ]', x, y);
-doc.text(verificacionesLabels[i] || 'Item '+(i+1), x+7, y);
+var verifLabels=['Fotos de sentinas','Foto proa','Foto amura babor','Foto amura estribor','Foto aleta babor','Foto aleta estribor','Foto colas','Foto ejes/IPS','Limpieza sentinas','Sistema dirección','Presión aceite motor','Amperímetro','Voltímetro','Cuenta horas','Temperatura motor','Temperatura agua','Nivel de aceite','Nivel de agua','Bombas de achique','Funcionamiento WC','Estado baterías','Luces navegación','Luces señal','Pulsador start','Inversor','Alarma sentinas','Bocina','Extintores','Aros salvavidas','Chalecos','Bengalas','Cabo remolque','Pérdidas aceite/agua','Desgaste escobillas','Comprobar próxima ITB','Revisión casco','Revisión hélice','Revisión timón','Ánodos','Soportes motor','Silentbloks','Gomas escape','Fuelles cola','Sonda','Válvulas fondo','Cierres eje','Tobera proa','Filtros agua','Filtros gas-oil','Refrigerante','Aceite hidráulico'];
+var cpLabels=['Agua dulce motores','Agua dulce aux','Cambio aceite motor','Cambio aceite colas','Invernar generador','Invernar A/C','Tensión correas','Revisar combustible','Revisar niveles agua','Revisar niveles aceite','Vaciar aguas negras'];
+
+var cpDone=cpLabels.filter((_,i)=>cp['cp'+i]).length;
+var verifDone=verifLabels.filter((_,i)=>verif['v'+i]).length;
+var fotosCount=Object.keys(fotos).length;
+
+var html=`
+<div class="detail-grid">
+  <div class="detail-section">
+    <h4>🚤 Datos Generales</h4>
+    ${dr('Embarcación',insp.embarcacion)}
+    ${dr('Modelo',insp.modelo)}
+    ${dr('Cliente',insp.cliente)}
+    ${dr('Técnico',insp.tecnico)}
+    ${dr('Fecha',formatDate(insp.fecha))}
+    ${dr('Hora',insp.hora)}
+    ${dr('Tipo','<span class="badge badge-'+insp.tipo+'">'+(insp.tipo||'').toUpperCase()+'</span>')}
+    ${dr('Estado','<span class="badge '+(insp.estado==='COMPLETADO'?'badge-completed':'badge-partial')+'">'+(insp.estado||'')+'</span>')}
+    ${dr('Cerrada',insp.cerrada==='SI'?'<span class="badge badge-closed">CERRADA</span>':'NO')}
+  </div>
+  <div class="detail-section">
+    <h4>⚙️ Motor & Equipo</h4>
+    ${dr('Motores',insp.motores)}
+    ${dr('Colas',insp.colas)}
+    ${dr('Motor Babor Nº',insp.motorBabor)}
+    ${dr('Motor Estribor Nº',insp.motorEstribor)}
+    ${dr('Motor Central Nº',insp.motorCentral)}
+    ${dr('Amarre',insp.amarre)}
+    ${dr('Paso Hélice',insp.pasoHelice)}
+    ${dr('Fecha Varada',insp.fechaVarada)}
+    ${dr('Fecha Botadura',insp.fechaBotadura)}
+  </div>
+</div>
+
+<div class="detail-section" style="margin-bottom:18px">
+  <h4>⏱️ Horas de Navegación</h4>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:8px">
+    ${hCard('Babor',insp.horasBabor)}${hCard('Estribor',insp.horasEstribor)}${hCard('Central',insp.horasCentral)}${hCard('Generador',insp.horasGenerador)}
+  </div>
+</div>
+
+<div class="detail-section" style="margin-bottom:18px">
+  <h4>🔧 Medidores</h4>
+  <table class="medidores-table">
+    <thead><tr><th>Medidor</th><th>Babor</th><th>Estribor</th><th>Central</th></tr></thead>
+    <tbody>
+      ${['RPM','Aceite','Temperatura','Voltaje','Tank'].map((l,i)=>`<tr><td style="font-weight:700;color:#555">${l}</td><td>${medB['mb'+i]||'—'}</td><td>${medE['me'+i]||'—'}</td><td>${medC['mc'+i]||'—'}</td></tr>`).join('')}
+    </tbody>
+  </table>
+</div>`;
+
+// Checklist previo (only for varada)
+if(insp.tipo==='varada'){
+html+=`<div class="detail-section" style="margin-bottom:18px">
+  <h4>✅ Checklist Previo (${cpDone}/${cpLabels.length})</h4>
+  <div class="verif-grid" style="margin-top:10px">
+    ${cpLabels.map((l,i)=>`<div class="verif-item ${cp['cp'+i]?'checked':'unchecked'}"><span class="verif-check">${cp['cp'+i]?'✅':'⬜'}</span><span>${l}</span></div>`).join('')}
+  </div>
+</div>`;}
+
+// Verificaciones
+html+=`<div class="detail-section" style="margin-bottom:18px">
+  <h4>🔍 Verificaciones (${verifDone}/${verifLabels.length})</h4>
+  <div class="verif-grid" style="margin-top:10px">
+    ${verifLabels.map((l,i)=>`<div class="verif-item ${verif['v'+i]?'checked':'unchecked'}"><span class="verif-check">${verif['v'+i]?'✅':'⬜'}</span><span>${l}</span></div>`).join('')}
+  </div>
+</div>`;
 
 // Notas
-if(data.notas['v'+i]){
-y += 3;
-doc.setFontSize(7);
-doc.setTextColor(100, 100, 100);
-doc.text('→ '+data.notas['v'+i].substring(0,40), x+7, y);
-doc.setFontSize(8);
-doc.setTextColor(0, 0, 0);
+var notasItems=Object.entries(notas).filter(([k,v])=>v);
+if(notasItems.length>0){
+html+=`<div class="detail-section" style="margin-bottom:18px">
+  <h4>📝 Notas (${notasItems.length})</h4>
+  <div class="notas-list" style="margin-top:10px">
+    ${notasItems.map(([k,v])=>`<div class="nota-item"><div class="nota-label">${k.replace('v','Verificación ').replace('cp','Checklist Previo ')}</div><div class="nota-text">${v}</div></div>`).join('')}
+  </div>
+</div>`;}
+
+// Observaciones
+if(insp.observaciones){
+html+=`<div class="detail-section" style="margin-bottom:18px">
+  <h4>📋 Observaciones</h4>
+  <p style="font-size:13px;color:#555;margin-top:8px;line-height:1.6">${insp.observaciones}</p>
+</div>`;}
+
+// Fotos
+if(fotosCount>0){
+html+=`<div class="photos-section">
+  <div class="photos-title">📷 Fotos en Google Drive (${fotosCount})</div>
+  <div class="photos-grid">
+  ${Object.entries(fotos).map(([k,url])=>{
+    var label=getPhotoLabel(k);
+    var fileId=url.match(/\/d\/([^\/]+)\//);
+    var thumbUrl=fileId?'https://drive.google.com/thumbnail?id='+fileId[1]+'&sz=w300':null;
+    return `<div class="photo-card">
+      ${thumbUrl?`<a href="${url}" target="_blank"><img src="${thumbUrl}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" alt="${label}"><a href="${url}" target="_blank" class="photo-drive-link" style="display:none"><span>🔗 Drive</span></a></a>`
+      :`<a href="${url}" target="_blank" class="photo-drive-link"><span>🔗 Ver en Drive</span></a>`}
+      <div class="photo-card-label">${label}</div>
+    </div>`;}).join('')}
+  </div>
+</div>`;
+}else{
+html+=`<div style="text-align:center;padding:24px;color:#aaa;background:#f9f9f9;border-radius:8px"><span style="font-size:28px">📷</span><br><span style="font-size:13px">Sin fotos en Drive</span></div>`;
 }
 
-col++;
-if(col >= 2){
-col = 0;
-y += 5;
-}
+document.getElementById('modal-body').innerHTML=html;
+document.getElementById('detail-modal').classList.add('active');
 }
 
-if(col > 0) y += 5;
-y += 5;
-
-// ===== MEDIDORES =====
-if(y > pageHeight - 60){
-doc.addPage();
-y = 20;
+function dr(label,val){
+if(!val&&val!==0)return '';
+return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${val||'—'}</span></div>`;
+}
+function hCard(label,val){
+return `<div style="background:#f0f4fa;border-radius:8px;padding:12px;text-align:center"><div style="font-size:20px;font-weight:700;color:#003d82">${val||'—'}</div><div style="font-size:11px;color:#888;margin-top:4px">${label}</div></div>`;
 }
 
-doc.setFontSize(11);
-doc.setFont(undefined, 'bold');
-doc.text('MEDIDORES', 15, y);
-y += 6;
+function closeModal(){
+document.getElementById('detail-modal').classList.remove('active');
+currentInspDetail=null;
+}
 
+// ====== PDF GENERATION ======
+const LOGO_VIAMAR='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';
+
+function generateInspPDF(){
+if(!currentInspDetail){alert('No hay inspección seleccionada');return;}
+var insp=currentInspDetail;
+var {jsPDF}=window.jspdf;
+var doc=new jsPDF('p','mm','a4');
+var pw=210,ph=297,y=20;
+
+// Header
+try{doc.addImage(LOGO_VIAMAR,'JPEG',15,10,50,15);}catch(e){}
+doc.setFontSize(16);doc.setTextColor(0,61,130);
+doc.text('INSPECCIÓN NÁUTICA',pw/2,y,{align:'center'});y+=8;
+doc.setFontSize(11);doc.setTextColor(0,0,0);
+doc.text((insp.tipo||'').toUpperCase(),pw/2,y,{align:'center'});y+=6;
+doc.setFontSize(10);doc.text((insp.embarcacion||'').toUpperCase(),pw/2,y,{align:'center'});y+=4;
+doc.line(15,y,pw-15,y);y+=8;
+
+// Datos
+var cp=insp._cp||{};
+var verif=insp._verif||{};
+var notas=insp._notas||{};
+var medB=insp._medB||{};
+var medE=insp._medE||{};
+var medC=insp._medC||{};
+var fotos=insp._fotos||{};
+
+function addSection(title){
+if(y>ph-20){doc.addPage();y=20;}
+doc.setFontSize(11);doc.setFont(undefined,'bold');doc.setTextColor(0,61,130);
+doc.text(title,15,y);doc.setTextColor(0,0,0);doc.setFont(undefined,'normal');y+=6;
+}
+function addRow(label,val){
+if(y>ph-15){doc.addPage();y=20;}
+doc.setFontSize(9);doc.setFont(undefined,'bold');doc.text(label,15,y);
+doc.setFont(undefined,'normal');doc.text(val||'—',75,y);y+=5;
+}
+
+addSection('DATOS GENERALES');
+addRow('Embarcación:',insp.embarcacion);addRow('Modelo:',insp.modelo);addRow('Cliente:',insp.cliente);
+addRow('Técnico:',insp.tecnico);addRow('Fecha:',formatDate(insp.fecha));addRow('Tipo:',insp.tipo);
+addRow('Estado:',insp.estado);addRow('Motores:',insp.motores);addRow('Amarre:',insp.amarre);
+y+=4;
+addSection('HORAS NAVEGACIÓN');
+addRow('Babor:',insp.horasBabor);addRow('Estribor:',insp.horasEstribor);
+addRow('Central:',insp.horasCentral);addRow('Generador:',insp.horasGenerador);
+y+=4;
+
+// Medidores
+addSection('MEDIDORES');
+var medLabels=['RPM','Aceite','Temperatura','Voltaje','Tank'];
 doc.setFontSize(9);
-doc.setFont(undefined, 'normal');
-
-const medidoresLabels = ['RPM', 'Aceite', 'Temperatura', 'Voltaje', 'Tank'];
-const motores = [
-{nombre: 'BABOR', prefix: 'mb'},
-{nombre: 'ESTRIBOR', prefix: 'me'},
-{nombre: 'CENTRAL', prefix: 'mc'}
-];
-
-motores.forEach(motor => {
-if(y > pageHeight - 30){
-doc.addPage();
-y = 20;
-}
-
-doc.setFont(undefined, 'bold');
-doc.text(motor.nombre, 15, y);
-y += 5;
-doc.setFont(undefined, 'normal');
-
-medidoresLabels.forEach((label, i) => {
-const id = motor.prefix + i;
-let value = '-';
-if(data.medidoresBabor && data.medidoresBabor[id]) value = data.medidoresBabor[id];
-if(data.medidoresEstribor && data.medidoresEstribor[id]) value = data.medidoresEstribor[id];
-if(data.medidoresCentral && data.medidoresCentral[id]) value = data.medidoresCentral[id];
-
-doc.text(label + ':', 20, y);
-doc.text(value, 60, y);
-y += 4;
+if(y>ph-40){doc.addPage();y=20;}
+doc.setFont(undefined,'bold');
+['Medidor','Babor','Estribor','Central'].forEach((h,i)=>doc.text(h,[15,65,110,155][i],y));
+doc.setFont(undefined,'normal');y+=5;
+medLabels.forEach((l,i)=>{
+if(y>ph-15){doc.addPage();y=20;}
+doc.text(l,15,y);doc.text(medB['mb'+i]||'—',65,y);doc.text(medE['me'+i]||'—',110,y);doc.text(medC['mc'+i]||'—',155,y);y+=5;
 });
+y+=4;
 
-y += 3;
-});
-
-// ===== HORAS =====
-y += 5;
-if(y > pageHeight - 30){
-doc.addPage();
-y = 20;
+// Checklist previo
+if(insp.tipo==='varada'){
+addSection('CHECKLIST PREVIO');
+var cpL=['Agua dulce motores','Agua dulce aux','Cambio aceite motor','Cambio aceite colas','Invernar generador','Invernar A/C','Tensión correas','Combustible','Niveles agua','Niveles aceite','Aguas negras'];
+for(var i=0;i<11;i++){
+if(y>ph-15){doc.addPage();y=20;}
+doc.setFontSize(9);doc.text(cp['cp'+i]?'[X]':'[ ]',15,y);doc.text(cpL[i],23,y);y+=5;
 }
+y+=4;}
 
-doc.setFont(undefined, 'bold');
-doc.text('HORAS DE NAVEGACIÓN', 15, y);
-y += 5;
-doc.setFont(undefined, 'normal');
-
-const horas = [
-['Babor:', document.getElementById('horas-babor').value || '-'],
-['Estribor:', document.getElementById('horas-estribor').value || '-'],
-['Central:', document.getElementById('horas-central').value || '-'],
-['Generador:', document.getElementById('horas-generador').value || '-']
-];
-
-horas.forEach(([label, value]) => {
-doc.text(label, 15, y);
-doc.text(value, 60, y);
-y += 5;
-});
-
-// ===== OBSERVACIONES =====
-const obs = document.getElementById('observaciones').value;
-if(obs){
-y += 5;
-if(y > pageHeight - 40){
-doc.addPage();
-y = 20;
+// Verificaciones
+addSection('VERIFICACIONES');
+var vL=['Fotos de sentinas','Foto proa','Foto amura babor','Foto amura estribor','Foto aleta babor','Foto aleta estribor','Foto colas','Foto ejes/IPS','Limpieza sentinas','Sistema dirección','Presión aceite motor','Amperímetro','Voltímetro','Cuenta horas','Temperatura motor','Temperatura agua','Nivel de aceite','Nivel de agua','Bombas de achique','Funcionamiento WC','Estado baterías','Luces navegación','Luces señal','Pulsador start','Inversor','Alarma sentinas','Bocina','Extintores','Aros salvavidas','Chalecos','Bengalas','Cabo remolque','Pérdidas aceite/agua','Desgaste escobillas','Comprobar próx ITB','Revisión casco','Revisión hélice','Revisión timón','Ánodos','Soportes motor','Silentbloks','Gomas escape','Fuelles cola','Sonda','Válvulas fondo','Cierres eje','Tobera proa','Filtros agua','Filtros gas-oil','Refrigerante','Aceite hidráulico'];
+var col=0;var startY=y;
+for(var i=0;i<52;i++){
+if(y>ph-15){doc.addPage();y=20;col=0;}
+var x=15+(col*97);
+doc.setFontSize(8);doc.text(verif['v'+i]?'[X]':'[ ]',x,y);doc.text(vL[i]||('V'+(i+1)),x+7,y);
+if(notas['v'+i]){y+=3;doc.setFontSize(7);doc.setTextColor(100,100,100);doc.text('→ '+notas['v'+i].substring(0,40),x+7,y);doc.setFontSize(8);doc.setTextColor(0,0,0);}
+col++;if(col>=2){col=0;y+=5;}
 }
+if(col>0)y+=5;y+=4;
 
-doc.setFont(undefined, 'bold');
-doc.text('OBSERVACIONES', 15, y);
-y += 5;
-doc.setFont(undefined, 'normal');
+// Observaciones
+if(insp.observaciones){
+addSection('OBSERVACIONES');
+var lines=doc.splitTextToSize(insp.observaciones,pw-30);
+lines.forEach(l=>{if(y>ph-15){doc.addPage();y=20;}doc.setFontSize(9);doc.text(l,15,y);y+=5;});
+y+=4;}
 
-const lines = doc.splitTextToSize(obs, pageWidth - 30);
-lines.forEach(line => {
-if(y > pageHeight - 15){
-doc.addPage();
-y = 20;
-}
-doc.text(line, 15, y);
-y += 5;
-});
-}
-
-// ===== FOTOS EN DRIVE =====
-// v3.0: Mostrar URLs de Drive en el PDF (las fotos están en Drive, no incrustadas)
-var drivePhotos = [];
-for(var k in data.photoReport){ if(data.photoReport[k]&&data.photoReport[k].length>0) drivePhotos.push(k); }
-for(var k in data.verificationPhotoFiles){ drivePhotos.push(k+'_verif'); }
-if(drivePhotos.length > 0){
-y += 5;
-if(y > pageHeight - 40){ doc.addPage(); y = 20; }
-doc.setFontSize(11);
-doc.setFont(undefined, 'bold');
-doc.setTextColor(0,61,130);
-doc.text('FOTOS (almacenadas en Google Drive)', 15, y);
-doc.setTextColor(0,0,0);
-y += 6;
+// Fotos Drive
+var fotosKeys=Object.keys(fotos);
+if(fotosKeys.length>0){
+addSection('FOTOS ('+fotosKeys.length+' en Google Drive)');
 doc.setFontSize(9);
-doc.setFont(undefined, 'normal');
-doc.text('Se registraron '+drivePhotos.length+' foto(s). Accede al Panel PC de Viamar para verlas.', 15, y);
-y += 5;
+doc.text('Las fotos están almacenadas en Google Drive. URLs:',15,y);y+=6;
+fotosKeys.forEach(k=>{
+if(y>ph-15){doc.addPage();y=20;}
+doc.setFontSize(8);doc.text('• '+getPhotoLabel(k)+': '+fotos[k].substring(0,80),15,y);y+=5;
+});}
+
+// Footer
+var totalPages=doc.internal.getNumberOfPages();
+for(var p=1;p<=totalPages;p++){
+doc.setPage(p);doc.setFontSize(8);doc.setTextColor(150,150,150);
+doc.text('Náutica Viamar - Panel PC v3.0',15,ph-10);
+doc.text('Página '+p+' de '+totalPages,pw-40,ph-10);
+}
+var fname='Inspeccion_'+(insp.embarcacion||'').replace(/ /g,'_')+'_'+(insp.tipo||'')+'_'+(insp.id||'').substr(-8)+'.pdf';
+doc.save(fname);
 }
 
-// ===== DATOS DE VARADA (solo botadura) =====
-if(type === 'botadura' && lastVarada){
-y += 10;
-if(y > pageHeight - 60){
-doc.addPage();
-y = 20;
+// ====== EXPORT CSV ======
+function exportCSV(){
+var rows=[['ID','Fecha','Embarcacion','Modelo','Tipo','Cliente','Tecnico','Estado','Cerrada','Fotos','Horas Babor','Horas Estribor','Horas Central','Horas Generador','Motores','Colas','Amarre']];
+filteredInspections.forEach(i=>{
+rows.push([i.id,formatDate(i.fecha),i.embarcacion,i.modelo,i.tipo,i.cliente,i.tecnico,i.estado,i.cerrada,getFotosCount(i),i.horasBabor,i.horasEstribor,i.horasCentral,i.horasGenerador,i.motores,i.colas,i.amarre]);
+});
+var csv=rows.map(r=>r.map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
+var a=document.createElement('a');
+a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+a.download='Inspecciones_Viamar_'+new Date().toISOString().slice(0,10)+'.csv';
+a.click();
 }
 
-doc.setFontSize(11);
-doc.setFont(undefined, 'bold');
-doc.setTextColor(0, 61, 130);
-doc.text('DATOS DE VARADA ANTERIOR (Referencia)', 15, y);
-doc.setTextColor(0, 0, 0);
-y += 6;
+// ====== NAVIGATION ======
+function showPage(id){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+document.getElementById('page-'+id).classList.add('active');
+document.getElementById('nav-'+id).classList.add('active');
+}
 
-doc.setFontSize(9);
-doc.setFont(undefined, 'normal');
-
-// Mostrar medidores de varada
+// ====== UTILS ======
+function parseDate(str){
+if(!str)return null;
 try{
-var medBV = JSON.parse(lastVarada.medidoresBaborJson || '{}');
-var medEV = JSON.parse(lastVarada.medidoresEstribOrJson || '{}');
-var medCV = JSON.parse(lastVarada.medidoresCentralJson || '{}');
-
-const medLabels = ['RPM', 'Aceite', 'Temp', 'Volt', 'Tank'];
-
-doc.setFont(undefined, 'bold');
-doc.text('Medidores Babor:', 15, y);
-y += 4;
-doc.setFont(undefined, 'normal');
-for(let i=0; i<5; i++){
-if(medBV['mb'+i]){
-doc.text(medLabels[i] + ': ' + medBV['mb'+i], 20, y);
-y += 4;
-}
+  // Try dd/MM/yyyy
+  var m=String(str).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m)return new Date(parseInt(m[3]),parseInt(m[2])-1,parseInt(m[1]));
+  // ISO
+  var d=new Date(str);
+  return isNaN(d)?null:d;
+}catch(e){return null;}
 }
 
-y += 2;
-doc.setFont(undefined, 'bold');
-doc.text('Medidores Estribor:', 15, y);
-y += 4;
-doc.setFont(undefined, 'normal');
-for(let i=0; i<5; i++){
-if(medEV['me'+i]){
-doc.text(medLabels[i] + ': ' + medEV['me'+i], 20, y);
-y += 4;
-}
+function formatDate(str){
+if(!str)return '—';
+var d=parseDate(str);
+if(!d)return String(str).split('T')[0];
+return d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
 }
 
-y += 2;
-doc.setFont(undefined, 'bold');
-doc.text('Medidores Central:', 15, y);
-y += 4;
-doc.setFont(undefined, 'normal');
-for(let i=0; i<5; i++){
-if(medCV['mc'+i]){
-doc.text(medLabels[i] + ': ' + medCV['mc'+i], 20, y);
-y += 4;
+function showLoading(msg){
+document.getElementById('loading-overlay').style.display='flex';
+document.getElementById('loading-msg').textContent=msg||'Cargando...';
 }
-}
-}catch(e){
-console.warn('Error mostrando datos varada:', e);
-}
-}
+function hideLoading(){document.getElementById('loading-overlay').style.display='none';}
 
-// ===== PIE DE PÁGINA =====
-const totalPages = doc.internal.getNumberOfPages();
-for(let i=1; i<=totalPages; i++){
-doc.setPage(i);
-doc.setFontSize(8);
-doc.setTextColor(150, 150, 150);
-doc.text('Náutica Viamar - Ibiza', 15, pageHeight - 10);
-doc.text('Página ' + i + ' de ' + totalPages, pageWidth - 40, pageHeight - 10);
-}
-
-// Guardar PDF
-const filename = 'Inspeccion_' + boat.replace(/ /g, '_') + '_' + type + '_' + new Date().toISOString().slice(0,10) + '.pdf';
-doc.save(filename);
-
-hideLoading();
-showMsg('message-area', '✅ PDF generado: ' + filename, 'success');
-
-}catch(error){
-hideLoading();
-console.error('Error generando PDF:', error);
-alert('Error generando PDF: ' + error.message);
-}
-}
-
-function generatePDFFromHistory(id){alert('Función PDF en desarrollo');}
-function showLoading(msg){document.getElementById('loading').textContent=msg||'Procesando...';document.getElementById('loading').style.display='block';}
-function hideLoading(){document.getElementById('loading').style.display='none';}
-function showMsg(id,msg,type){var el=document.getElementById(id);el.textContent=msg;el.className='message-area '+type;el.style.display='block';setTimeout(()=>el.style.display='none',5000);}
-
-// INICIALIZAR SISTEMA OFFLINE AL CARGAR
-window.addEventListener('DOMContentLoaded',function(){
-initOfflineSystem();
-console.log('Sistema offline inicializado');
+// Close modal on overlay click
+document.getElementById('detail-modal').addEventListener('click',function(e){
+if(e.target===this)closeModal();
 });
 
+// Enter key login
+document.addEventListener('keydown',function(e){
+if(e.key==='Enter'&&document.getElementById('login-page').style.display!=='none') pcLogin();
+});
 </script>
 </body>
 </html>
