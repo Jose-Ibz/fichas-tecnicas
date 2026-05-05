@@ -979,6 +979,8 @@ var data={checklistPrevio:{},verificaciones:{},notas:{},medidoresBabor:{},medido
 var currentNoteId='';
 var isOnline=navigator.onLine;
 var syncInterval=null;
+var esContinuacion=false;
+var inheritedFotosUrls={};
 
 // ========== UPLOAD STATUS TRACKING ==========
 var uploadStatus = {}; // {photoId: 'pending'|'uploading'|'done'|'error', url: string}
@@ -1116,7 +1118,7 @@ fetch(SCRIPT_URL+'?action=login&username='+encodeURIComponent(user)+'&password='
 .then(result=>{
 hideLoading();
 if(result.success){
-currentUser=result.user.name;
+currentUser=result.user;
 document.getElementById('current-user').textContent=currentUser;
 document.getElementById('login-section').style.display='none';
 document.getElementById('main-section').style.display='block';
@@ -1193,10 +1195,12 @@ if(!lastVarada)return;
 try{
 var checkPrev=JSON.parse(lastVarada.checklistPrevioJson||'{}');
 for(var k in checkPrev){if(checkPrev[k])document.getElementById(k).checked=true;}
+data.checklistPrevio=checkPrev;
 }catch(e){}
 try{
-var verif=JSON.parse(lastVarada.verificacionesJson||'{}');
-for(var k in verif){if(verif[k])document.getElementById(k).checked=true;}
+var verif=JSON.parse(lastVarada.checklistVerificacionesJson||lastVarada.verificacionesJson||'{}');
+for(var k in verif){if(verif[k]&&!String(k).endsWith('_photo'))document.getElementById(k)&&(document.getElementById(k).checked=true);}
+data.verificaciones=Object.assign({},verif);
 }catch(e){}
 try{
 var notas=JSON.parse(lastVarada.notasJson||'{}');
@@ -1239,6 +1243,9 @@ document.getElementById('horas-central').value=lastVarada.horasCentral||'';
 document.getElementById('horas-generador').value=lastVarada.horasGenerador||'';
 document.getElementById('observaciones').value=lastVarada.observaciones||'';
 updateCharCounter();
+esContinuacion=true;
+try{inheritedFotosUrls=JSON.parse(lastVarada.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
+renderDriveFotosEnFormulario(inheritedFotosUrls);
 showMsg('message-area','Varada cargada. Puedes continuar trabajando.','success');
 document.getElementById('import-section').style.display='none';
 }
@@ -1336,6 +1343,78 @@ document.getElementById('horas-generador').value=lastVarada.horasGenerador||'';
 
 showMsg('message-area','Datos de varada importados. Horas pre-rellenadas. Notas y medidores visibles.','success');
 document.getElementById('import-section').style.display='none';
+}
+
+function renderDriveFotosEnFormulario(fotosJson){
+try{
+var fotos=typeof fotosJson==='string'?JSON.parse(fotosJson):fotosJson;
+Object.keys(fotos).forEach(function(k){
+var url=fotos[k];if(!url)return;
+var fileId=url.match(/\/d\/([^\/]+)\//);
+var thumbUrl=fileId?'https://drive.google.com/thumbnail?id='+fileId[1]+'&sz=w300':null;
+if(/^f\d$/.test(k)){
+var preview=document.getElementById('preview-'+k);
+var item=document.getElementById('photo-'+k+'-item');
+if(preview)preview.innerHTML=(thumbUrl?'<a href="'+url+'" target="_blank"><img src="'+thumbUrl+'" class="photo-preview" onerror="this.style.display=\'none\'"></a>':'')+'<div style="font-size:11px;color:#888;margin-top:4px">📂 Guardada en Drive</div>';
+if(item)item.classList.add('has-photo');
+}else if(k.endsWith('_verif')){
+var verifId=k.replace('_verif','');
+var container=document.getElementById(verifId+'-photo-container');
+if(container){container.innerHTML=(thumbUrl?'<a href="'+url+'" target="_blank"><img src="'+thumbUrl+'" class="check-item-photo" onerror="this.style.display=\'none\'"></a>':'<a href="'+url+'" target="_blank" style="font-size:10px;color:#003d82">🔗 Drive</a>')+'<div style="font-size:10px;color:#888">📂 Drive</div>';container.style.display='block';}
+}
+});
+}catch(e){console.warn('Error renderizando fotos Drive:',e);}
+}
+
+function continuarDesdeHistorial(id){
+showLoading('Cargando inspección...');
+fetch(SCRIPT_URL+'?action=getInspection&id='+id)
+.then(function(r){return r.json();})
+.then(function(result){
+hideLoading();
+if(!result.success){showMsg('message-area','Error: '+(result.message||'No encontrado'),'error');return;}
+var insp=result.inspection||result.data;
+if(!insp){showMsg('message-area','Error al leer datos','error');return;}
+document.getElementById('boat-name').value=insp.embarcacion;
+document.getElementById('modelo').value=insp.modelo||'';
+document.getElementById('inspection-type').value=insp.tipo;
+currentInspType=insp.tipo;
+document.getElementById('cliente').value=insp.cliente||'';
+document.getElementById('motores').value=insp.motores||'';
+document.getElementById('colas').value=insp.colas||'';
+document.getElementById('motor-babor').value=insp.motorBabor||'';
+document.getElementById('motor-estribor').value=insp.motorEstribor||'';
+document.getElementById('motor-central').value=insp.motorCentral||'';
+document.getElementById('motor-aux-num').value=insp.motorAuxiliarNum||'';
+document.getElementById('motor-aux-modelo').value=insp.motorAuxiliarModelo||'';
+document.getElementById('llaves').value=insp.llaves||'';
+document.getElementById('cabina').value=insp.cabina||'';
+document.getElementById('amarre').value=insp.amarre||'';
+document.getElementById('paso-helice').value=insp.pasoHelice||'';
+document.getElementById('date-varada').value=insp.fechaVarada||'';
+document.getElementById('horas-babor').value=insp.horasBabor||'';
+document.getElementById('horas-estribor').value=insp.horasEstribor||'';
+document.getElementById('horas-central').value=insp.horasCentral||'';
+document.getElementById('horas-generador').value=insp.horasGenerador||'';
+document.getElementById('observaciones').value=insp.observaciones||'';
+try{var cp=JSON.parse(insp.checklistPrevioJson||'{}');for(var k in cp){var el=document.getElementById(k);if(el)el.checked=cp[k];}data.checklistPrevio=cp;}catch(e){}
+try{var v=JSON.parse(insp.checklistVerificacionesJson||insp.verificacionesJson||'{}');for(var k in v){if(!String(k).endsWith('_photo')){var el=document.getElementById(k);if(el)el.checked=v[k];}}data.verificaciones=Object.assign({},v);}catch(e){}
+try{var n=JSON.parse(insp.notasJson||'{}');data.notas=n;for(var k in n){if(n[k]){var it=document.getElementById(k+'-item');if(it)it.classList.add('with-note');}}}catch(e){}
+try{var mb=JSON.parse(insp.medidoresBaborJson||'{}');for(var k in mb){var el=document.getElementById(k);if(el)el.value=mb[k];}}catch(e){}
+try{var me=JSON.parse(insp.medidoresEstribOrJson||'{}');for(var k in me){var el=document.getElementById(k);if(el)el.value=me[k];}}catch(e){}
+try{var mc=JSON.parse(insp.medidoresCentralJson||'{}');for(var k in mc){var el=document.getElementById(k);if(el)el.value=mc[k];}}catch(e){}
+lastVarada=insp;
+esContinuacion=true;
+try{inheritedFotosUrls=JSON.parse(insp.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
+renderDriveFotosEnFormulario(inheritedFotosUrls);
+document.getElementById('checklist-previo-section').style.display='block';
+document.getElementById('photo-report-section').style.display='block';
+document.querySelectorAll('.tab').forEach(function(t,i){if(i===0)t.classList.add('active');else t.classList.remove('active');});
+document.querySelectorAll('.tab-content').forEach(function(t){t.classList.remove('active');});
+document.getElementById('tab-nueva').classList.add('active');
+updateCharCounter();
+showMsg('message-area','▶️ Varada cargada. Continúa desde donde la dejaste.','success');
+}).catch(function(err){hideLoading();showMsg('message-area','Error de conexión','error');});
 }
 
 function updateCheck(id){
@@ -1530,8 +1609,9 @@ medidoresBabor:data.medidoresBabor,
 medidoresEstribor:data.medidoresEstribor,
 medidoresCentral:data.medidoresCentral,
 photoReport:{}, // v3.0: sin base64
-fotosUrls:{},   // v3.0: URLs de Drive, se rellenan abajo
+fotosUrls:Object.assign({},inheritedFotosUrls),
 varadaImportada:lastVarada?lastVarada.id:'',
+esContinuacion:esContinuacion,
 estadoInspeccion:estado,
 porcentajeCompleto:pctCompleto
 };
@@ -1648,6 +1728,8 @@ if(container){container.innerHTML='';container.style.display='none';}
 
 data={checklistPrevio:{},verificaciones:{},notas:{},medidoresBabor:{},medidoresEstribor:{},medidoresCentral:{},photoReport:{},photoFiles:{},verificationPhotoFiles:{},alerts:{}};
 lastVarada=null;
+esContinuacion=false;
+inheritedFotosUrls={};
 document.getElementById('import-section').style.display='none';
 document.getElementById('pdf-btn').style.display='none';
 updateCharCounter();
@@ -1675,6 +1757,7 @@ html+='<div class="history-date">'+formatFecha(item.fecha)+'</div>';
 html+='<div class="history-info"><strong>'+item.embarcacion+'</strong> - '+(item.tipo||'').toUpperCase()+'<br>'+item.tecnico+'</div>';
 html+='<button class="history-btn" onclick="verInspeccion(\''+item.id+'\')">VER</button>';
 html+='<button class="history-btn" onclick="generatePDFFromHistory(\''+item.id+'\')">PDF</button>';
+if((item.tipo||'').toLowerCase()==='varada'&&item.cerrada!=='SI'){html+='<button class="history-btn" style="background:#ff9800" onclick="continuarDesdeHistorial(\''+item.id+'\')">▶ CONTINUAR</button>';}
 html+='</div>';
 });
 document.getElementById('history-list').innerHTML=html||'<p>No hay inspecciones</p>';
@@ -1712,8 +1795,8 @@ document.getElementById('horas-estribor').value=insp.horasEstribor||'';
 document.getElementById('horas-central').value=insp.horasCentral||'';
 document.getElementById('horas-generador').value=insp.horasGenerador||'';
 document.getElementById('observaciones').value=insp.observaciones||'';
-try{var cp=JSON.parse(insp.checklistPrevioJson||'{}');for(var k in cp){var el=document.getElementById(k);if(el)el.checked=cp[k];}}catch(e){}
-try{var v=JSON.parse(insp.verificacionesJson||'{}');for(var k in v){var el=document.getElementById(k);if(el)el.checked=v[k];}}catch(e){}
+try{var cp=JSON.parse(insp.checklistPrevioJson||'{}');for(var k in cp){var el=document.getElementById(k);if(el)el.checked=cp[k];}data.checklistPrevio=cp;}catch(e){}
+try{var v=JSON.parse(insp.checklistVerificacionesJson||insp.verificacionesJson||'{}');for(var k in v){if(!String(k).endsWith('_photo')){var el=document.getElementById(k);if(el)el.checked=v[k];}}data.verificaciones=Object.assign({},v);}catch(e){}
 try{var n=JSON.parse(insp.notasJson||'{}');data.notas=n;for(var k in n){if(n[k])document.getElementById(k+'-item').classList.add('with-note');}}catch(e){}
 try{var mb=JSON.parse(insp.medidoresBaborJson||'{}');for(var k in mb){var el=document.getElementById(k);if(el)el.value=mb[k];}}catch(e){}
 try{var me=JSON.parse(insp.medidoresEstribOrJson||'{}');for(var k in me){var el=document.getElementById(k);if(el)el.value=me[k];}}catch(e){}
