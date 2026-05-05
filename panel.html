@@ -158,11 +158,32 @@ tr:hover td{background:#fafbff}
 .nota-label{font-weight:700;color:#333;font-size:11px;text-transform:uppercase;margin-bottom:4px}
 .nota-text{color:#555}
 
+/* ---- POR BARCO ---- */
+.barco-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:20px}
+.barco-chip{background:white;border-radius:10px;padding:14px 18px;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.06);border:2px solid transparent;transition:all .2s;display:flex;align-items:center;justify-content:space-between}
+.barco-chip:hover{border-color:#003d82;background:#f0f6ff}
+.barco-chip strong{color:#1a2e4a;font-size:14px}
+.barco-chip span{font-size:11px;color:#888;background:#f0f0f0;padding:2px 8px;border-radius:10px}
+.timeline-header{display:flex;align-items:center;gap:16px;margin-bottom:24px}
+.timeline-back{background:none;border:none;color:#003d82;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:6px;padding:8px 12px;border-radius:6px;transition:background .2s}
+.timeline-back:hover{background:#e3f0ff}
+.timeline-cards{display:flex;flex-direction:column;gap:16px}
+.timeline-card{background:white;border-radius:12px;padding:20px 24px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:4px solid #ddd;display:grid;grid-template-columns:140px 1fr auto;gap:16px;align-items:center}
+.timeline-card.varada{border-left-color:#003d82}
+.timeline-card.botadura{border-left-color:#4caf50}
+.timeline-date{font-size:13px;color:#888}
+.timeline-date strong{display:block;font-size:15px;color:#1a2e4a;margin-bottom:4px}
+.timeline-metrics{display:flex;gap:20px;flex-wrap:wrap;margin-top:6px}
+.metric{font-size:12px;color:#555}
+.metric strong{color:#1a2e4a}
+.horas-evolucion{background:#f0f6ff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#333;border-left:4px solid #003d82;line-height:1.8}
+
 /* RESPOSIVE */
 @media(max-width:1200px){
 .stats-grid{grid-template-columns:repeat(2,1fr)}
 .charts-grid{grid-template-columns:1fr}
 .verif-grid{grid-template-columns:repeat(2,1fr)}
+.timeline-card{grid-template-columns:1fr}
 }
 </style>
 </head>
@@ -210,6 +231,9 @@ tr:hover td{background:#fafbff}
 </div>
 <div class="nav-item" onclick="showPage('estadisticas')" id="nav-estadisticas">
 <span class="nav-icon">📈</span><span>Estadísticas</span>
+</div>
+<div class="nav-item" onclick="showPage('barco')" id="nav-barco">
+<span class="nav-icon">🚤</span><span>Por Barco</span>
 </div>
 </div>
 <div class="sidebar-user">
@@ -378,6 +402,29 @@ tr:hover td{background:#fafbff}
 <h3>👷 Actividad por Técnico</h3>
 <div id="chart-tecnicos" class="bar-chart"></div>
 </div>
+</div>
+</div>
+
+<!-- POR BARCO -->
+<div id="page-barco" class="page">
+<div class="topbar"><h1>🚤 Por Barco</h1></div>
+<div id="barco-search-section">
+<div class="filters-bar" style="margin-bottom:0">
+<div class="filter-group">
+<label>Buscar embarcación</label>
+<input type="text" id="barco-search" placeholder="Nombre del barco..." oninput="renderBarcoList()">
+</div>
+</div>
+<div id="barco-list" class="barco-list"></div>
+</div>
+<div id="barco-timeline-section" style="display:none">
+<div class="timeline-header">
+<button class="timeline-back" onclick="volverBarcoList()">← Volver</button>
+<h2 id="barco-selected-name" style="font-size:18px;color:#1a2e4a;font-weight:700"></h2>
+<span id="barco-selected-count" class="badge badge-varada"></span>
+</div>
+<div id="barco-horas-evolucion" class="horas-evolucion" style="display:none"></div>
+<div id="barco-timeline" class="timeline-cards"></div>
 </div>
 </div>
 
@@ -1207,6 +1254,7 @@ if(id==='dashboard')renderDashboard();
 else if(id==='inspecciones'){buildYearFilter();applyFilters();}
 else if(id==='estadisticas')renderStats();
 else if(id==='fotos')applyGalleryFilter();
+else if(id==='barco')renderBarcoPage();
 }
 
 // ====== UTILS ======
@@ -1253,6 +1301,96 @@ function showAppMsg(msg){
 document.getElementById('detail-modal').addEventListener('click',function(e){
 if(e.target===this)closeModal();
 });
+
+// ====== POR BARCO ======
+function renderBarcoPage(){
+document.getElementById('barco-search-section').style.display='block';
+document.getElementById('barco-timeline-section').style.display='none';
+document.getElementById('barco-search').value='';
+renderBarcoList();
+}
+
+function renderBarcoList(){
+var q=(document.getElementById('barco-search').value||'').toLowerCase();
+var counts={};
+allInspections.forEach(function(i){
+var b=i.embarcacion||'';if(!b)return;
+if(q&&!b.toLowerCase().includes(q))return;
+counts[b]=(counts[b]||0)+1;
+});
+var boats=Object.keys(counts).sort();
+if(boats.length===0){
+document.getElementById('barco-list').innerHTML='<p style="color:#aaa;grid-column:1/-1;padding:20px">No se encontraron embarcaciones</p>';
+return;
+}
+document.getElementById('barco-list').innerHTML=boats.map(function(b){
+return '<div class="barco-chip" onclick="selectBarco(\''+b.replace(/\\/g,'\\\\').replace(/'/g,"\\'")+'\')">'
++'<strong>'+b+'</strong><span>'+counts[b]+' insp.</span></div>';
+}).join('');
+}
+
+function selectBarco(nombre){
+var insps=allInspections.filter(function(i){return i.embarcacion===nombre;});
+insps.sort(function(a,b){var da=parseDate(a.fecha),db=parseDate(b.fecha);return(da&&db)?(da-db):0;});
+document.getElementById('barco-search-section').style.display='none';
+document.getElementById('barco-timeline-section').style.display='block';
+document.getElementById('barco-selected-name').textContent=nombre;
+document.getElementById('barco-selected-count').textContent=insps.length+' inspecciones';
+
+// Evolución de horas (solo registros que tengan horas)
+var conHoras=insps.filter(function(i){return i.horasBabor||i.horasEstribor||i.horasCentral;});
+if(conHoras.length>=2){
+var evol=conHoras.map(function(i){
+  var parts=[];
+  if(i.horasBabor)parts.push('B:'+i.horasBabor+'h');
+  if(i.horasEstribor)parts.push('E:'+i.horasEstribor+'h');
+  if(i.horasCentral)parts.push('C:'+i.horasCentral+'h');
+  return '<strong>'+formatDate(i.fecha)+'</strong> '+parts.join(' | ');
+}).join(' &nbsp;→&nbsp; ');
+document.getElementById('barco-horas-evolucion').innerHTML='⏱ <strong>Evolución horas motor:</strong> &nbsp;'+evol;
+document.getElementById('barco-horas-evolucion').style.display='block';
+}else{
+document.getElementById('barco-horas-evolucion').style.display='none';
+}
+
+// Tarjetas de la línea de tiempo
+var html=insps.map(function(insp){
+var tipo=(insp.tipo||'').toLowerCase();
+var fotos=getFotosCount(insp);
+var totalNotas=Object.keys(insp._notas||{}).filter(function(k){return insp._notas[k];}).length;
+var totalVerif=Object.keys(insp._verif||{}).filter(function(k){return !String(k).endsWith('_photo')&&insp._verif[k];}).length;
+var pct=Math.round(totalVerif/52*100);
+var pctColor=pct>=80?'#4caf50':pct>=50?'#ff9800':'#f44336';
+var estadoBadge=insp.estado==='CERRADA'?'badge-completed':insp.estado==='EN CURSO'?'badge-partial':'badge-partial';
+return '<div class="timeline-card '+tipo+'">'
++'<div class="timeline-date"><strong>'+formatDate(insp.fecha)+'</strong>'
++'<span class="badge badge-'+tipo+'" style="margin-top:4px;display:inline-block">'+tipo.toUpperCase()+'</span></div>'
++'<div>'
++'<div style="font-size:12px;color:#888;margin-bottom:8px">👷 '+insp.tecnico
++' &nbsp;·&nbsp; <span class="badge '+estadoBadge+'">'+insp.estado+'</span></div>'
++(insp.horasBabor||insp.horasEstribor||insp.horasCentral?
+'<div class="timeline-metrics">'
++(insp.horasBabor?'<div class="metric">⚓ Babor <strong>'+insp.horasBabor+'h</strong></div>':'')
++(insp.horasEstribor?'<div class="metric">⚓ Estribor <strong>'+insp.horasEstribor+'h</strong></div>':'')
++(insp.horasCentral?'<div class="metric">⚓ Central <strong>'+insp.horasCentral+'h</strong></div>':'')
++'</div>':'')
++'<div class="timeline-metrics" style="margin-top:6px">'
++'<div class="metric">✅ <strong style="color:'+pctColor+'">'+pct+'%</strong> verif. ('+totalVerif+'/52)</div>'
++(totalNotas?'<div class="metric">📝 <strong>'+totalNotas+'</strong> notas</div>':'')
++(fotos?'<div class="metric">📷 <strong>'+fotos+'</strong> fotos</div>':'')
++'</div>'
++(insp.observaciones?'<div style="font-size:12px;color:#777;margin-top:8px;font-style:italic">«'+insp.observaciones.substring(0,120)+(insp.observaciones.length>120?'…':'')+'»</div>':'')
++'</div>'
++'<button class="btn btn-outline btn-sm" onclick="openInspDetail(\''+insp.id+'\')">Ver →</button>'
++'</div>';
+}).join('');
+document.getElementById('barco-timeline').innerHTML=html||'<p style="color:#aaa">Sin inspecciones registradas</p>';
+}
+
+function volverBarcoList(){
+document.getElementById('barco-search-section').style.display='block';
+document.getElementById('barco-timeline-section').style.display='none';
+}
 
 // Enter key login
 document.addEventListener('keydown',function(e){
