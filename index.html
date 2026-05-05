@@ -1082,19 +1082,39 @@ indicator.textContent='🔄';
 text.textContent='Sincronizando...';
 
 var promises=pending.map(function(item){
+var inspData=item.data;
+var offlinePhotos=inspData._offlinePhotos||{};
+delete inspData._offlinePhotos;
+var photoIds=Object.keys(offlinePhotos);
+
+// Subir fotos guardadas offline (si las hay) antes de guardar la inspección
+var uploadPromises=photoIds.map(function(photoId){
 return fetch(SCRIPT_URL,{
 method:'POST',
-body:JSON.stringify({action:'save',data:item.data})
+body:JSON.stringify({
+action:'uploadPhoto',
+base64Data:offlinePhotos[photoId].split(',')[1],
+inspectionData:{embarcacion:inspData.embarcacion,tipo:inspData.tipo,fecha:inspData.fecha},
+photoId:photoId
+})
+})
+.then(function(r){return r.json();})
+.then(function(result){if(result.success)inspData.fotosUrls[photoId]=result.url;})
+.catch(function(){});
+});
+
+return Promise.all(uploadPromises).then(function(){
+return fetch(SCRIPT_URL,{
+method:'POST',
+body:JSON.stringify({action:'save',data:inspData})
 })
 .then(r=>r.json())
 .then(result=>{
-if(result.success){
-removePendingInspection(item.id);
-return{success:true,id:item.id};
-}
+if(result.success){removePendingInspection(item.id);return{success:true,id:item.id};}
 return{success:false,id:item.id};
 })
 .catch(()=>({success:false,id:item.id}));
+});
 });
 
 Promise.all(promises).then(function(results){
@@ -1626,9 +1646,39 @@ localStorage.setItem('lastInspection_'+boat,JSON.stringify(backupData));
 // Si NO hay internet
 if(!isOnline){
 hideLoading();
-savePendingInspection(inspData);
-showMsg('message-area','⚠️ SIN CONEXIÓN - Datos guardados localmente. Las fotos se subirán cuando haya internet.','success');
-document.getElementById('pdf-btn').style.display='inline-block';
+var offlineBlobs={};
+for(var k in data.photoFiles){if(data.photoFiles[k])offlineBlobs[k]=data.photoFiles[k];}
+for(var k in data.verificationPhotoFiles){if(data.verificationPhotoFiles[k])offlineBlobs[k+'_verif']=data.verificationPhotoFiles[k];}
+var blobIds=Object.keys(offlineBlobs);
+if(blobIds.length===0){
+  savePendingInspection(inspData);
+  showMsg('message-area','⚠️ SIN CONEXIÓN - Datos guardados localmente. Se sincronizarán cuando haya internet.','success');
+  document.getElementById('pdf-btn').style.display='inline-block';
+  return;
+}
+// Convertir blobs a base64 para poder guardarlos en localStorage
+var converted=0;
+var offlinePhotos={};
+blobIds.forEach(function(photoId){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    offlinePhotos[photoId]=e.target.result;
+    converted++;
+    if(converted===blobIds.length){
+      inspData._offlinePhotos=offlinePhotos;
+      try{
+        savePendingInspection(inspData);
+        showMsg('message-area','⚠️ SIN CONEXIÓN - Datos y '+blobIds.length+' foto(s) guardadas. Se subirán al recuperar conexión.','success');
+      }catch(storageErr){
+        delete inspData._offlinePhotos;
+        savePendingInspection(inspData);
+        showMsg('message-area','⚠️ SIN CONEXIÓN - Datos guardados. Las fotos no caben en el almacenamiento local y se perderán al sincronizar.','error');
+      }
+      document.getElementById('pdf-btn').style.display='inline-block';
+    }
+  };
+  reader.readAsDataURL(offlineBlobs[photoId]);
+});
 return;
 }
 
@@ -1744,7 +1794,9 @@ return s;
 }
 function loadHistory(){
 showLoading('Cargando historial...');
-fetch(SCRIPT_URL+'?action=getHistory&user='+encodeURIComponent(currentUser)+'&username='+encodeURIComponent(currentUser))
+var dosAniosAtras=new Date();dosAniosAtras.setFullYear(dosAniosAtras.getFullYear()-2);
+var desdeStr=dosAniosAtras.getFullYear()+'-01-01';
+fetch(SCRIPT_URL+'?action=getHistory&user='+encodeURIComponent(currentUser)+'&username='+encodeURIComponent(currentUser)+'&desde='+desdeStr)
 .then(r=>r.json())
 .then(result=>{
 hideLoading();
