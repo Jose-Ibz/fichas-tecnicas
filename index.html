@@ -1866,10 +1866,13 @@ photoIds.forEach(function(photoId) {
     photosBase64.push({photoId: photoId, base64Data: e.target.result});
     readCount++;
     if(readCount === totalPhotos) {
-      // Paso 2: enviar todo en una sola llamada al GAS
+      // Paso 2: enviar todo en una sola llamada al GAS (timeout 90s)
       showLoading('Subiendo '+totalPhotos+' foto(s) a Drive...');
+      var batchController = new AbortController();
+      var batchTimeout = setTimeout(function(){ batchController.abort(); }, 90000);
       fetch(SCRIPT_URL, {
         method: 'POST',
+        signal: batchController.signal,
         body: JSON.stringify({
           action: 'uploadPhotoBatch',
           photos: photosBase64,
@@ -1880,7 +1883,7 @@ photoIds.forEach(function(photoId) {
           }
         })
       })
-      .then(function(r){ return r.json(); })
+      .then(function(r){ clearTimeout(batchTimeout); return r.json(); })
       .then(function(result) {
         var errorCount = 0;
         if(result.success && result.results) {
@@ -1910,28 +1913,41 @@ photoIds.forEach(function(photoId) {
 });
 }
 
-function _doSaveInspection(inspData, estado, pctCompleto){
+function _doSaveInspection(inspData, estado, pctCompleto, _retry){
+var retry = _retry || 0;
 fetch(SCRIPT_URL,{
 method:'POST',
 body:JSON.stringify({action:'save',data:inspData})
 })
 .then(r=>r.json())
 .then(result=>{
+if(result.success){
 hideLoading();
 document.getElementById('upload-progress').style.display='none';
-if(result.success){
 var fotosCount=Object.keys(inspData.fotosUrls||{}).length;
-showMsg('message-area','✅ Inspección guardada en Drive. '+fotosCount+' foto(s) subida(s). ('+estado+' - '+pctCompleto+'%).','success');
+showMsg('message-area','✅ Inspección guardada. '+fotosCount+' foto(s). ('+estado+' - '+pctCompleto+'%).','success');
 document.getElementById('pdf-btn').style.display='inline-block';
 }else{
-savePendingInspection(inspData);
-showMsg('message-area','⚠️ Error del servidor. Guardado LOCAL, se reintentará.','success');
-}
-}).catch(err=>{
+if(retry < 2){
+showLoading('Reintentando guardado ('+(retry+1)+'/2)...');
+setTimeout(function(){_doSaveInspection(inspData,estado,pctCompleto,retry+1);},3000);
+}else{
 hideLoading();
 document.getElementById('upload-progress').style.display='none';
 savePendingInspection(inspData);
-showMsg('message-area','⚠️ Error de conexión. Guardado LOCAL.','success');
+showMsg('message-area','⚠️ Error del servidor. Guardado LOCAL, se sincronizará automáticamente.','success');
+}
+}
+}).catch(function(err){
+if(retry < 2){
+showLoading('Sin respuesta, reintentando ('+(retry+1)+'/2)...');
+setTimeout(function(){_doSaveInspection(inspData,estado,pctCompleto,retry+1);},4000);
+}else{
+hideLoading();
+document.getElementById('upload-progress').style.display='none';
+savePendingInspection(inspData);
+showMsg('message-area','⚠️ Error de conexión. Guardado LOCAL, se sincronizará cuando haya internet.','success');
+}
 });
 }
 
