@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viamar - Borrar cola</title>
+<style>
+body{font-family:Arial,sans-serif;background:#003d82;min-height:100vh;display:flex;align-items:center;justify-content:center;margin:0}
+.card{background:white;border-radius:16px;padding:40px 30px;max-width:380px;width:90%;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,0.3)}
+.icon{font-size:56px;margin-bottom:16px}
+h2{color:#003d82;margin:0 0 10px}
+p{color:#666;font-size:14px;line-height:1.6;margin-bottom:24px}
+.btn{display:block;width:100%;padding:14px;border:none;border-radius:8px;font-size:15px;font-weight:bold;cursor:pointer;margin-bottom:12px;text-decoration:none;box-sizing:border-box}
+.btn-red{background:#f44336;color:white}
+.btn-blue{background:#003d82;color:white}
+.btn-gray{background:#eee;color:#333}
+.result{padding:16px;border-radius:8px;margin-bottom:20px;font-weight:bold;display:none}
+.result.ok{background:#e8f5e9;color:#2e7d32}
+.result.empty{background:#fff3e0;color:#e65100}
+#info{font-size:12px;color:#aaa;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🗑️</div>
+  <h2>Borrar cola pendiente</h2>
+  <p>Esta herramienta elimina las fichas atascadas en este dispositivo.<br>
+  <strong>No borra nada del servidor</strong>, solo lo que está pendiente en el móvil.</p>
+
+  <div class="result ok" id="result-ok">✅ Cola borrada correctamente</div>
+  <div class="result empty" id="result-empty">ℹ️ No había fichas pendientes</div>
+
+  <div id="info"></div>
+
+  <button class="btn btn-red" onclick="borrarCola()">🗑 Borrar fichas pendientes</button>
+  <a class="btn btn-blue" href="index.html">← Volver a la app</a>
+</div>
+
+<script>
+// Mostrar cuántas hay al cargar
+window.onload = function(){
+  try {
+    var p = localStorage.getItem('pendingInspections');
+    var arr = p ? JSON.parse(p) : [];
+    document.getElementById('info').textContent = arr.length > 0
+      ? '⚠️ Hay ' + arr.length + ' ficha(s) pendiente(s) en este dispositivo'
+      : '✅ No hay fichas pendientes ahora mismo';
+  } catch(e) {
+    document.getElementById('info').textContent = 'No se pudo leer el estado';
+  }
+};
+
+function borrarCola(){
+  try {
+    var p = localStorage.getItem('pendingInspections');
+    var arr = p ? JSON.parse(p) : [];
+    if(arr.length === 0){
+      document.getElementById('result-empty').style.display = 'block';
+      document.getElementById('info').textContent = '✅ No había nada que borrar';
+      return;
+    }
+    localStorage.removeItem('pendingInspections');
+    document.getElementById('result-ok').style.display = 'block';
+    document.getElementById('info').textContent = '✅ Se han eliminado ' + arr.length + ' ficha(s) pendiente(s)';
+  } catch(e) {
+    alert('Error: ' + e.message);
+  }
+}
+</script>
+</body>
+</html>
