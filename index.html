@@ -707,6 +707,93 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 </div>
 
 <div class="section">
+<div class="section-title">🛡️ Material de Seguridad</div>
+
+<div style="margin-bottom:18px">
+<h4 style="color:#003d82;margin-bottom:10px;font-size:14px">📋 ITB (Inspección Técnica de Barco)</h4>
+<div class="form-row">
+<div class="form-group">
+<label>Próxima revisión ITB</label>
+<input type="date" id="seg-itb-fecha">
+</div>
+</div>
+</div>
+
+<div style="margin-bottom:18px;border-top:1px solid #eee;padding-top:14px">
+<h4 style="color:#003d82;margin-bottom:10px;font-size:14px">🔴 Pirotecnia</h4>
+<div class="form-row">
+<div class="form-group">
+<label>Caducidad pirotecnia (mes/año)</label>
+<input type="month" id="seg-pirotecnia-fecha">
+</div>
+</div>
+</div>
+
+<div style="margin-bottom:18px;border-top:1px solid #eee;padding-top:14px">
+<h4 style="color:#003d82;margin-bottom:10px;font-size:14px">🛟 Balsa Salvavidas</h4>
+<div class="form-row">
+<div class="form-group">
+<label>¿Tiene balsa?</label>
+<select id="seg-balsa-tiene">
+<option value="">—</option>
+<option value="SI">SÍ</option>
+<option value="NO">NO</option>
+</select>
+</div>
+<div class="form-group">
+<label>Caducidad balsa (mes/año)</label>
+<input type="month" id="seg-balsa-fecha">
+</div>
+</div>
+</div>
+
+<div style="margin-bottom:18px;border-top:1px solid #eee;padding-top:14px">
+<h4 style="color:#003d82;margin-bottom:10px;font-size:14px">📡 Radiobaliza</h4>
+<div class="form-row">
+<div class="form-group">
+<label>¿Tiene radiobaliza?</label>
+<select id="seg-radiobaliza-tiene">
+<option value="">—</option>
+<option value="SI">SÍ</option>
+<option value="NO">NO</option>
+</select>
+</div>
+<div class="form-group">
+<label>Caducidad radiobaliza (mes/año)</label>
+<input type="month" id="seg-radiobaliza-fecha">
+</div>
+</div>
+</div>
+
+<div style="border-top:1px solid #eee;padding-top:14px">
+<h4 style="color:#003d82;margin-bottom:10px;font-size:14px">📻 Radio VHF Bidireccional Zona 2</h4>
+<div class="form-row">
+<div class="form-group">
+<label>¿Tiene VHF?</label>
+<select id="seg-vhf-tiene">
+<option value="">—</option>
+<option value="SI">SÍ</option>
+<option value="NO">NO</option>
+</select>
+</div>
+<div class="form-group">
+<label>¿Tiene batería?</label>
+<select id="seg-vhf-bateria">
+<option value="">—</option>
+<option value="SI">SÍ</option>
+<option value="NO">NO</option>
+</select>
+</div>
+<div class="form-group">
+<label>Caducidad batería VHF (mes/año)</label>
+<input type="month" id="seg-vhf-fecha">
+</div>
+</div>
+</div>
+
+</div>
+
+<div class="section">
 <div class="section-title">Medidores</div>
 <div class="medidores-section">
 
@@ -1446,6 +1533,17 @@ try{var n=JSON.parse(insp.notasJson||'{}');data.notas=n;for(var k in n){if(n[k])
 try{var mb=JSON.parse(insp.medidoresBaborJson||'{}');for(var k in mb){var el=document.getElementById(k);if(el)el.value=mb[k];}}catch(e){}
 try{var me=JSON.parse(insp.medidoresEstribOrJson||'{}');for(var k in me){var el=document.getElementById(k);if(el)el.value=me[k];}}catch(e){}
 try{var mc=JSON.parse(insp.medidoresCentralJson||'{}');for(var k in mc){var el=document.getElementById(k);if(el)el.value=mc[k];}}catch(e){}
+try{var seg=JSON.parse(insp.seguridadJson||'{}');
+document.getElementById('seg-itb-fecha').value=seg.itbFecha||'';
+document.getElementById('seg-pirotecnia-fecha').value=seg.pirotecniaFecha||'';
+document.getElementById('seg-balsa-tiene').value=seg.balsaTiene||'';
+document.getElementById('seg-balsa-fecha').value=seg.balsaFecha||'';
+document.getElementById('seg-radiobaliza-tiene').value=seg.radiobalizaTiene||'';
+document.getElementById('seg-radiobaliza-fecha').value=seg.radiobalizaFecha||'';
+document.getElementById('seg-vhf-tiene').value=seg.vhfTiene||'';
+document.getElementById('seg-vhf-bateria').value=seg.vhfBateria||'';
+document.getElementById('seg-vhf-fecha').value=seg.vhfFecha||'';
+}catch(e){}
 lastVarada=insp;
 esContinuacion=true;
 try{inheritedFotosUrls=JSON.parse(insp.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
@@ -1656,7 +1754,18 @@ fotosUrls:Object.assign({},inheritedFotosUrls),
 varadaImportada:lastVarada?lastVarada.id:'',
 esContinuacion:esContinuacion,
 estadoInspeccion:estado,
-porcentajeCompleto:pctCompleto
+porcentajeCompleto:pctCompleto,
+seguridad:{
+  itbFecha:document.getElementById('seg-itb-fecha').value,
+  pirotecniaFecha:document.getElementById('seg-pirotecnia-fecha').value,
+  balsaTiene:document.getElementById('seg-balsa-tiene').value,
+  balsaFecha:document.getElementById('seg-balsa-fecha').value,
+  radiobalizaTiene:document.getElementById('seg-radiobaliza-tiene').value,
+  radiobalizaFecha:document.getElementById('seg-radiobaliza-fecha').value,
+  vhfTiene:document.getElementById('seg-vhf-tiene').value,
+  vhfBateria:document.getElementById('seg-vhf-bateria').value,
+  vhfFecha:document.getElementById('seg-vhf-fecha').value
+}
 };
 
 // Guardar backup local (sin fotos para no llenar storage)
@@ -1775,7 +1884,7 @@ showMsg('message-area','⚠️ Error de conexión. Guardado LOCAL.','success');
 }
 
 function clearForm(){
-document.querySelectorAll('input[type="text"],input[type="date"],textarea,select').forEach(e=>e.value='');
+document.querySelectorAll('input[type="text"],input[type="date"],input[type="month"],textarea,select').forEach(e=>e.value='');
 document.querySelectorAll('input[type="checkbox"]').forEach(e=>e.checked=false);
 document.querySelectorAll('.check-item').forEach(e=>e.classList.remove('with-note','imported'));
 for(var i=0;i<7;i++)removePhoto('f'+i);
@@ -1868,6 +1977,17 @@ try{var n=JSON.parse(insp.notasJson||'{}');data.notas=n;for(var k in n){if(n[k])
 try{var mb=JSON.parse(insp.medidoresBaborJson||'{}');for(var k in mb){var el=document.getElementById(k);if(el)el.value=mb[k];}}catch(e){}
 try{var me=JSON.parse(insp.medidoresEstribOrJson||'{}');for(var k in me){var el=document.getElementById(k);if(el)el.value=me[k];}}catch(e){}
 try{var mc=JSON.parse(insp.medidoresCentralJson||'{}');for(var k in mc){var el=document.getElementById(k);if(el)el.value=mc[k];}}catch(e){}
+try{var seg=JSON.parse(insp.seguridadJson||'{}');
+document.getElementById('seg-itb-fecha').value=seg.itbFecha||'';
+document.getElementById('seg-pirotecnia-fecha').value=seg.pirotecniaFecha||'';
+document.getElementById('seg-balsa-tiene').value=seg.balsaTiene||'';
+document.getElementById('seg-balsa-fecha').value=seg.balsaFecha||'';
+document.getElementById('seg-radiobaliza-tiene').value=seg.radiobalizaTiene||'';
+document.getElementById('seg-radiobaliza-fecha').value=seg.radiobalizaFecha||'';
+document.getElementById('seg-vhf-tiene').value=seg.vhfTiene||'';
+document.getElementById('seg-vhf-bateria').value=seg.vhfBateria||'';
+document.getElementById('seg-vhf-fecha').value=seg.vhfFecha||'';
+}catch(e){}
 updateCharCounter();
 showTab('nueva');
 showMsg('message-area','Inspección cargada','success');
