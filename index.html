@@ -1188,23 +1188,35 @@ var offlinePhotos=inspData._offlinePhotos||{};
 delete inspData._offlinePhotos;
 var photoIds=Object.keys(offlinePhotos);
 
-// Subir fotos guardadas offline (si las hay) antes de guardar la inspección
-var uploadPromises=photoIds.map(function(photoId){
-return fetch(SCRIPT_URL,{
-method:'POST',
-body:JSON.stringify({
-action:'uploadPhoto',
-base64Data:offlinePhotos[photoId], // data URL completo — el GAS separa el prefijo
-inspectionData:{embarcacion:inspData.embarcacion,tipo:inspData.tipo,fecha:inspData.fecha},
-photoId:photoId
-})
-})
-.then(function(r){return r.json();})
-.then(function(result){if(result.success)inspData.fotosUrls[photoId]=result.url;})
-.catch(function(){});
-});
+// Subir fotos en LOTE (batch) antes de guardar la inspección
+var uploadBatchPromise;
+if(photoIds.length===0){
+  uploadBatchPromise=Promise.resolve();
+}else{
+  var photosArray=photoIds.map(function(photoId){
+    return{photoId:photoId,base64Data:offlinePhotos[photoId]};
+  });
+  uploadBatchPromise=fetch(SCRIPT_URL,{
+    method:'POST',
+    body:JSON.stringify({
+      action:'uploadPhotoBatch',
+      photos:photosArray,
+      inspectionData:{embarcacion:inspData.embarcacion,tipo:inspData.tipo,fecha:inspData.fecha}
+    })
+  })
+  .then(function(r){return r.json();})
+  .then(function(batchResult){
+    if(batchResult.success&&batchResult.results){
+      photoIds.forEach(function(photoId){
+        var res=batchResult.results[photoId];
+        if(res&&res.success)inspData.fotosUrls[photoId]=res.url;
+      });
+    }
+  })
+  .catch(function(){});
+}
 
-return Promise.all(uploadPromises).then(function(){
+return uploadBatchPromise.then(function(){
 return fetch(SCRIPT_URL,{
 method:'POST',
 body:JSON.stringify({action:'save',data:inspData})
@@ -1610,7 +1622,7 @@ var input=document.getElementById('photo-'+id);
 var file=input.files[0];
 if(!file)return;
 // v3.0: Comprimir y guardar como previewUrl + File para subir a Drive
-compressImage(file, 1200, 0.8, function(blob, previewUrl) {
+compressImage(file, 1000, 0.72, function(blob, previewUrl) {
   data.photoReport[id]=[previewUrl]; // preview en memoria
   data.photoFiles[id]=blob;          // blob para subir a Drive
   var preview=document.getElementById('preview-'+id);
@@ -1637,7 +1649,7 @@ input.click();
 
 function handleCheckPhoto(id,file){
 if(!file)return;
-compressImage(file, 800, 0.75, function(blob, previewUrl) {
+compressImage(file, 700, 0.68, function(blob, previewUrl) {
   if(!data.verificaciones)data.verificaciones={};
   data.verificaciones[id+'_photo']=[previewUrl];
   data.verificationPhotoFiles[id]=blob;
@@ -1828,47 +1840,73 @@ blobIds.forEach(function(photoId){
 return;
 }
 
-// FLUJO CON INTERNET: primero subir fotos, luego guardar
-var photoBlobs = {}; // photoId -> blob
-// Fotos reportaje
+// FLUJO CON INTERNET: convertir todas las fotos a base64 y subir en UNA sola llamada
+var photoBlobs = {};
 for(var k in data.photoFiles){ if(data.photoFiles[k]) photoBlobs[k]=data.photoFiles[k]; }
-// Fotos verificaciones
 for(var k in data.verificationPhotoFiles){ if(data.verificationPhotoFiles[k]) photoBlobs[k+'_verif']=data.verificationPhotoFiles[k]; }
 
 var photoIds = Object.keys(photoBlobs);
 var totalPhotos = photoIds.length;
 
 if(totalPhotos === 0) {
-  // Sin fotos: guardar directo
   _doSaveInspection(inspData, estado, pctCompleto);
   return;
 }
 
-// Con fotos: mostrar progreso y subir
-showLoading('Subiendo fotos a Drive (0/'+totalPhotos+')...');
-var progressEl = document.getElementById('upload-progress');
+// Paso 1: convertir todos los blobs a base64 en paralelo
+showLoading('Preparando '+totalPhotos+' foto(s)...');
 showUploadProgress(totalPhotos, 0, 0);
 
-var doneCount=0, errorCount=0;
-var uploadPromises = photoIds.map(function(photoId){
-  return uploadPhotoToDrive(photoBlobs[photoId], inspData, photoId)
-    .then(function(result){
-      doneCount++;
-      inspData.fotosUrls[result.photoId] = result.url;
-      showLoading('Subiendo fotos a Drive ('+doneCount+'/'+totalPhotos+')...');
-      showUploadProgress(totalPhotos, doneCount, errorCount);
-    })
-    .catch(function(err){
-      errorCount++;
-      doneCount++;
-      console.warn('Error subiendo foto '+photoId+':', err);
-      showUploadProgress(totalPhotos, doneCount, errorCount);
-    });
-});
+var photosBase64 = [];
+var readCount = 0;
 
-Promise.all(uploadPromises).then(function(){
-  showLoading('Guardando inspección...');
-  _doSaveInspection(inspData, estado, pctCompleto);
+photoIds.forEach(function(photoId) {
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    photosBase64.push({photoId: photoId, base64Data: e.target.result});
+    readCount++;
+    if(readCount === totalPhotos) {
+      // Paso 2: enviar todo en una sola llamada al GAS
+      showLoading('Subiendo '+totalPhotos+' foto(s) a Drive...');
+      fetch(SCRIPT_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'uploadPhotoBatch',
+          photos: photosBase64,
+          inspectionData: {
+            embarcacion: inspData.embarcacion,
+            tipo: inspData.tipo,
+            fecha: inspData.fecha
+          }
+        })
+      })
+      .then(function(r){ return r.json(); })
+      .then(function(result) {
+        var errorCount = 0;
+        if(result.success && result.results) {
+          Object.keys(result.results).forEach(function(pid) {
+            if(result.results[pid].success) {
+              inspData.fotosUrls[pid] = result.results[pid].url;
+            } else {
+              errorCount++;
+            }
+          });
+        } else {
+          errorCount = totalPhotos;
+        }
+        showUploadProgress(totalPhotos, totalPhotos, errorCount);
+        showLoading('Guardando inspección...');
+        _doSaveInspection(inspData, estado, pctCompleto);
+      })
+      .catch(function(err) {
+        console.warn('Error batch fotos:', err);
+        showUploadProgress(totalPhotos, totalPhotos, totalPhotos);
+        showLoading('Guardando inspección sin fotos...');
+        _doSaveInspection(inspData, estado, pctCompleto);
+      });
+    }
+  };
+  reader.readAsDataURL(photoBlobs[photoId]);
 });
 }
 
