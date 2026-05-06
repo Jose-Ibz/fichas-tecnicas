@@ -951,6 +951,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <div id="tab-historial" class="tab-content">
 <div class="section">
 <div class="section-title">Historial de Inspecciones</div>
+<input type="text" id="history-search" placeholder="🔍 Buscar por nombre de barco..." oninput="filterHistory()" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;font-size:15px;margin-bottom:15px">
 <div id="history-list" class="history-list"></div>
 </div>
 </div>
@@ -981,6 +982,7 @@ var isOnline=navigator.onLine;
 var syncInterval=null;
 var esContinuacion=false;
 var inheritedFotosUrls={};
+var historyItems=[];
 
 // ========== UPLOAD STATUS TRACKING ==========
 var uploadStatus = {}; // {photoId: 'pending'|'uploading'|'done'|'error', url: string}
@@ -1093,7 +1095,7 @@ return fetch(SCRIPT_URL,{
 method:'POST',
 body:JSON.stringify({
 action:'uploadPhoto',
-base64Data:offlinePhotos[photoId].split(',')[1],
+base64Data:offlinePhotos[photoId], // data URL completo — el GAS separa el prefijo
 inspectionData:{embarcacion:inspData.embarcacion,tipo:inspData.tipo,fecha:inspData.fecha},
 photoId:photoId
 })
@@ -1208,6 +1210,29 @@ document.getElementById('import-section').style.display='none';
 lastVarada=null;
 }
 }).catch(err=>{hideLoading();document.getElementById('import-section').style.display='none'});
+}
+
+function renderHistoryList(items){
+var html='';
+items.forEach(function(item){
+html+='<div class="history-item '+(item.cerrada==='SI'?'cerrada':'')+'">';
+html+='<div class="history-date">'+formatFecha(item.fecha)+'</div>';
+html+='<div class="history-info"><strong>'+item.embarcacion+'</strong> - '+(item.tipo||'').toUpperCase()+'<br>'+item.tecnico+'</div>';
+html+='<button class="history-btn" onclick="verInspeccion(\''+item.id+'\')">VER</button>';
+html+='<button class="history-btn" onclick="generatePDFFromHistory(\''+item.id+'\')">PDF</button>';
+if((item.tipo||'').toLowerCase()==='varada'&&item.cerrada!=='SI'){html+='<button class="history-btn" style="background:#ff9800" onclick="continuarDesdeHistorial(\''+item.id+'\')">▶ CONTINUAR</button>';}
+html+='</div>';
+});
+document.getElementById('history-list').innerHTML=html||'<p style="color:#999;padding:20px;text-align:center">No hay inspecciones</p>';
+}
+
+function filterHistory(){
+var q=(document.getElementById('history-search').value||'').toLowerCase().trim();
+if(!q){renderHistoryList(historyItems);return;}
+var filtered=historyItems.filter(function(item){
+return (item.embarcacion||'').toLowerCase().includes(q);
+});
+renderHistoryList(filtered);
 }
 
 function continuarVarada(){
@@ -1546,12 +1571,12 @@ function uploadPhotoToDrive(blob, inspData, photoId) {
 return new Promise(function(resolve, reject) {
   var reader = new FileReader();
   reader.onload = function(e) {
-    var base64 = e.target.result.split(',')[1];
+    var base64Full = e.target.result; // data:image/jpeg;base64,... completo — el GAS separa el prefijo
     fetch(SCRIPT_URL, {
       method: 'POST',
       body: JSON.stringify({
         action: 'uploadPhoto',
-        base64Data: base64,
+        base64Data: base64Full,
         inspectionData: {
           embarcacion: inspData.embarcacion,
           tipo: inspData.tipo,
@@ -1801,18 +1826,10 @@ fetch(SCRIPT_URL+'?action=getHistory&user='+encodeURIComponent(currentUser)+'&us
 .then(result=>{
 hideLoading();
 if(result.success){
-var items = result.inspections || result.data || [];
-var html='';
-items.slice().reverse().forEach(function(item){
-html+='<div class="history-item '+(item.cerrada==='SI'?'cerrada':'')+'">';
-html+='<div class="history-date">'+formatFecha(item.fecha)+'</div>';
-html+='<div class="history-info"><strong>'+item.embarcacion+'</strong> - '+(item.tipo||'').toUpperCase()+'<br>'+item.tecnico+'</div>';
-html+='<button class="history-btn" onclick="verInspeccion(\''+item.id+'\')">VER</button>';
-html+='<button class="history-btn" onclick="generatePDFFromHistory(\''+item.id+'\')">PDF</button>';
-if((item.tipo||'').toLowerCase()==='varada'&&item.cerrada!=='SI'){html+='<button class="history-btn" style="background:#ff9800" onclick="continuarDesdeHistorial(\''+item.id+'\')">▶ CONTINUAR</button>';}
-html+='</div>';
-});
-document.getElementById('history-list').innerHTML=html||'<p>No hay inspecciones</p>';
+historyItems=(result.inspections||result.data||[]).slice().reverse();
+var searchEl=document.getElementById('history-search');
+if(searchEl)searchEl.value='';
+renderHistoryList(historyItems);
 }
 }).catch(err=>{hideLoading();});
 }
