@@ -107,6 +107,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <span id="sync-text">Conectado</span>
 <span id="pending-count" class="pending-count" style="display:none">0 pendientes</span>
 <button id="sync-btn" class="sync-btn" style="display:none" onclick="syncPendingInspections()">SINCRONIZAR</button>
+<button id="clear-pending-btn" class="sync-btn" style="display:none;background:rgba(255,80,80,0.4)" onclick="clearPendingQueue()">🗑 BORRAR COLA</button>
 </div>
 
 <div id="login-section">
@@ -1110,11 +1111,13 @@ var syncBtn=document.getElementById('sync-btn');
 
 var pending=getPendingInspections();
 var count=pending.length;
+var clearBtn=document.getElementById('clear-pending-btn');
 
 if(!isOnline){
 statusDiv.className='sync-status offline';
 indicator.textContent='🟡';
 text.textContent='Sin conexión';
+if(clearBtn)clearBtn.style.display=count>0?'inline-block':'none';
 }else if(count>0){
 statusDiv.className='sync-status offline';
 indicator.textContent='🟡';
@@ -1122,13 +1125,24 @@ text.textContent='Pendiente sincronizar';
 pendingCountEl.textContent=count+' pendiente'+(count>1?'s':'');
 pendingCountEl.style.display='inline-block';
 syncBtn.style.display='inline-block';
+if(clearBtn)clearBtn.style.display='inline-block';
 }else{
 statusDiv.className='sync-status online';
 indicator.textContent='🟢';
 text.textContent='Sincronizado';
 pendingCountEl.style.display='none';
 syncBtn.style.display='none';
+if(clearBtn)clearBtn.style.display='none';
 }
+}
+
+function clearPendingQueue(){
+var pending=getPendingInspections();
+if(pending.length===0){alert('No hay fichas pendientes.');return;}
+if(!confirm('⚠️ ¿Borrar '+pending.length+' ficha(s) pendiente(s)?\n\nEsto las eliminará del móvil. Solo hazlo si ya se guardaron en el servidor o quieres descartarlas.')){return;}
+localStorage.removeItem('pendingInspections');
+updateSyncStatus();
+alert('Cola borrada. Ya no hay fichas pendientes.');
 }
 
 function getPendingInspections(){
