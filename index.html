@@ -2464,6 +2464,17 @@ function showMsg(id,msg,type){var el=document.getElementById(id);el.textContent=
 
 // INICIALIZAR SISTEMA OFFLINE AL CARGAR
 window.addEventListener('DOMContentLoaded',function(){
+// Emergencia: ?resetQueue=1 en la URL borra la cola de pendientes
+if(window.location.search.indexOf('resetQueue=1')!==-1){
+  localStorage.removeItem('pendingInspections');
+  document.body.innerHTML='<div style="font-family:Arial;text-align:center;padding:60px;background:#e8f5e9;min-height:100vh">'
+    +'<div style="font-size:64px;margin-bottom:20px">✅</div>'
+    +'<h2 style="color:#2e7d32;margin-bottom:10px">Cola borrada</h2>'
+    +'<p style="color:#555;margin-bottom:30px">Las fichas pendientes han sido eliminadas del dispositivo.</p>'
+    +'<a href="'+window.location.pathname+'" style="background:#003d82;color:white;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:bold">Volver a la app</a>'
+    +'</div>';
+  return;
+}
 initOfflineSystem();
 console.log('Sistema offline inicializado');
 });
