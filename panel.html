@@ -178,6 +178,28 @@ tr:hover td{background:#fafbff}
 .metric strong{color:#1a2e4a}
 .horas-evolucion{background:#f0f6ff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#333;border-left:4px solid #003d82;line-height:1.8}
 
+/* CHAT IA */
+.chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px);background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden}
+.chat-header{background:#003d82;color:white;padding:18px 24px;display:flex;align-items:center;gap:12px}
+.chat-header h2{font-size:16px;font-weight:700}
+.chat-header p{font-size:12px;opacity:.75;margin-top:2px}
+.chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;background:#f7f9fc}
+.chat-msg{max-width:80%;padding:12px 16px;border-radius:14px;font-size:14px;line-height:1.6;white-space:pre-wrap;word-break:break-word}
+.chat-msg.user{align-self:flex-end;background:#003d82;color:white;border-bottom-right-radius:4px}
+.chat-msg.assistant{align-self:flex-start;background:white;color:#1a2e4a;border-bottom-left-radius:4px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.chat-msg.system{align-self:center;background:#e8f5e9;color:#2e7d32;font-size:12px;padding:8px 14px;border-radius:20px;max-width:100%;text-align:center}
+.chat-msg.error{align-self:flex-start;background:#ffebee;color:#c62828;border-bottom-left-radius:4px}
+.chat-thinking{align-self:flex-start;background:white;color:#888;padding:12px 16px;border-radius:14px;border-bottom-left-radius:4px;font-size:13px;font-style:italic;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.chat-input-bar{padding:16px 20px;border-top:1px solid #eee;background:white;display:flex;gap:10px;align-items:flex-end}
+.chat-input-bar textarea{flex:1;padding:10px 14px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;font-family:inherit;resize:none;max-height:120px;min-height:42px;line-height:1.5;outline:none;transition:border-color .2s}
+.chat-input-bar textarea:focus{border-color:#003d82}
+.chat-send-btn{background:#003d82;color:white;border:none;border-radius:10px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:background .2s;white-space:nowrap;height:42px}
+.chat-send-btn:hover{background:#002656}
+.chat-send-btn:disabled{background:#aaa;cursor:not-allowed}
+.chat-sugerencias{display:flex;flex-wrap:wrap;gap:8px;padding:10px 20px 0}
+.chat-sug{background:#e3f0ff;color:#003d82;border:1px solid #90caf9;border-radius:20px;padding:5px 14px;font-size:12px;cursor:pointer;transition:all .2s}
+.chat-sug:hover{background:#003d82;color:white}
+
 /* RESPOSIVE */
 @media(max-width:1200px){
 .stats-grid{grid-template-columns:repeat(2,1fr)}
@@ -235,6 +257,9 @@ tr:hover td{background:#fafbff}
 <div class="nav-item" onclick="showPage('barco')" id="nav-barco">
 <span class="nav-icon">🚤</span><span>Por Barco</span>
 </div>
+<div class="nav-item" onclick="showPage('asistente')" id="nav-asistente">
+<span class="nav-icon">🤖</span><span>Asistente IA</span>
+</div>
 </div>
 <div class="sidebar-user">
 <div>👤 <span id="sidebar-user"></span></div>
@@ -271,6 +296,8 @@ tr:hover td{background:#fafbff}
 <div><div class="stat-value" id="stat-fotos">-</div><div class="stat-label">Fotos en Drive</div></div>
 </div>
 </div>
+<div id="alertas-seguridad" style="display:none;margin-bottom:22px"></div>
+
 <div class="charts-grid">
 <div class="chart-card">
 <h3>📅 Inspecciones por Mes (últimos 6 meses)</h3>
@@ -427,6 +454,41 @@ tr:hover td{background:#fafbff}
 <div id="barco-timeline" class="timeline-cards"></div>
 </div>
 </div>
+
+<!-- ASISTENTE IA -->
+<div id="page-asistente" class="page">
+<div class="topbar">
+<h1>🤖 Asistente IA</h1>
+<div class="topbar-actions">
+<button class="btn btn-secondary btn-sm" onclick="clearChat()">🗑️ Limpiar conversación</button>
+</div>
+</div>
+<div class="chat-wrap">
+<div class="chat-header">
+<div style="font-size:32px">🤖</div>
+<div>
+<h2>Asistente Viamar</h2>
+<p>Acceso completo a todas las inspecciones · Responde en español · Powered by Claude (Anthropic)</p>
+</div>
+</div>
+<div id="chat-messages" class="chat-messages">
+<div class="chat-msg system">👋 Hola, soy el asistente de Náutica Viamar. Tengo acceso a todas las fichas técnicas. Puedes preguntarme lo que necesites.</div>
+</div>
+<div class="chat-sugerencias" id="chat-sugerencias">
+<span class="chat-sug" onclick="askSuggestion(this)">¿Qué barcos tienen la ITB a punto de vencer?</span>
+<span class="chat-sug" onclick="askSuggestion(this)">¿Cuántas varadas hay activas ahora mismo?</span>
+<span class="chat-sug" onclick="askSuggestion(this)">Dame el historial completo del barco NOMBRE</span>
+<span class="chat-sug" onclick="askSuggestion(this)">¿Qué barcos tienen la pirotecnia caducada?</span>
+<span class="chat-sug" onclick="askSuggestion(this)">Resume las últimas 10 inspecciones</span>
+</div>
+<div class="chat-input-bar">
+<textarea id="chat-input" placeholder="Escribe tu pregunta sobre las inspecciones..." rows="1"
+  onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAIMessage();}"
+  oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+<button class="chat-send-btn" id="chat-send-btn" onclick="sendAIMessage()">Enviar ↑</button>
+</div>
+</div>
+</div><!-- /page-asistente -->
 
 </div><!-- /main -->
 </div><!-- /app -->
@@ -629,7 +691,9 @@ return {
   totalNotas: i.totalNotas||0,
   totalFotos: i.totalFotos||0,
   varadaImportada: i.varadaImportada||'',
-  carpetaDriveId: i.carpetaDriveId||''
+  carpetaDriveId: i.carpetaDriveId||'',
+  seguridadJson: i.seguridadJson||'{}',
+  _seguridad: safeJson(i.seguridadJson)
 };
 }
 
@@ -688,6 +752,80 @@ document.getElementById('chart-boats').innerHTML=topBoats.map(([b,c])=>`
 // Recent table
 var recent=allInspections.slice(-10).reverse();
 document.getElementById('recent-table').innerHTML=recent.map(i=>rowHtml(i)).join('');
+
+// ---- ALERTAS DE SEGURIDAD ----
+var hoy=new Date();
+var en12meses=new Date(hoy); en12meses.setFullYear(en12meses.getFullYear()+1);
+
+// Para cada barco, quedarse con la inspección más reciente que tenga datos de seguridad
+var lastSegByBoat={};
+allInspections.forEach(function(i){
+  if(!i.embarcacion) return;
+  var seg=i._seguridad||{};
+  var hasData=seg.itbFecha||seg.pirotecniaFecha||seg.balsaFecha||seg.radiobalizaFecha||seg.vhfFecha;
+  if(!hasData) return;
+  var d=parseDate(i.fecha);
+  if(!d) return;
+  var prev=lastSegByBoat[i.embarcacion];
+  if(!prev||d>parseDate(prev.insp.fecha)) lastSegByBoat[i.embarcacion]={insp:i,seg:seg};
+});
+
+var alertas=[];
+Object.values(lastSegByBoat).forEach(function(item){
+  var seg=item.seg;
+  var boat=item.insp.embarcacion;
+
+  function addAlerta(tipo,fechaStr,isMonth){
+    if(!fechaStr) return;
+    var d;
+    if(isMonth){
+      var p=fechaStr.split('-');
+      if(p.length<2) return;
+      d=new Date(parseInt(p[0]),parseInt(p[1])-1,1);
+    } else {
+      d=new Date(fechaStr);
+    }
+    if(isNaN(d.getTime())) return;
+    if(d>en12meses) return;
+    alertas.push({embarcacion:boat,tipo:tipo,fecha:d,fechaStr:fechaStr,isMonth:isMonth});
+  }
+
+  addAlerta('📋 ITB',seg.itbFecha,false);
+  addAlerta('🔴 Pirotecnia',seg.pirotecniaFecha,true);
+  addAlerta('🛟 Balsa',seg.balsaFecha,true);
+  addAlerta('📡 Radiobaliza',seg.radiobalizaFecha,true);
+  addAlerta('📻 VHF Batería',seg.vhfFecha,true);
+});
+
+alertas.sort(function(a,b){return a.fecha-b.fecha;});
+
+var alertasDiv=document.getElementById('alertas-seguridad');
+if(alertas.length>0){
+  alertasDiv.style.display='block';
+  var html='<div class="table-card"><div class="table-header" style="background:#fff3e0;border-bottom:2px solid #ffcc80">';
+  html+='<h3 style="color:#e65100">⚠️ Alertas de Seguridad — próximos 12 meses</h3>';
+  html+='<span style="font-size:12px;color:#999">'+alertas.length+' elemento'+(alertas.length>1?'s':'')+' a revisar</span>';
+  html+='</div><table><thead><tr><th>Embarcación</th><th>Elemento</th><th>Caducidad / Revisión</th><th>Estado</th></tr></thead><tbody>';
+  alertas.forEach(function(a){
+    var diasRestantes=Math.round((a.fecha-hoy)/(1000*60*60*24));
+    var estadoTxt,bg,color;
+    if(diasRestantes<0){estadoTxt='VENCIDA';bg='#f44336';color='white';}
+    else if(diasRestantes<=30){estadoTxt=diasRestantes+' días';bg='#ff5722';color='white';}
+    else if(diasRestantes<=90){estadoTxt=diasRestantes+' días';bg='#ff9800';color='white';}
+    else{estadoTxt=diasRestantes+' días';bg='#ffc107';color='#333';}
+    var fechaDisplay=a.isMonth?(a.fechaStr.split('-')[1]+'/'+a.fechaStr.split('-')[0]):a.fechaStr.split('-').reverse().join('/');
+    html+='<tr>';
+    html+='<td><strong>'+a.embarcacion+'</strong></td>';
+    html+='<td>'+a.tipo+'</td>';
+    html+='<td style="font-weight:600">'+fechaDisplay+'</td>';
+    html+='<td><span class="badge" style="background:'+bg+';color:'+color+'">'+estadoTxt+'</span></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  alertasDiv.innerHTML=html;
+} else {
+  alertasDiv.style.display='none';
+}
 }
 
 function rowHtml(i){
@@ -1255,6 +1393,7 @@ else if(id==='inspecciones'){buildYearFilter();applyFilters();}
 else if(id==='estadisticas')renderStats();
 else if(id==='fotos')applyGalleryFilter();
 else if(id==='barco')renderBarcoPage();
+else if(id==='asistente')initAsistente();
 }
 
 // ====== UTILS ======
@@ -1396,6 +1535,97 @@ document.getElementById('barco-timeline-section').style.display='none';
 document.addEventListener('keydown',function(e){
 if(e.key==='Enter'&&document.getElementById('login-page').style.display!=='none') pcLogin();
 });
+
+// ====== ASISTENTE IA ======
+var chatHistory = []; // [{role:'user',content:'...'},{role:'assistant',content:'...'}]
+var chatReady = false;
+
+function initAsistente(){
+if(!chatReady){
+  chatReady=true;
+  // Ya tiene el mensaje de bienvenida inicial en el HTML
+}
+}
+
+function askSuggestion(el){
+var q=el.textContent;
+document.getElementById('chat-input').value=q;
+document.getElementById('chat-sugerencias').style.display='none';
+sendAIMessage();
+}
+
+function sendAIMessage(){
+var input=document.getElementById('chat-input');
+var question=(input.value||'').trim();
+if(!question) return;
+
+var btn=document.getElementById('chat-send-btn');
+btn.disabled=true;
+input.value='';
+input.style.height='auto';
+document.getElementById('chat-sugerencias').style.display='none';
+
+// Mostrar mensaje del usuario
+appendChatMsg('user', question);
+
+// Indicador de pensamiento
+var thinkingId='thinking_'+Date.now();
+var messagesDiv=document.getElementById('chat-messages');
+var thinkingEl=document.createElement('div');
+thinkingEl.className='chat-thinking';
+thinkingEl.id=thinkingId;
+thinkingEl.textContent='🤔 Consultando los datos...';
+messagesDiv.appendChild(thinkingEl);
+messagesDiv.scrollTop=messagesDiv.scrollHeight;
+
+// Llamar al GAS
+fetch(SCRIPT_URL,{
+  method:'POST',
+  body:JSON.stringify({
+    action:'aiQuery',
+    question:question,
+    history:chatHistory
+  })
+})
+.then(function(r){return r.json();})
+.then(function(result){
+  // Quitar indicador
+  var th=document.getElementById(thinkingId);
+  if(th)th.remove();
+
+  if(result.success){
+    // Actualizar historial
+    chatHistory.push({role:'user',content:question});
+    chatHistory.push({role:'assistant',content:result.response});
+    appendChatMsg('assistant', result.response);
+  } else {
+    appendChatMsg('error', '❌ Error: '+(result.message||'Sin respuesta del servidor.'));
+  }
+  btn.disabled=false;
+})
+.catch(function(err){
+  var th=document.getElementById(thinkingId);
+  if(th)th.remove();
+  appendChatMsg('error','❌ Error de conexión: '+err.message);
+  btn.disabled=false;
+});
+}
+
+function appendChatMsg(role, text){
+var messagesDiv=document.getElementById('chat-messages');
+var div=document.createElement('div');
+div.className='chat-msg '+role;
+div.textContent=text;
+messagesDiv.appendChild(div);
+messagesDiv.scrollTop=messagesDiv.scrollHeight;
+}
+
+function clearChat(){
+chatHistory=[];
+document.getElementById('chat-messages').innerHTML=
+  '<div class="chat-msg system">🔄 Conversación reiniciada. ¿En qué te puedo ayudar?</div>';
+document.getElementById('chat-sugerencias').style.display='flex';
+}
 </script>
 </body>
 </html>
