@@ -178,6 +178,51 @@ tr:hover td{background:#fafbff}
 .metric strong{color:#1a2e4a}
 .horas-evolucion{background:#f0f6ff;border-radius:10px;padding:14px 18px;margin-bottom:20px;font-size:13px;color:#333;border-left:4px solid #003d82;line-height:1.8}
 
+/* ---- TRABAJOS PENDIENTES ---- */
+.tarea-card{background:white;border-radius:10px;padding:16px 20px;box-shadow:0 2px 8px rgba(0,0,0,.06);border-left:5px solid #ddd;display:grid;grid-template-columns:1fr auto;gap:12px;align-items:start;margin-bottom:10px;transition:box-shadow .2s}
+.tarea-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.1)}
+.tarea-card.urgente{border-left-color:#f44336}
+.tarea-card.pronto{border-left-color:#ff9800}
+.tarea-card.normal{border-left-color:#4caf50}
+.tarea-card.vencida{border-left-color:#9e0000;background:#fff5f5}
+.tarea-card.completada{border-left-color:#bbb;opacity:.65}
+.tarea-barco{font-size:15px;font-weight:700;color:#1a2e4a;margin-bottom:4px}
+.tarea-desc{font-size:13px;color:#555;line-height:1.5;margin-bottom:8px;white-space:pre-line}
+.tarea-meta{display:flex;gap:14px;font-size:12px;flex-wrap:wrap}
+.tarea-fecha{font-weight:700}
+.tarea-fecha.vencida{color:#c62828}
+.tarea-fecha.urgente{color:#e65100}
+.tarea-fecha.pronto{color:#f57f17}
+.tarea-fecha.ok{color:#2e7d32}
+.tarea-notas{font-size:12px;color:#888;margin-top:6px;padding-top:6px;border-top:1px solid #eee;white-space:pre-line}
+.tarea-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;flex-shrink:0}
+.tarea-views{display:flex;gap:10px;margin-bottom:20px}
+.tarea-view-btn{padding:8px 18px;border:2px solid #003d82;border-radius:7px;background:white;color:#003d82;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s}
+.tarea-view-btn.active{background:#003d82;color:white}
+.tarea-modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center}
+.tarea-modal-overlay.active{display:flex}
+.tarea-modal{background:white;border-radius:14px;width:100%;max-width:520px;box-shadow:0 20px 60px rgba(0,0,0,.25);overflow:hidden}
+.tarea-modal-top{background:#003d82;color:white;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+.tarea-modal-top h3{font-size:17px;font-weight:700}
+.tarea-modal-body{padding:24px}
+.tarea-form-group{margin-bottom:16px}
+.tarea-form-group label{display:block;font-size:12px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.tarea-form-group input,.tarea-form-group textarea,.tarea-form-group select{width:100%;padding:10px 14px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s}
+.tarea-form-group input:focus,.tarea-form-group textarea:focus{border-color:#003d82}
+.tarea-form-group textarea{resize:vertical;min-height:80px}
+.tarea-historial{margin-top:28px;padding-top:20px;border-top:2px dashed #eee}
+.badge-vencida{background:#ffebee;color:#c62828}
+.badge-urgente{background:#fff3e0;color:#e65100}
+.badge-pronto{background:#fffde7;color:#f57f17}
+.badge-ok{background:#e8f5e9;color:#2e7d32}
+.dashboard-tareas-widget{background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:22px;overflow:hidden}
+.dashboard-tareas-widget .widget-header{padding:14px 20px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center}
+.dashboard-tareas-widget .widget-header h3{font-size:14px;font-weight:700;color:#1a2e4a}
+.dashboard-tareas-mini{padding:0 16px 12px}
+.tarea-mini{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid #f5f5f5;font-size:13px}
+.tarea-mini:last-child{border-bottom:none}
+.tarea-mini-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
 /* CHAT IA */
 .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 160px);background:white;border-radius:14px;box-shadow:0 2px 12px rgba(0,0,0,.08);overflow:hidden}
 .chat-header{background:#003d82;color:white;padding:18px 24px;display:flex;align-items:center;gap:12px}
@@ -261,6 +306,9 @@ tr:hover td{background:#fafbff}
 <div class="nav-item" onclick="showPage('asistente')" id="nav-asistente">
 <span class="nav-icon">🤖</span><span>Asistente IA</span>
 </div>
+<div class="nav-item" onclick="showPage('tareas')" id="nav-tareas">
+<span class="nav-icon">📋</span><span>Trabajos Pendientes</span>
+</div>
 </div>
 <div class="sidebar-user">
 <div>👤 <span id="sidebar-user"></span></div>
@@ -302,6 +350,15 @@ tr:hover td{background:#fafbff}
 </div>
 </div>
 <div id="alertas-seguridad" style="display:none;margin-bottom:22px"></div>
+
+<!-- Widget trabajos próximos -->
+<div class="dashboard-tareas-widget" id="widget-tareas" style="display:none">
+<div class="widget-header">
+  <h3>📋 Trabajos pendientes próximos</h3>
+  <button class="btn btn-outline btn-sm" onclick="showPage('tareas')">Ver todos →</button>
+</div>
+<div class="dashboard-tareas-mini" id="widget-tareas-lista"></div>
+</div>
 
 <div class="charts-grid">
 <div class="chart-card">
@@ -495,7 +552,57 @@ tr:hover td{background:#fafbff}
 </div>
 </div><!-- /page-asistente -->
 
+<!-- TRABAJOS PENDIENTES -->
+<div id="page-tareas" class="page">
+<div class="topbar">
+  <h1>📋 Trabajos Pendientes</h1>
+  <button class="btn btn-primary" onclick="openTareaModal(null)">+ Nuevo trabajo</button>
+</div>
+
+<div class="tarea-views">
+  <button class="tarea-view-btn active" id="tview-fecha" onclick="setTareaView('fecha')">Por fecha</button>
+  <button class="tarea-view-btn" id="tview-barco" onclick="setTareaView('barco')">Por embarcación</button>
+  <button class="tarea-view-btn" id="tview-hist" onclick="setTareaView('hist')">Historial</button>
+</div>
+
+<div id="tareas-container"></div>
+</div><!-- /page-tareas -->
+
 </div><!-- /main -->
+
+<!-- MODAL TAREA -->
+<div class="tarea-modal-overlay" id="tarea-modal">
+<div class="tarea-modal">
+  <div class="tarea-modal-top">
+    <h3 id="tarea-modal-title">Nuevo trabajo</h3>
+    <button onclick="closeTareaModal()" style="background:none;border:none;color:white;font-size:26px;cursor:pointer;line-height:1">×</button>
+  </div>
+  <div class="tarea-modal-body">
+    <input type="hidden" id="tarea-id">
+    <div class="tarea-form-group">
+      <label>Embarcación *</label>
+      <input type="text" id="tarea-barco" placeholder="Nombre del barco" list="tarea-barcos-list">
+      <datalist id="tarea-barcos-list"></datalist>
+    </div>
+    <div class="tarea-form-group">
+      <label>Descripción del trabajo *</label>
+      <textarea id="tarea-desc" rows="3" placeholder="Describe el trabajo a realizar..."></textarea>
+    </div>
+    <div class="tarea-form-group">
+      <label>Fecha tope</label>
+      <input type="date" id="tarea-fecha">
+    </div>
+    <div class="tarea-form-group">
+      <label>Notas adicionales</label>
+      <textarea id="tarea-notas" rows="2" placeholder="Información extra, presupuesto, contacto..."></textarea>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="btn btn-primary" onclick="saveTarea()" style="flex:1">Guardar</button>
+      <button class="btn btn-secondary" onclick="closeTareaModal()">Cancelar</button>
+    </div>
+  </div>
+</div>
+</div>
 </div><!-- /app -->
 
 <!-- DETAIL MODAL -->
@@ -536,6 +643,7 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
     document.getElementById('sidebar-user').textContent=pcUser.nombre||u;
     showPage('dashboard');
     loadAllData();
+    loadTareas();
   }else{
     showLoginError(res.message||'Credenciales incorrectas');
   }
@@ -1384,6 +1492,230 @@ a.download='Inspecciones_Viamar_'+new Date().toISOString().slice(0,10)+'.csv';
 a.click();
 }
 
+// ====== TRABAJOS PENDIENTES ======
+var allTareas = [];
+var tareaView = 'fecha';
+
+function loadTareas(){
+  fetch(SCRIPT_URL+'?action=getTareas')
+  .then(function(r){return r.text();})
+  .then(function(t){
+    try{ var res=JSON.parse(t); if(res.success) allTareas=res.tareas||[]; }catch(e){}
+    renderTareas();
+    renderWidgetTareas();
+  }).catch(function(){});
+}
+
+function setTareaView(v){
+  tareaView=v;
+  document.querySelectorAll('.tarea-view-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('tview-'+v).classList.add('active');
+  renderTareas();
+}
+
+function tareaUrgencia(fechaTope){
+  if(!fechaTope) return 'normal';
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  var f=new Date(fechaTope); f.setHours(0,0,0,0);
+  var dias=Math.round((f-hoy)/(1000*60*60*24));
+  if(dias<0) return 'vencida';
+  if(dias<=7) return 'urgente';
+  if(dias<=30) return 'pronto';
+  return 'normal';
+}
+
+function tareaFechaLabel(fechaTope){
+  if(!fechaTope) return '';
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  var f=new Date(fechaTope); f.setHours(0,0,0,0);
+  var dias=Math.round((f-hoy)/(1000*60*60*24));
+  var str=f.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  if(dias<0) return str+' (vencida hace '+Math.abs(dias)+' días)';
+  if(dias===0) return str+' (hoy)';
+  if(dias===1) return str+' (mañana)';
+  if(dias<=30) return str+' (en '+dias+' días)';
+  return str;
+}
+
+function renderTareaCard(t, modo){
+  var urg = t.estado==='COMPLETADO' ? 'completada' : tareaUrgencia(t.fechaTope);
+  var urgClass = urg==='completada' ? 'completada' : urg;
+  var fechaLbl = tareaFechaLabel(t.fechaTope);
+  var actions = '';
+  if(t.estado!=='COMPLETADO'){
+    actions = '<button class="btn btn-success btn-xs" onclick="completarTarea(\''+t.id+'\')">✓ Hecho</button>'
+            + '<button class="btn btn-outline btn-xs" onclick="openTareaModal(\''+t.id+'\')">✏ Editar</button>';
+  } else {
+    var fc = t.fechaCompletado ? new Date(t.fechaCompletado).toLocaleDateString('es-ES') : '';
+    actions = '<span style="font-size:11px;color:#aaa">Completado'+( fc ? '<br>'+fc : '')+'</span>';
+  }
+  return '<div class="tarea-card '+urgClass+'">'
+    + '<div>'
+    + '<div class="tarea-barco">'+escHtml(t.embarcacion||'—')+'</div>'
+    + '<div class="tarea-desc">'+escHtml(t.descripcion||'')+'</div>'
+    + '<div class="tarea-meta">'
+    + (fechaLbl ? '<span class="tarea-fecha '+urgClass+'">📅 '+escHtml(fechaLbl)+'</span>' : '')
+    + '</div>'
+    + (t.notas ? '<div class="tarea-notas">'+escHtml(t.notas)+'</div>' : '')
+    + '</div>'
+    + '<div class="tarea-actions">'+actions+'</div>'
+    + '</div>';
+}
+
+function renderTareas(){
+  var cont = document.getElementById('tareas-container');
+  if(!cont) return;
+  var pendientes = allTareas.filter(function(t){return t.estado!=='COMPLETADO';});
+  var completadas = allTareas.filter(function(t){return t.estado==='COMPLETADO';});
+
+  if(tareaView==='hist'){
+    if(completadas.length===0){
+      cont.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><p>No hay trabajos completados aún</p></div>';
+      return;
+    }
+    completadas.sort(function(a,b){return new Date(b.fechaCompletado||0)-new Date(a.fechaCompletado||0);});
+    cont.innerHTML='<div style="font-size:13px;color:#888;margin-bottom:14px">'+completadas.length+' trabajo(s) completado(s)</div>'
+      + completadas.map(function(t){return renderTareaCard(t,'hist');}).join('');
+    return;
+  }
+
+  if(pendientes.length===0){
+    cont.innerHTML='<div class="empty-state"><div class="empty-icon">🎉</div><p>No hay trabajos pendientes.<br><button class="btn btn-primary" onclick="openTareaModal(null)" style="margin-top:14px">+ Añadir trabajo</button></p></div>';
+    return;
+  }
+
+  if(tareaView==='fecha'){
+    pendientes.sort(function(a,b){
+      if(!a.fechaTope && !b.fechaTope) return 0;
+      if(!a.fechaTope) return 1;
+      if(!b.fechaTope) return -1;
+      return new Date(a.fechaTope)-new Date(b.fechaTope);
+    });
+    cont.innerHTML='<div style="font-size:13px;color:#888;margin-bottom:14px">'+pendientes.length+' trabajo(s) pendiente(s) · ordenados por fecha tope</div>'
+      + pendientes.map(function(t){return renderTareaCard(t,'fecha');}).join('');
+  } else {
+    // Por barco
+    var porBarco={};
+    pendientes.forEach(function(t){
+      var b=t.embarcacion||'Sin embarcación';
+      if(!porBarco[b]) porBarco[b]=[];
+      porBarco[b].push(t);
+    });
+    var barcos=Object.keys(porBarco).sort();
+    var html='<div style="font-size:13px;color:#888;margin-bottom:14px">'+pendientes.length+' trabajo(s) en '+barcos.length+' embarcación(es)</div>';
+    barcos.forEach(function(b){
+      var items=porBarco[b];
+      items.sort(function(a,c){
+        if(!a.fechaTope && !c.fechaTope) return 0;
+        if(!a.fechaTope) return 1;
+        if(!c.fechaTope) return -1;
+        return new Date(a.fechaTope)-new Date(c.fechaTope);
+      });
+      html+='<div style="font-size:12px;font-weight:700;color:#003d82;text-transform:uppercase;letter-spacing:.5px;margin:18px 0 8px;padding-left:4px">'+escHtml(b)+' ('+items.length+')</div>';
+      html+=items.map(function(t){return renderTareaCard(t,'barco');}).join('');
+    });
+    cont.innerHTML=html;
+  }
+}
+
+function renderWidgetTareas(){
+  var widget=document.getElementById('widget-tareas');
+  var lista=document.getElementById('widget-tareas-lista');
+  if(!widget||!lista) return;
+  var hoy=new Date(); hoy.setHours(0,0,0,0);
+  var proximos=allTareas.filter(function(t){
+    if(t.estado==='COMPLETADO') return false;
+    if(!t.fechaTope) return false;
+    var f=new Date(t.fechaTope); f.setHours(0,0,0,0);
+    return (f-hoy)/(1000*60*60*24) <= 30;
+  });
+  proximos.sort(function(a,b){return new Date(a.fechaTope)-new Date(b.fechaTope);});
+  if(proximos.length===0){ widget.style.display='none'; return; }
+  widget.style.display='block';
+  var colors={vencida:'#f44336',urgente:'#ff9800',pronto:'#ffc107',normal:'#4caf50'};
+  lista.innerHTML=proximos.slice(0,6).map(function(t){
+    var urg=tareaUrgencia(t.fechaTope);
+    var col=colors[urg]||'#4caf50';
+    var f=new Date(t.fechaTope).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit'});
+    return '<div class="tarea-mini">'
+      +'<div class="tarea-mini-dot" style="background:'+col+'"></div>'
+      +'<div style="flex:1"><strong>'+escHtml(t.embarcacion||'—')+'</strong> — '+escHtml((t.descripcion||'').substring(0,60))+'</div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+col+'">'+f+'</div>'
+      +'</div>';
+  }).join('');
+}
+
+function openTareaModal(id){
+  document.getElementById('tarea-id').value = id||'';
+  // Populate datalist with known boats
+  var barcos=[...new Set(allInspections.map(function(i){return i.embarcacion||'';}).filter(Boolean))].sort();
+  document.getElementById('tarea-barcos-list').innerHTML=barcos.map(function(b){return '<option value="'+escHtml(b)+'">'; }).join('');
+
+  if(id){
+    var t=allTareas.find(function(x){return x.id===id;});
+    if(!t) return;
+    document.getElementById('tarea-modal-title').textContent='Editar trabajo';
+    document.getElementById('tarea-barco').value=t.embarcacion||'';
+    document.getElementById('tarea-desc').value=t.descripcion||'';
+    document.getElementById('tarea-fecha').value=t.fechaTope||'';
+    document.getElementById('tarea-notas').value=t.notas||'';
+  } else {
+    document.getElementById('tarea-modal-title').textContent='Nuevo trabajo';
+    document.getElementById('tarea-barco').value='';
+    document.getElementById('tarea-desc').value='';
+    document.getElementById('tarea-fecha').value='';
+    document.getElementById('tarea-notas').value='';
+  }
+  document.getElementById('tarea-modal').classList.add('active');
+}
+
+function closeTareaModal(){
+  document.getElementById('tarea-modal').classList.remove('active');
+}
+
+function saveTarea(){
+  var barco=document.getElementById('tarea-barco').value.trim();
+  var desc=document.getElementById('tarea-desc').value.trim();
+  if(!barco||!desc){alert('Embarcación y descripción son obligatorios');return;}
+  var payload={
+    action:'saveTarea',
+    tarea:{
+      id: document.getElementById('tarea-id').value||'',
+      embarcacion: barco,
+      descripcion: desc,
+      fechaTope: document.getElementById('tarea-fecha').value||'',
+      notas: document.getElementById('tarea-notas').value.trim()
+    }
+  };
+  closeTareaModal();
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)})
+  .then(function(r){return r.text();})
+  .then(function(t){
+    try{
+      var res=JSON.parse(t);
+      if(res.success){ loadTareas(); }
+      else{ alert('Error: '+(res.message||'desconocido')); }
+    }catch(e){ alert('Error de respuesta'); }
+  }).catch(function(e){alert('Error de conexión: '+e.message);});
+}
+
+function completarTarea(id){
+  if(!confirm('¿Marcar este trabajo como completado?')) return;
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'completarTarea',id:id})})
+  .then(function(r){return r.text();})
+  .then(function(t){
+    try{
+      var res=JSON.parse(t);
+      if(res.success){ loadTareas(); }
+      else{ alert('Error: '+(res.message||'desconocido')); }
+    }catch(e){ alert('Error de respuesta'); }
+  }).catch(function(e){alert('Error: '+e.message);});
+}
+
+function escHtml(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 // ====== NAVIGATION ======
 function showPage(id){
 document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
@@ -1399,6 +1731,7 @@ else if(id==='estadisticas')renderStats();
 else if(id==='fotos')applyGalleryFilter();
 else if(id==='barco')renderBarcoPage();
 else if(id==='asistente')initAsistente();
+else if(id==='tareas')renderTareas();
 }
 
 // ====== UTILS ======
