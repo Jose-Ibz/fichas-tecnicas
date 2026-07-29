@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Inventario - Náutica Viamar</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh}
+
+/* LOGIN */
+#login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#003d82,#0066cc);padding:20px}
+.login-card{background:white;border-radius:16px;padding:36px 28px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3)}
+.login-logo{text-align:center;margin-bottom:24px}
+.login-logo h1{color:#003d82;font-size:22px;font-weight:800;letter-spacing:1px}
+.login-logo p{color:#888;font-size:13px;margin-top:4px}
+.login-field{margin-bottom:16px}
+.login-field label{display:block;font-size:12px;font-weight:700;color:#555;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.login-field input{width:100%;padding:13px 14px;border:1.5px solid #ddd;border-radius:8px;font-size:15px;color:#333;outline:none;transition:border .2s}
+.login-field input:focus{border-color:#003d82}
+.btn-login{width:100%;padding:14px;background:#003d82;color:white;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;margin-top:8px;transition:background .2s}
+.btn-login:active{background:#002656}
+.login-error{color:#d32f2f;font-size:13px;text-align:center;margin-top:10px;min-height:18px}
+
+/* APP */
+#app-screen{display:none;min-height:100vh;background:#f0f4f8}
+
+/* HEADER */
+.app-header{background:#003d82;color:white;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.app-header h1{font-size:16px;font-weight:700}
+.header-boat{font-size:12px;opacity:.8;margin-top:2px}
+.btn-logout{background:rgba(255,255,255,.15);color:white;border:none;padding:7px 14px;border-radius:6px;font-size:12px;cursor:pointer}
+.header-info{text-align:right}
+
+/* STATUS */
+#status-bar{background:#fff8e1;padding:8px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:#555;border-bottom:1px solid #ffe082}
+#status-dot{width:10px;height:10px;border-radius:50%;background:#4caf50;flex-shrink:0}
+#status-dot.offline{background:#ff9800}
+#status-dot.pending{background:#ff9800}
+
+/* TOOLBAR */
+.toolbar{padding:12px 16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:white;border-bottom:1px solid #eee}
+.toolbar-left{display:flex;gap:10px;flex:1;align-items:center}
+.toolbar label{font-size:11px;font-weight:700;color:#888;text-transform:uppercase}
+.toolbar input[type=date]{padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;color:#333;outline:none;background:white}
+.toolbar input[type=date]:focus{border-color:#003d82}
+.btn-hist{background:#e3f0ff;color:#003d82;border:1.5px solid #003d82;padding:8px 14px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer}
+
+/* INVENTORY LIST */
+.inv-list{padding:12px 12px 100px}
+.item-card{background:white;border-radius:10px;margin-bottom:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.item-header{padding:10px 14px 0;display:flex;align-items:center;gap:8px}
+.item-num{width:24px;height:24px;background:#003d82;color:white;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.item-name{font-size:14px;font-weight:700;color:#1a2e4a;flex:1}
+.item-body{padding:8px 14px 12px;display:grid;grid-template-columns:90px 1fr auto;gap:8px;align-items:end}
+.item-body label{display:block;font-size:10px;font-weight:700;color:#999;text-transform:uppercase;margin-bottom:4px}
+.item-qty{width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:15px;font-weight:600;text-align:center;outline:none;color:#333}
+.item-qty:focus{border-color:#003d82}
+.item-obs{width:100%;padding:8px 10px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;outline:none;color:#333;resize:none;height:38px;font-family:inherit}
+.item-obs:focus{border-color:#003d82}
+.btn-photo{background:#f3e5f5;color:#6a1b9a;border:1.5px solid #ce93d8;border-radius:7px;padding:7px 10px;font-size:18px;cursor:pointer;line-height:1;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:48px}
+.btn-photo span{font-size:9px;font-weight:700;text-transform:uppercase}
+.btn-photo.has-photo{background:#e8f5e9;color:#2e7d32;border-color:#81c784}
+.photo-preview{display:none;margin-top:4px;padding:0 14px 10px}
+.photo-preview img{width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #ddd;cursor:pointer}
+.photo-preview .del-photo{display:inline-block;margin-left:6px;color:#d32f2f;font-size:11px;cursor:pointer;vertical-align:middle;font-weight:700}
+
+/* NOTAS GENERALES */
+.notas-card{background:white;border-radius:10px;margin:0 12px 10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.notas-card label{display:block;font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px}
+.notas-card textarea{width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;resize:vertical;min-height:70px;outline:none;font-family:inherit;color:#333}
+.notas-card textarea:focus{border-color:#003d82}
+
+/* SAVE BUTTON */
+.save-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 16px;background:white;border-top:1px solid #eee;display:flex;gap:10px;z-index:50}
+.btn-save{flex:1;padding:15px;background:#003d82;color:white;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer}
+.btn-save:disabled{background:#999;cursor:not-allowed}
+.btn-save:not(:disabled):active{background:#002656}
+
+/* MESSAGE */
+#msg-bar{margin:0 12px 10px;padding:12px 14px;border-radius:8px;font-size:13px;display:none;font-weight:600}
+#msg-bar.success{background:#e8f5e9;color:#1b5e20;border:1px solid #81c784}
+#msg-bar.error{background:#ffebee;color:#b71c1c;border:1px solid #ef9a9a}
+#msg-bar.info{background:#e3f0ff;color:#003d82;border:1px solid #90caf9}
+
+/* LOADING */
+#loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:200}
+#loading-box{background:white;border-radius:14px;padding:28px 36px;text-align:center;font-size:14px;font-weight:600;color:#333}
+
+/* HISTORY MODAL */
+#hist-modal{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:none;align-items:flex-end;justify-content:center;z-index:100}
+#hist-box{background:white;border-radius:16px 16px 0 0;padding:20px;width:100%;max-width:600px;max-height:70vh;overflow-y:auto}
+#hist-box h3{font-size:16px;color:#1a2e4a;margin-bottom:14px}
+.hist-item{padding:12px;border:1.5px solid #eee;border-radius:8px;margin-bottom:8px;cursor:pointer;transition:background .15s}
+.hist-item:hover{background:#f0f4f8}
+.hist-item h4{font-size:13px;font-weight:700;color:#003d82}
+.hist-item p{font-size:12px;color:#888;margin-top:3px}
+
+/* UPLOAD BAR */
+#upload-bar{display:none;padding:10px 16px;background:#e3f0ff;font-size:13px;color:#003d82;font-weight:600;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>NÁUTICA VIAMAR</h1>
+      <p>Inventario de Embarcación</p>
+    </div>
+    <div class="login-field">
+      <label>Usuario</label>
+      <input type="text" id="l-user" autocomplete="username" placeholder="Usuario del barco" />
+    </div>
+    <div class="login-field">
+      <label>Contraseña</label>
+      <input type="password" id="l-pass" autocomplete="current-password" placeholder="Contraseña" />
+    </div>
+    <button class="btn-login" id="btn-login" onclick="doLogin()">ENTRAR</button>
+    <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="app-header">
+    <div>
+      <div class="app-header h1" id="hdr-title" style="font-size:16px;font-weight:700">Inventario</div>
+      <div class="header-boat" id="hdr-boat"></div>
+    </div>
+    <div class="header-info">
+      <button class="btn-logout" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+  <div id="status-bar">
+    <div id="status-dot"></div>
+    <span id="status-txt">Comprobando conexión...</span>
+  </div>
+  <div id="upload-bar">📤 Subiendo fotos...</div>
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <div>
+        <label>Fecha</label>
+        <input type="date" id="inv-fecha" />
+      </div>
+    </div>
+    <button class="btn-hist" onclick="openHist()">🕐 Ver anteriores</button>
+  </div>
+
+  <div id="msg-bar"></div>
+
+  <!-- ITEMS -->
+  <div class="inv-list" id="inv-list"></div>
+
+  <!-- NOTAS -->
+  <div class="notas-card">
+    <label>Observaciones generales</label>
+    <textarea id="inv-notas" placeholder="Notas, observaciones..."></textarea>
+  </div>
+
+  <!-- SAVE BAR -->
+  <div class="save-bar">
+    <button class="btn-save" id="btn-save" onclick="doSave()">GUARDAR INVENTARIO</button>
+  </div>
+</div>
+
+<!-- LOADING -->
+<div id="loading"><div id="loading-box">Cargando...</div></div>
+
+<!-- HISTORY MODAL -->
+<div id="hist-modal" onclick="closeHist(event)">
+  <div id="hist-box">
+    <h3>📋 Inventarios anteriores</h3>
+    <div id="hist-list"></div>
+    <button onclick="closeHistForce()" style="width:100%;padding:12px;margin-top:8px;background:#eee;border:none;border-radius:8px;font-size:14px;cursor:pointer">Cerrar</button>
+  </div>
+</div>
+
+<!-- FILE INPUT for photos -->
+<input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" />
+
+<script>
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzzCQwSIDcavJNmJKMV8vc3osVrV1SUaEZ3E_xYCdd8cBJJ0qPZDbGSS8qlJFPk7Qa9g/exec';
+
+var ITEMS = [
+  {key:'defensas',       label:'Defensas'},
+  {key:'def_pantalon',   label:'Defensas pantalón'},
+  {key:'cabos',          label:'Cabos'},
+  {key:'cabos_amarre',   label:'Cabos amarre'},
+  {key:'manguera',       label:'Manguera'},
+  {key:'cable_pantalon', label:'Cable pantalón'},
+  {key:'chalecos',       label:'Chalecos'},
+  {key:'aro_salvavidas', label:'Aro Salvavidas'},
+  {key:'bichero',        label:'Bichero'},
+  {key:'bengalas',       label:'Bengalas'},
+  {key:'extintor',       label:'Extintor'},
+  {key:'prismaticos',    label:'Prismáticos'},
+  {key:'arquillada',     label:'Arquillada'},
+  {key:'bimini',         label:'Bimini'},
+  {key:'caja_herramientas', label:'Caja Herramientas'},
+  {key:'cojines',        label:'Cojines'},
+  {key:'cuberteria',     label:'Cubertería'},
+  {key:'neumatica',      label:'Neumática'},
+  {key:'fueraborda',     label:'Fueraborda'},
+  {key:'colchonetas',    label:'Colchonetas'},
+  {key:'fundas_colchoneta', label:'Fundas de colchoneta'},
+  {key:'lona_fondeo',    label:'Lona de fondeo'}
+];
+
+var invUser = null;
+var invBarco = null;
+var currentInvId = null;
+var photoData = {};       // key -> base64
+var offlinePhotos = {};   // key -> base64 (for offline queue)
+var pendingInventarios = JSON.parse(localStorage.getItem('pendingInventarios')||'[]');
+var isOnline = navigator.onLine;
+
+/* ============ LOGIN ============ */
+function doLogin() {
+  var u = document.getElementById('l-user').value.trim();
+  var p = document.getElementById('l-pass').value.trim();
+  if (!u || !p) { document.getElementById('login-err').textContent='Introduce usuario y contraseña'; return; }
+  document.getElementById('btn-login').disabled = true;
+  document.getElementById('btn-login').textContent = 'Entrando...';
+  fetch(SCRIPT_URL+'?action=loginInventario&user='+encodeURIComponent(u)+'&pass='+encodeURIComponent(p))
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false,message:'Error de servidor'};}
+      if (res.success) {
+        invUser = res.user;
+        invBarco = res.embarcacion;
+        document.getElementById('login-screen').style.display='none';
+        document.getElementById('app-screen').style.display='block';
+        document.getElementById('hdr-boat').textContent = invBarco;
+        initApp();
+      } else {
+        document.getElementById('login-err').textContent = res.message || 'Usuario o contraseña incorrectos';
+        document.getElementById('btn-login').disabled=false;
+        document.getElementById('btn-login').textContent='ENTRAR';
+      }
+    })
+    .catch(function(){
+      document.getElementById('login-err').textContent='Sin conexión al servidor';
+      document.getElementById('btn-login').disabled=false;
+      document.getElementById('btn-login').textContent='ENTRAR';
+    });
+}
+
+function doLogout() {
+  if (pendingInventarios.length > 0 && !confirm('Hay inventarios pendientes de sincronizar. ¿Salir igualmente?')) return;
+  invUser=null; invBarco=null; currentInvId=null; photoData={}; offlinePhotos={};
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('btn-login').disabled=false;
+  document.getElementById('btn-login').textContent='ENTRAR';
+  document.getElementById('login-err').textContent='';
+}
+
+/* ============ INIT ============ */
+function initApp() {
+  // set today date
+  var today = new Date();
+  var y = today.getFullYear(), m = String(today.getMonth()+1).padStart(2,'0'), d = String(today.getDate()).padStart(2,'0');
+  document.getElementById('inv-fecha').value = y+'-'+m+'-'+d;
+  // render items
+  renderItems({});
+  updateStatus();
+  setInterval(updateStatus, 30000);
+  setInterval(syncPending, 30000);
+  syncPending();
+}
+
+/* ============ RENDER ITEMS ============ */
+function renderItems(loadedData) {
+  var container = document.getElementById('inv-list');
+  container.innerHTML = '';
+  ITEMS.forEach(function(item, idx) {
+    var data = loadedData[item.key] || {};
+    var qty = data.cantidad !== undefined ? data.cantidad : '';
+    var obs = data.obs || '';
+    var div = document.createElement('div');
+    div.className = 'item-card';
+    var hasPhoto = photoData[item.key+'_foto'] ? true : false;
+    div.innerHTML =
+      '<div class="item-header">'+
+        '<div class="item-num">'+(idx+1)+'</div>'+
+        '<div class="item-name">'+escH(item.label)+'</div>'+
+      '</div>'+
+      '<div class="item-body">'+
+        '<div>'+
+          '<label>Cantidad</label>'+
+          '<input class="item-qty" type="number" min="0" data-key="'+item.key+'" value="'+escH(String(qty))+'" placeholder="0" />'+
+        '</div>'+
+        '<div>'+
+          '<label>Observaciones</label>'+
+          '<textarea class="item-obs" data-key="'+item.key+'" placeholder="Observaciones...">'+escH(obs)+'</textarea>'+
+        '</div>'+
+        '<div>'+
+          '<label>&nbsp;</label>'+
+          '<button class="btn-photo'+(hasPhoto?' has-photo':'')+'" id="photobtn-'+item.key+'" onclick="triggerPhoto(\''+item.key+'\')">'+
+            '📷<span>'+(hasPhoto?'OK':'Foto')+'</span>'+
+          '</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="photo-preview" id="preview-'+item.key+'"></div>';
+    container.appendChild(div);
+    if (hasPhoto) showPhotoPreview(item.key);
+  });
+}
+
+/* ============ PHOTO HANDLING ============ */
+var currentPhotoKey = null;
+function triggerPhoto(key) {
+  currentPhotoKey = key;
+  var inp = document.getElementById('photo-input');
+  inp.onchange = function(e) { handlePhotoFile(e, key); };
+  inp.click();
+}
+
+function handlePhotoFile(e, key) {
+  var file = e.target.files && e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var img = new Image();
+    img.onload = function() {
+      var canvas = document.createElement('canvas');
+      var max = 900;
+      var w = img.width, h = img.height;
+      if (w > max || h > max) {
+        if (w > h) { h = Math.round(h*max/w); w = max; } else { w = Math.round(w*max/h); h = max; }
+      }
+      canvas.width=w; canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      var b64 = canvas.toDataURL('image/jpeg', 0.75);
+      photoData[key+'_foto'] = b64;
+      var btn = document.getElementById('photobtn-'+key);
+      if (btn) { btn.className='btn-photo has-photo'; btn.innerHTML='📷<span>OK</span>'; }
+      showPhotoPreview(key);
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function showPhotoPreview(key) {
+  var b64 = photoData[key+'_foto'];
+  if (!b64) return;
+  var div = document.getElementById('preview-'+key);
+  if (!div) return;
+  div.style.display='block';
+  div.innerHTML='<img src="'+b64+'" onclick="window.open(this.src)" /><span class="del-photo" onclick="deletePhoto(\''+key+'\')">✕ Quitar</span>';
+}
+
+function deletePhoto(key) {
+  delete photoData[key+'_foto'];
+  var div = document.getElementById('preview-'+key);
+  if (div) { div.style.display='none'; div.innerHTML=''; }
+  var btn = document.getElementById('photobtn-'+key);
+  if (btn) { btn.className='btn-photo'; btn.innerHTML='📷<span>Foto</span>'; }
+}
+
+/* ============ COLLECT FORM DATA ============ */
+function collectItems() {
+  var result = {};
+  ITEMS.forEach(function(item) {
+    var qtyEl = document.querySelector('.item-qty[data-key="'+item.key+'"]');
+    var obsEl = document.querySelector('.item-obs[data-key="'+item.key+'"]');
+    var qty = qtyEl ? qtyEl.value.trim() : '';
+    var obs = obsEl ? obsEl.value.trim() : '';
+    if (qty !== '' || obs !== '') {
+      result[item.key] = { cantidad: qty, obs: obs };
+    }
+  });
+  return result;
+}
+
+/* ============ SAVE ============ */
+function doSave() {
+  var items = collectItems();
+  var fechaVal = document.getElementById('inv-fecha').value;
+  var notas = document.getElementById('inv-notas').value.trim();
+  var invData = {
+    id: currentInvId || ('INV_'+Date.now()),
+    embarcacion: invBarco,
+    fecha: formatDateES(fechaVal),
+    realizadoPor: invUser,
+    items: items,
+    fotosUrls: {},
+    notas: notas
+  };
+  currentInvId = invData.id;
+
+  if (!isOnline) {
+    saveOffline(invData);
+    showMsg('⚠️ Sin conexión — Guardado LOCAL. Se sincronizará automáticamente.', 'error');
+    return;
+  }
+
+  // Upload photos first if any
+  var photoIds = Object.keys(photoData);
+  document.getElementById('btn-save').disabled = true;
+  if (photoIds.length > 0) {
+    document.getElementById('upload-bar').style.display='block';
+    document.getElementById('upload-bar').textContent = '📤 Subiendo '+photoIds.length+' foto(s)...';
+    var photosArr = photoIds.map(function(pid){ return {photoId:pid, base64Data:photoData[pid]}; });
+    var controller = new AbortController();
+    var tid = setTimeout(function(){controller.abort();}, 90000);
+    fetch(SCRIPT_URL, {
+      method:'POST',
+      body: JSON.stringify({action:'uploadInventarioPhotoBatch', photos:photosArr, inventarioData:{embarcacion:invBarco}}),
+      signal: controller.signal
+    })
+    .then(function(r){clearTimeout(tid);return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if (res.success && res.results) {
+        photoIds.forEach(function(pid){
+          var r2=res.results[pid];
+          if(r2&&r2.success) invData.fotosUrls[pid]=r2.url;
+        });
+      }
+      document.getElementById('upload-bar').style.display='none';
+      doSaveData(invData);
+    })
+    .catch(function(){
+      clearTimeout(tid);
+      document.getElementById('upload-bar').style.display='none';
+      doSaveData(invData); // save without photos
+    });
+  } else {
+    doSaveData(invData);
+  }
+}
+
+function doSaveData(invData, retry) {
+  retry = retry || 0;
+  fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'saveInventario', data:invData})})
+  .then(function(r){return r.text();})
+  .then(function(t){
+    var res; try{res=JSON.parse(t);}catch(e){res={success:false,message:'Respuesta no JSON: '+t.substring(0,80)};}
+    document.getElementById('btn-save').disabled=false;
+    if (res.success) {
+      var fCount = Object.keys(invData.fotosUrls||{}).length;
+      showMsg('✅ Inventario guardado. '+fCount+' foto(s).', 'success');
+      photoData = {};
+    } else {
+      if (retry < 2) {
+        setTimeout(function(){doSaveData(invData, retry+1);}, 3000);
+      } else {
+        saveOffline(invData);
+        showMsg('⚠️ Error del servidor — Guardado LOCAL.', 'error');
+      }
+    }
+  })
+  .catch(function(err){
+    if (retry < 2) {
+      setTimeout(function(){doSaveData(invData, retry+1);}, 4000);
+    } else {
+      document.getElementById('btn-save').disabled=false;
+      saveOffline(invData);
+      showMsg('⚠️ Sin respuesta — Guardado LOCAL.', 'error');
+    }
+  });
+}
+
+/* ============ OFFLINE ============ */
+function saveOffline(invData) {
+  var pending = JSON.parse(localStorage.getItem('pendingInventarios')||'[]');
+  var idx = pending.findIndex(function(x){return x.id===invData.id;});
+  var toSave = Object.assign({}, invData, {_offlinePhotos: photoData});
+  if (idx >= 0) pending[idx] = toSave; else pending.push(toSave);
+  localStorage.setItem('pendingInventarios', JSON.stringify(pending));
+  pendingInventarios = pending;
+  updateStatus();
+}
+
+function syncPending() {
+  var pending = JSON.parse(localStorage.getItem('pendingInventarios')||'[]');
+  if (pending.length === 0 || !navigator.onLine) return;
+  var item = pending[0];
+  var offPhotos = item._offlinePhotos || {};
+  var invData = Object.assign({}, item);
+  delete invData._offlinePhotos;
+  invData.fotosUrls = invData.fotosUrls || {};
+
+  var photoIds = Object.keys(offPhotos);
+  if (photoIds.length > 0) {
+    var photosArr = photoIds.map(function(pid){return {photoId:pid,base64Data:offPhotos[pid]};});
+    fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'uploadInventarioPhotoBatch', photos:photosArr, inventarioData:{embarcacion:invData.embarcacion}})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if (res.success && res.results) {
+        photoIds.forEach(function(pid){var r2=res.results[pid];if(r2&&r2.success)invData.fotosUrls[pid]=r2.url;});
+      }
+      return syncSaveInventario(invData);
+    })
+    .catch(function(){return syncSaveInventario(invData);});
+  } else {
+    syncSaveInventario(invData);
+  }
+}
+
+function syncSaveInventario(invData) {
+  return fetch(SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'saveInventario', data:invData})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if (res.success) {
+        var pending = JSON.parse(localStorage.getItem('pendingInventarios')||'[]');
+        pending = pending.filter(function(x){return x.id!==invData.id;});
+        localStorage.setItem('pendingInventarios', JSON.stringify(pending));
+        pendingInventarios = pending;
+        updateStatus();
+      }
+    })
+    .catch(function(){});
+}
+
+/* ============ HISTORY ============ */
+function openHist() {
+  if (!isOnline) { showMsg('Sin conexión — no se puede cargar el historial.', 'error'); return; }
+  showLoading('Cargando historial...');
+  fetch(SCRIPT_URL+'?action=getInventario&embarcacion='+encodeURIComponent(invBarco))
+    .then(function(r){return r.text();})
+    .then(function(t){
+      hideLoading();
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if (!res.success || !res.inventarios || res.inventarios.length===0) {
+        showMsg('No hay inventarios anteriores para este barco.','info');
+        return;
+      }
+      var list = document.getElementById('hist-list');
+      list.innerHTML = '';
+      res.inventarios.forEach(function(inv) {
+        var d = document.createElement('div');
+        d.className='hist-item';
+        var fCount = inv.fotosUrls ? Object.keys(inv.fotosUrls).length : 0;
+        d.innerHTML='<h4>'+escH(inv.fecha)+'</h4><p>Por: '+escH(inv.realizadoPor||'-')+' &bull; '+fCount+' foto(s)</p>';
+        d.onclick = function(){loadInventario(inv);};
+        list.appendChild(d);
+      });
+      document.getElementById('hist-modal').style.display='flex';
+    })
+    .catch(function(){hideLoading();showMsg('Error al cargar historial.','error');});
+}
+
+function closeHist(e) {
+  if (e.target.id==='hist-modal') closeHistForce();
+}
+function closeHistForce() {
+  document.getElementById('hist-modal').style.display='none';
+}
+
+function loadInventario(inv) {
+  closeHistForce();
+  currentInvId = inv.id;
+  // Set date
+  if (inv.fecha) {
+    var parts = inv.fecha.split('/');
+    if (parts.length===3) document.getElementById('inv-fecha').value=parts[2]+'-'+parts[1]+'-'+parts[0];
+  }
+  document.getElementById('inv-notas').value = inv.notas || '';
+  renderItems(inv.items || {});
+  photoData = {};
+  showMsg('Inventario del '+inv.fecha+' cargado. Puedes editarlo y guardar.','info');
+}
+
+/* ============ STATUS ============ */
+function updateStatus() {
+  isOnline = navigator.onLine;
+  var dot = document.getElementById('status-dot');
+  var txt = document.getElementById('status-txt');
+  var pending = JSON.parse(localStorage.getItem('pendingInventarios')||'[]');
+  if (!isOnline) {
+    dot.className='offline'; txt.textContent='Sin conexión';
+  } else if (pending.length > 0) {
+    dot.className='pending'; txt.textContent=pending.length+' inventario(s) pendiente(s) de sincronizar';
+  } else {
+    dot.className=''; txt.textContent='Conectado y sincronizado';
+  }
+}
+
+window.addEventListener('online', function(){isOnline=true;updateStatus();syncPending();});
+window.addEventListener('offline', function(){isOnline=false;updateStatus();});
+
+/* ============ UI HELPERS ============ */
+function showLoading(msg) {
+  document.getElementById('loading-box').textContent=msg||'Cargando...';
+  document.getElementById('loading').style.display='flex';
+}
+function hideLoading(){document.getElementById('loading').style.display='none';}
+function showMsg(text, type) {
+  var el = document.getElementById('msg-bar');
+  el.textContent=text; el.className=type; el.style.display='block';
+  setTimeout(function(){el.style.display='none';},5000);
+}
+function escH(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function formatDateES(iso) {
+  if (!iso) return '';
+  var p=iso.split('-');
+  return (p[2]||'')+'/'+( p[1]||'')+'/'+( p[0]||'');
+}
+
+// Enter key in login
+document.getElementById('l-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('l-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('l-pass').focus();});
+</script>
+</body>
+</html>
