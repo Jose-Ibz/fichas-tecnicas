@@ -347,6 +347,9 @@ tr:hover td{background:#fafbff}
 <div class="nav-item" onclick="showPage('inventarios')" id="nav-inventarios">
 <span class="nav-icon">📦</span><span>Inventarios</span>
 </div>
+<div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios" style="display:none">
+<span class="nav-icon">👥</span><span>Usuarios</span>
+</div>
 </div>
 <div class="sidebar-user">
 <div>👤 <span id="sidebar-user"></span></div>
@@ -664,6 +667,71 @@ tr:hover td{background:#fafbff}
 </div>
 </div><!-- /page-inventarios -->
 
+<!-- USUARIOS -->
+<div id="page-usuarios" class="page">
+<div class="topbar">
+  <h1>👥 Usuarios del Sistema</h1>
+  <div class="topbar-actions">
+    <button class="btn btn-primary btn-sm" onclick="openUsuarioModal(null)">+ Nuevo usuario</button>
+    <button class="btn btn-outline btn-sm" onclick="loadUsuarios()">🔄 Actualizar</button>
+  </div>
+</div>
+<div class="table-card">
+  <table>
+    <thead>
+      <tr>
+        <th>Usuario</th>
+        <th>Rol</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody id="usuarios-table-body">
+      <tr><td colspan="4" style="text-align:center;color:#888;padding:30px">Cargando...</td></tr>
+    </tbody>
+  </table>
+</div>
+</div><!-- /page-usuarios -->
+
+<!-- MODAL USUARIO -->
+<div class="acceso-modal-overlay" id="usuario-modal">
+  <div class="acceso-modal">
+    <div class="acceso-modal-top">
+      <h3 id="usuario-modal-title">Nuevo usuario</h3>
+      <button onclick="closeUsuarioModal()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div class="acceso-modal-body">
+      <div class="acceso-field">
+        <label>Usuario *</label>
+        <input type="text" id="usu-user" placeholder="Ej: tecnico2" autocomplete="off" />
+      </div>
+      <div class="acceso-field">
+        <label id="usu-pass-label">Contraseña *</label>
+        <input type="text" id="usu-pass" placeholder="Contraseña" autocomplete="off" />
+      </div>
+      <div class="acceso-field">
+        <label>Rol</label>
+        <select id="usu-rol">
+          <option value="Tecnico">Técnico</option>
+          <option value="Administrador">Administrador</option>
+        </select>
+      </div>
+      <div class="acceso-field">
+        <label>Estado</label>
+        <select id="usu-activo">
+          <option value="SI">Activo</option>
+          <option value="NO">Inactivo</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-secondary" onclick="closeUsuarioModal()" style="flex:1">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveUsuario()" style="flex:1">Guardar</button>
+      </div>
+      <div id="usuario-msg" style="margin-top:10px;font-size:13px;min-height:18px;text-align:center"></div>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL DETALLE INVENTARIO -->
 <div class="inv-detail-overlay" id="inv-detail-modal">
   <div class="inv-detail-box">
@@ -791,6 +859,10 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
     loadAllData();
     loadTareas();
     loadInventarios();
+    if((res.role||'').toLowerCase()==='administrador'){
+      document.getElementById('nav-usuarios').style.display='flex';
+      loadUsuarios();
+    }
   }else{
     showLoginError(res.message||'Credenciales incorrectas');
   }
@@ -1879,6 +1951,7 @@ else if(id==='barco')renderBarcoPage();
 else if(id==='asistente')initAsistente();
 else if(id==='tareas')renderTareas();
 else if(id==='inventarios'){renderInventariosTable();renderAccesos();}
+else if(id==='usuarios')renderUsuariosTable();
 }
 
 // ====== UTILS ======
@@ -2110,6 +2183,93 @@ chatHistory=[];
 document.getElementById('chat-messages').innerHTML=
   '<div class="chat-msg system">🔄 Conversación reiniciada. ¿En qué te puedo ayudar?</div>';
 document.getElementById('chat-sugerencias').style.display='flex';
+}
+
+// ====== USUARIOS ======
+var allUsuarios=[];
+
+function loadUsuarios(){
+  fetch(SCRIPT_URL+'?action=getUsuarios')
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){allUsuarios=res.usuarios||[];renderUsuariosTable();}
+      else{document.getElementById('usuarios-table-body').innerHTML='<tr><td colspan="4" style="text-align:center;color:#c62828;padding:20px">Error al cargar usuarios</td></tr>';}
+    })
+    .catch(function(){document.getElementById('usuarios-table-body').innerHTML='<tr><td colspan="4" style="text-align:center;color:#c62828;padding:20px">Error de conexión</td></tr>';});
+}
+
+function renderUsuariosTable(){
+  var tb=document.getElementById('usuarios-table-body');
+  if(!tb)return;
+  if(allUsuarios.length===0){tb.innerHTML='<tr><td colspan="4" style="text-align:center;color:#888;padding:20px">Sin usuarios</td></tr>';return;}
+  var html='';
+  allUsuarios.forEach(function(u){
+    var activo=String(u.activo||'').toUpperCase()==='SI';
+    var esYo=pcUser&&pcUser.nombre===u.usuario;
+    html+='<tr>'+
+      '<td><strong>'+escHtml(u.usuario)+'</strong>'+(esYo?' <span style="font-size:11px;color:#888">(tú)</span>':'')+'</td>'+
+      '<td><span class="badge '+(u.rol==='Administrador'?'badge-varada':'badge-partial')+'">'+escHtml(u.rol||'-')+'</span></td>'+
+      '<td><span class="acceso-badge '+(activo?'activo':'inactivo')+'">'+(activo?'Activo':'Inactivo')+'</span></td>'+
+      '<td style="display:flex;gap:6px">'+
+        '<button class="btn btn-outline btn-xs" onclick="openUsuarioModal(\''+escHtml(u.usuario)+'\')">Editar</button>'+
+        (!esYo?'<button class="btn btn-xs '+(activo?'btn-danger':'btn-success')+'" onclick="toggleUsuario(\''+escHtml(u.usuario)+'\','+(activo?'\'NO\'':'\'SI\'')+')">'+
+          (activo?'Desactivar':'Activar')+'</button>':'')+
+      '</td>'+
+    '</tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function openUsuarioModal(username){
+  var u=username?allUsuarios.find(function(x){return x.usuario===username;}):null;
+  document.getElementById('usuario-modal-title').textContent=u?'Editar usuario':'Nuevo usuario';
+  document.getElementById('usu-user').value=u?u.usuario:'';
+  document.getElementById('usu-user').readOnly=!!u;
+  document.getElementById('usu-pass').value='';
+  document.getElementById('usu-pass-label').textContent=u?'Nueva contraseña (dejar vacío para no cambiar)':'Contraseña *';
+  document.getElementById('usu-rol').value=u?(u.rol||'Tecnico'):'Tecnico';
+  document.getElementById('usu-activo').value=u?(String(u.activo||'SI').toUpperCase()):'SI';
+  document.getElementById('usuario-msg').textContent='';
+  document.getElementById('usuario-modal').classList.add('active');
+}
+
+function closeUsuarioModal(){
+  document.getElementById('usuario-modal').classList.remove('active');
+}
+
+function saveUsuario(){
+  var user=document.getElementById('usu-user').value.trim();
+  var pass=document.getElementById('usu-pass').value.trim();
+  var rol=document.getElementById('usu-rol').value;
+  var activo=document.getElementById('usu-activo').value;
+  var msgEl=document.getElementById('usuario-msg');
+  if(!user){msgEl.style.color='#c62828';msgEl.textContent='El nombre de usuario es obligatorio.';return;}
+  msgEl.style.color='#003d82';msgEl.textContent='Guardando...';
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'saveUsuario',usuario:{usuario:user,password:pass,rol:rol,activo:activo}})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        msgEl.style.color='#2e7d32';msgEl.textContent='Guardado correctamente.';
+        loadUsuarios();
+        setTimeout(closeUsuarioModal,1200);
+      }else{msgEl.style.color='#c62828';msgEl.textContent='Error: '+(res.message||'Sin detalles');}
+    })
+    .catch(function(){msgEl.style.color='#c62828';msgEl.textContent='Error de conexión.';});
+}
+
+function toggleUsuario(username,activo){
+  var accion=activo==='SI'?'activar':'desactivar';
+  if(!confirm('¿'+accion.charAt(0).toUpperCase()+accion.slice(1)+' al usuario "'+username+'"?'))return;
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'toggleUsuario',username:username,activo:activo})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success)loadUsuarios();
+      else alert('Error: '+(res.message||'desconocido'));
+    })
+    .catch(function(){alert('Error de conexión.');});
 }
 
 // ====== INVENTARIOS ======
