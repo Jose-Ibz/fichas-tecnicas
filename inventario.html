@@ -366,6 +366,16 @@ function renderItems(loadedData) {
       '</div>';
     }
 
+    // Campo ubicación para colchonetas y lona de fondeo
+    var ubicField = '';
+    if (item.key === 'colchonetas' || item.key === 'lona_fondeo') {
+      var ubic = data.ubicacion || '';
+      ubicField = '<div style="padding:0 14px 10px;display:flex;align-items:center;gap:10px">'+
+        '<label style="font-size:10px;font-weight:700;color:#1565c0;text-transform:uppercase;white-space:nowrap">📍 Ubicación</label>'+
+        '<input type="text" class="item-ubic" data-key="'+item.key+'" placeholder="¿Dónde están guardadas?" value="'+escH(ubic)+'" style="flex:1;padding:7px 10px;border:1.5px solid #90caf9;border-radius:7px;font-size:13px;outline:none;color:#1565c0" />'+
+      '</div>';
+    }
+
     div.innerHTML =
       '<div class="item-header">'+
         '<div class="item-num">'+(idx+1)+'</div>'+
@@ -388,7 +398,7 @@ function renderItems(loadedData) {
         '</div>'+
       '</div>'+
       '<div class="photo-preview" id="preview-'+item.key+'"></div>'+
-      cadField;
+      cadField+ubicField;
     container.appendChild(div);
     if (hasPhoto) showPhotoPreview(item.key);
   });
@@ -410,6 +420,7 @@ function renderCustomItemCard(ci) {
   var div = document.createElement('div');
   div.className = 'item-card';
   div.id = 'custom-card-'+ci.key;
+  var hasPhoto = photoData[ci.key+'_foto'] ? true : false;
   div.innerHTML =
     '<div class="item-header">'+
       '<div class="item-num" style="background:#888">+</div>'+
@@ -426,9 +437,16 @@ function renderCustomItemCard(ci) {
         '<label>Observaciones</label>'+
         '<textarea class="item-obs" data-key="'+ci.key+'" placeholder="Observaciones...">'+escH(ci.obs)+'</textarea>'+
       '</div>'+
-      '<div><label>&nbsp;</label><div style="width:48px"></div></div>'+
-    '</div>';
+      '<div>'+
+        '<label>&nbsp;</label>'+
+        '<button class="btn-photo'+(hasPhoto?' has-photo':'')+'" id="photobtn-'+ci.key+'" onclick="triggerPhoto(\''+ci.key+'\')">'+
+          '📷<span>'+(hasPhoto?'OK':'Foto')+'</span>'+
+        '</button>'+
+      '</div>'+
+    '</div>'+
+    '<div class="photo-preview" id="preview-'+ci.key+'"></div>';
   container.appendChild(div);
+  if (hasPhoto) showPhotoPreview(ci.key);
 }
 
 function removeCustomItem(key) {
@@ -506,6 +524,12 @@ function collectItems() {
       var cadEl = document.querySelector('.item-cad[data-key="bengalas"]');
       var cad = cadEl ? cadEl.value.trim() : '';
       if (cad) entry.caducidad = cad;
+    }
+    // ubicación para colchonetas y lona_fondeo
+    if (item.key === 'colchonetas' || item.key === 'lona_fondeo') {
+      var ubicEl = document.querySelector('.item-ubic[data-key="'+item.key+'"]');
+      var ubic = ubicEl ? ubicEl.value.trim() : '';
+      if (ubic) entry.ubicacion = ubic;
     }
     if (Object.keys(entry).length > 0) result[item.key] = entry;
   });
