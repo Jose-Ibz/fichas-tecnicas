@@ -414,6 +414,20 @@ tr:hover td{background:#fafbff}
 <div id="dashboard-tareas-full" style="padding:0 8px 12px;max-height:300px;overflow-y:auto"></div>
 </div>
 </div>
+
+<div class="charts-grid" style="margin-top:20px">
+<div class="chart-card" style="overflow:hidden;padding:0">
+<div style="padding:18px 22px 12px;display:flex;justify-content:space-between;align-items:center">
+  <h3 style="margin:0">🔥 Caducidad Bengalas</h3>
+  <button class="btn btn-outline btn-xs" onclick="showPage('inventarios')">Ver inventarios →</button>
+</div>
+<div id="widget-bengalas" style="padding:0 20px 12px;max-height:260px;overflow-y:auto">
+  <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
+</div>
+</div>
+<div class="chart-card"></div>
+</div>
+
 <div class="table-card">
 <div class="table-header">
 <h3>🕐 Últimas 10 Inspecciones</h3>
@@ -624,7 +638,8 @@ tr:hover td{background:#fafbff}
 
 <div class="inv-tabs">
   <button class="inv-tab active" id="inv-tab-lista" onclick="setInvTab('lista')">📋 Lista de Inventarios</button>
-  <button class="inv-tab" id="inv-tab-accesos" onclick="setInvTab('accesos')">🔑 Accesos por Barco</button>
+  <button class="inv-tab" id="inv-tab-barcos" onclick="setInvTab('barcos')">🚤 Barcos</button>
+  <button class="inv-tab" id="inv-tab-accesos" onclick="setInvTab('accesos')">🔑 Accesos</button>
 </div>
 
 <!-- TAB LISTA -->
@@ -652,6 +667,17 @@ tr:hover td{background:#fafbff}
         <tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Cargando...</td></tr>
       </tbody>
     </table>
+  </div>
+</div>
+
+<!-- TAB BARCOS -->
+<div class="inv-section" id="inv-section-barcos">
+  <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
+    <p style="font-size:13px;color:#555">Lista de barcos disponibles en el formulario de inventario. Solo los activos aparecen en el móvil.</p>
+    <button class="btn btn-primary btn-sm" onclick="openBarcoModal(null)">+ Nuevo barco</button>
+  </div>
+  <div id="barcos-list">
+    <div style="text-align:center;color:#888;padding:30px">Cargando...</div>
   </div>
 </div>
 
@@ -743,6 +769,34 @@ tr:hover td{background:#fafbff}
       <button onclick="closeInvDetail()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
     </div>
     <div class="inv-detail-body" id="inv-detail-body" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- MODAL BARCO -->
+<div class="acceso-modal-overlay" id="barco-modal">
+  <div class="acceso-modal">
+    <div class="acceso-modal-top">
+      <h3 id="barco-modal-title">Nuevo barco</h3>
+      <button onclick="closeBarcoModal()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div class="acceso-modal-body">
+      <div class="acceso-field">
+        <label>Nombre del barco *</label>
+        <input type="text" id="brc-nombre" placeholder="Ej: VENUS" style="text-transform:uppercase" autocomplete="off" />
+      </div>
+      <div class="acceso-field">
+        <label>Estado</label>
+        <select id="brc-activo">
+          <option value="SI">Activo (aparece en el móvil)</option>
+          <option value="NO">Inactivo (oculto en el móvil)</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:6px">
+        <button class="btn btn-secondary" onclick="closeBarcoModal()" style="flex:1">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveBarco()" style="flex:1">Guardar</button>
+      </div>
+      <div id="barco-msg" style="margin-top:10px;font-size:13px;min-height:18px;text-align:center"></div>
+    </div>
   </div>
 </div>
 
@@ -860,6 +914,7 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
     loadAllData();
     loadTareas();
     loadInventarios();
+    loadBarcos();
     if((res.role||'').toLowerCase()==='administrador'){
       document.getElementById('nav-usuarios').style.display='flex';
       loadUsuarios();
@@ -1149,6 +1204,54 @@ if(alertas.length>0){
 }
 
 renderWidgetTareas();
+renderWidgetBengalas();
+}
+
+function renderWidgetBengalas(){
+  var container = document.getElementById('widget-bengalas');
+  if(!container) return;
+  // Recopilar bengalas de todos los inventarios (el más reciente por barco)
+  var porBarco = {};
+  allInventarios.forEach(function(inv){
+    var barco = inv.embarcacion||'';
+    if(!porBarco[barco] || inv.fechaCreacion > porBarco[barco].fechaCreacion) {
+      porBarco[barco] = inv;
+    }
+  });
+  var lista = [];
+  Object.keys(porBarco).forEach(function(barco){
+    var inv = porBarco[barco];
+    var b = (inv.items||{}).bengalas || {};
+    if(b.caducidad) {
+      var parts = b.caducidad.split('/');
+      var mes = parseInt(parts[0])||0, anio = parseInt(parts[1])||0;
+      lista.push({barco:barco, caducidad:b.caducidad, mes:mes, anio:anio, cantidad:b.cantidad||'-'});
+    }
+  });
+  if(lista.length===0){
+    container.innerHTML='<div style="color:#888;font-size:13px;padding:10px 0">Sin datos de bengalas registrados.</div>';
+    return;
+  }
+  lista.sort(function(a,b){ return (a.anio*12+a.mes)-(b.anio*12+b.mes); });
+  var now = new Date();
+  var mesActual = now.getFullYear()*12 + now.getMonth()+1;
+  var html = '';
+  lista.forEach(function(it){
+    var meses = (it.anio*12+it.mes) - mesActual;
+    var color, etiqueta;
+    if(meses < 0){ color='#b71c1c'; etiqueta='CADUCADAS'; }
+    else if(meses <= 2){ color='#e65100'; etiqueta='Caduca en '+meses+' mes(es)'; }
+    else if(meses <= 6){ color='#f57f17'; etiqueta='Caduca en '+meses+' meses'; }
+    else{ color='#2e7d32'; etiqueta='OK ('+meses+' meses)'; }
+    html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid #f0f0f0;font-size:13px">'+
+      '<div>'+
+        '<div style="font-weight:700;color:#1a2e4a">'+escHtml(it.barco)+'</div>'+
+        '<div style="font-size:11px;color:#888">Ud: '+escHtml(String(it.cantidad))+' &bull; Cad: '+escHtml(it.caducidad)+'</div>'+
+      '</div>'+
+      '<span style="font-size:11px;font-weight:700;color:'+color+'">'+etiqueta+'</span>'+
+    '</div>';
+  });
+  container.innerHTML=html;
 }
 
 function rowHtml(i){
@@ -1951,7 +2054,7 @@ else if(id==='fotos')applyGalleryFilter();
 else if(id==='barco')renderBarcoPage();
 else if(id==='asistente')initAsistente();
 else if(id==='tareas')renderTareas();
-else if(id==='inventarios'){renderInventariosTable();renderAccesos();}
+else if(id==='inventarios'){renderInventariosTable();renderBarcosList();renderAccesos();}
 else if(id==='usuarios')renderUsuariosTable();
 }
 
@@ -2273,6 +2376,74 @@ function toggleUsuario(username,activo){
     .catch(function(){alert('Error de conexión.');});
 }
 
+// ====== BARCOS ======
+var allBarcos=[];
+
+function loadBarcos(){
+  fetch(SCRIPT_URL_INV+'?action=getBarcosAll')
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){allBarcos=res.barcos||[];renderBarcosList();}
+    }).catch(function(){});
+}
+
+function renderBarcosList(){
+  var container=document.getElementById('barcos-list');
+  if(!container)return;
+  if(allBarcos.length===0){
+    container.innerHTML='<div style="text-align:center;color:#888;padding:30px">No hay barcos. Añade el primero con "+ Nuevo barco".</div>';
+    return;
+  }
+  var html='';
+  allBarcos.forEach(function(b){
+    var activo=String(b.activo||'').toUpperCase()==='SI';
+    html+='<div class="acceso-card">'+
+      '<div>'+
+        '<div class="acceso-barco">🚤 '+escHtml(b.nombre)+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:10px;align-items:center">'+
+        '<span class="acceso-badge '+(activo?'activo':'inactivo')+'">'+(activo?'Activo':'Inactivo')+'</span>'+
+        '<button class="btn btn-outline btn-xs" onclick="openBarcoModal(\''+escHtml(b.nombre)+'\')">Editar</button>'+
+      '</div>'+
+    '</div>';
+  });
+  container.innerHTML=html;
+}
+
+function openBarcoModal(nombre){
+  var b=nombre?allBarcos.find(function(x){return x.nombre===nombre;}):null;
+  document.getElementById('barco-modal-title').textContent=b?'Editar barco':'Nuevo barco';
+  document.getElementById('brc-nombre').value=b?b.nombre:'';
+  document.getElementById('brc-nombre').readOnly=!!b;
+  document.getElementById('brc-activo').value=b?(String(b.activo||'SI').toUpperCase()):'SI';
+  document.getElementById('barco-msg').textContent='';
+  document.getElementById('barco-modal').classList.add('active');
+}
+
+function closeBarcoModal(){
+  document.getElementById('barco-modal').classList.remove('active');
+}
+
+function saveBarco(){
+  var nombre=document.getElementById('brc-nombre').value.trim().toUpperCase();
+  var activo=document.getElementById('brc-activo').value;
+  var msgEl=document.getElementById('barco-msg');
+  if(!nombre){msgEl.style.color='#c62828';msgEl.textContent='El nombre es obligatorio.';return;}
+  msgEl.style.color='#003d82';msgEl.textContent='Guardando...';
+  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'saveBarco',nombre:nombre,activo:activo})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        msgEl.style.color='#2e7d32';msgEl.textContent='Guardado correctamente.';
+        loadBarcos();
+        setTimeout(closeBarcoModal,1200);
+      }else{msgEl.style.color='#c62828';msgEl.textContent='Error: '+(res.message||'Sin detalles');}
+    })
+    .catch(function(){msgEl.style.color='#c62828';msgEl.textContent='Error de conexión.';});
+}
+
 // ====== INVENTARIOS ======
 var allInventarios=[];
 var allAccesos=[];
@@ -2310,6 +2481,7 @@ function loadInventarios(){
       if(res.success){
         allInventarios=res.inventarios||[];
         renderInventariosTable();
+        renderWidgetBengalas();
       } else {
         document.getElementById('inv-table-body').innerHTML=
           '<tr><td colspan="6" style="text-align:center;color:#c62828;padding:20px">Error al cargar inventarios</td></tr>';
