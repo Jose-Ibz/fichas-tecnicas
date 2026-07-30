@@ -2757,8 +2757,10 @@ function doDeleteInventario(){
   var btn=document.querySelector('[onclick="doDeleteInventario()"]');
   if(btn){btn.textContent='Borrando...';btn.disabled=true;}
   fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'deleteInventario',id:currentInvId})})
-    .then(function(r){return r.json();})
-    .then(function(res){
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;
+      try{res=JSON.parse(t);}catch(e){res={success:false,message:'Respuesta inválida: '+t.substring(0,80)};}
       if(res.success){
         allInventarios=allInventarios.filter(function(x){return x.id!==currentInvId;});
         closeInvDetail();
@@ -2772,7 +2774,7 @@ function doDeleteInventario(){
       }
     })
     .catch(function(e){
-      alert('Error de conexión al borrar el inventario.');
+      alert('Error de conexión: '+e.message);
       if(btn){btn.textContent='🗑️ Borrar';btn.disabled=false;}
     });
 }
