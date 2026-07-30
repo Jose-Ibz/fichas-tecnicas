@@ -835,6 +835,7 @@ tr:hover td{background:#fafbff}
 
 <script>
 var SCRIPT_URL='https://script.google.com/macros/s/AKfycbzzzCQwSIDcavJNmJKMV8vc3osVrV1SUaEZ3E_xYCdd8cBJJ0qPZDbGSS8qlJFPk7Qa9g/exec';
+var SCRIPT_URL_INV='https://script.google.com/macros/s/AKfycbxOOfIJT996LypxXqzekuwAgWQLXw6C79MlOzfJJeZTASGG2DoXNidPsdlVt8D3USfPZg/exec';
 var allInspections=[];
 var filteredInspections=[];
 var currentInspDetail=null;
@@ -2302,7 +2303,7 @@ var INV_ITEMS=[
 ];
 
 function loadInventarios(){
-  fetch(SCRIPT_URL+'?action=getInventarios')
+  fetch(SCRIPT_URL_INV+'?action=getInventarios')
     .then(function(r){return r.text();})
     .then(function(t){
       var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
@@ -2319,7 +2320,7 @@ function loadInventarios(){
         '<tr><td colspan="6" style="text-align:center;color:#c62828;padding:20px">Error de conexión</td></tr>';
     });
 
-  fetch(SCRIPT_URL+'?action=getInventarioAccesos')
+  fetch(SCRIPT_URL_INV+'?action=getInventarioAccesos')
     .then(function(r){return r.text();})
     .then(function(t){
       var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
@@ -2450,7 +2451,7 @@ function saveAcceso(){
   var msgEl=document.getElementById('acceso-msg');
   if(!barco||!user||!pass){msgEl.style.color='#c62828';msgEl.textContent='Rellena todos los campos.';return;}
   msgEl.style.color='#003d82';msgEl.textContent='Guardando...';
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'saveInventarioAcceso',acceso:{embarcacion:barco,usuario:user,password:pass,activo:activo}})})
+  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'saveInventarioAcceso',acceso:{embarcacion:barco,usuario:user,password:pass,activo:activo}})})
     .then(function(r){return r.text();})
     .then(function(t){
       var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
