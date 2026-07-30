@@ -802,12 +802,20 @@ function renderIncidenciaItem(id, desc) {
   var container = document.getElementById('inc-list');
   var div = document.createElement('div');
   div.id = 'inc-item-'+id;
-  div.style.cssText = 'margin-bottom:8px;display:flex;gap:8px;align-items:flex-start';
+  div.style.cssText = 'margin-bottom:8px;background:#fff5f5;border-radius:8px;border:1.5px solid #ef9a9a;overflow:hidden';
+  var hasPhoto = photoData[id+'_foto'] ? true : false;
   div.innerHTML =
-    '<textarea class="inc-desc" data-id="'+id+'" placeholder="Describe la incidencia..." '+
-      'style="flex:1;padding:8px 10px;border:1.5px solid #ef9a9a;border-radius:7px;font-size:13px;resize:none;height:52px;outline:none;font-family:inherit;color:#b71c1c;background:#fff5f5">'+escH(desc)+'</textarea>'+
-    '<button onclick="removeIncidencia(\''+id+'\')" style="background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:4px 2px;flex-shrink:0;line-height:1">✕</button>';
+    '<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 8px 6px">'+
+      '<textarea class="inc-desc" data-id="'+id+'" placeholder="Describe la incidencia..." '+
+        'style="flex:1;padding:8px 10px;border:1.5px solid #ef9a9a;border-radius:7px;font-size:13px;resize:none;height:52px;outline:none;font-family:inherit;color:#b71c1c;background:white">'+escH(desc)+'</textarea>'+
+      '<button class="btn-photo'+(hasPhoto?' has-photo':'')+'" id="photobtn-'+id+'" onclick="triggerPhoto(\''+id+'\')" style="flex-shrink:0">'+
+        '📷<span>'+(hasPhoto?'OK':'Foto')+'</span>'+
+      '</button>'+
+      '<button onclick="removeIncidencia(\''+id+'\')" style="background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:4px 2px;flex-shrink:0;line-height:1">✕</button>'+
+    '</div>'+
+    '<div class="photo-preview" id="preview-'+id+'"></div>';
   container.appendChild(div);
+  if (hasPhoto) showPhotoPreview(id);
 }
 
 function removeIncidencia(id) {
