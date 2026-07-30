@@ -828,6 +828,7 @@ tr:hover td{background:#fafbff}
       <div style="display:flex;gap:8px;align-items:center">
         <button onclick="printInventario(false)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🖨️ Sin fotos</button>
         <button onclick="printInventario(true)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🖨️ Con fotos</button>
+        <button onclick="doDeleteInventario()" style="background:rgba(211,47,47,.7);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🗑️ Borrar</button>
         <button onclick="closeInvDetail()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
       </div>
     </div>
@@ -2760,6 +2761,33 @@ function openInvDetail(id){
 
 function closeInvDetail(){
   document.getElementById('inv-detail-modal').classList.remove('active');
+}
+
+function doDeleteInventario(){
+  var inv=allInventarios.find(function(x){return x.id===currentInvId;});
+  if(!inv) return;
+  if(!confirm('¿Está seguro de que desea borrar el inventario de "'+inv.embarcacion+'" ('+inv.fecha+')?\n\nEsta acción no se puede deshacer.')) return;
+  var btn=document.querySelector('[onclick="doDeleteInventario()"]');
+  if(btn){btn.textContent='Borrando...';btn.disabled=true;}
+  fetch(INV_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteInventario',id:currentInvId})})
+    .then(function(r){return r.json();})
+    .then(function(res){
+      if(res.success){
+        allInventarios=allInventarios.filter(function(x){return x.id!==currentInvId;});
+        closeInvDetail();
+        renderInventariosTable();
+        renderWidgetBengalas();
+        renderWidgetUbicacionesTaller();
+        document.getElementById('stat-inventarios').textContent=allInventarios.length||'-';
+      } else {
+        alert('Error al borrar: '+(res.message||'Error desconocido'));
+        if(btn){btn.textContent='🗑️ Borrar';btn.disabled=false;}
+      }
+    })
+    .catch(function(e){
+      alert('Error de conexión al borrar el inventario.');
+      if(btn){btn.textContent='🗑️ Borrar';btn.disabled=false;}
+    });
 }
 
 function setInvTab(tab){
