@@ -127,11 +127,16 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
   <div class="login-card">
     <div class="login-logo">
       <h1>NÁUTICA VIAMAR</h1>
-      <p id="barco-user-label">Selecciona la embarcación</p>
+      <p id="barco-user-label">¿Qué barco vas a inventariar?</p>
     </div>
-    <div id="barco-list" style="margin-bottom:16px"></div>
-    <div class="login-error" id="barco-err"></div>
-    <button onclick="doLogout()" style="width:100%;padding:10px;background:none;border:1.5px solid #ddd;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin-top:8px">← Volver al login</button>
+    <div class="login-field">
+      <label>Nombre del barco</label>
+      <input type="text" id="barco-input" placeholder="Escribe el nombre..." style="text-transform:uppercase" />
+    </div>
+    <button class="btn-login" onclick="confirmarBarco()">CONTINUAR →</button>
+    <div class="login-error" id="barco-err" style="margin-top:8px"></div>
+    <div id="barco-sugerencias" style="margin-top:14px"></div>
+    <button onclick="doLogout()" style="width:100%;padding:10px;background:none;border:1.5px solid #ddd;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin-top:10px">← Volver al login</button>
   </div>
 </div>
 
@@ -266,28 +271,28 @@ function doLogin() {
 }
 
 function loadBarcos() {
-  var listEl = document.getElementById('barco-list');
-  listEl.innerHTML='<div style="text-align:center;color:#888;padding:14px;font-size:13px">Cargando barcos...</div>';
+  // Carga sugerencias del servidor en segundo plano
   fetch(SCRIPT_URL+'?action=getBarcos')
     .then(function(r){return r.text();})
     .then(function(t){
       var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      var sug = document.getElementById('barco-sugerencias');
+      if(!sug) return;
       if (res.success && res.barcos && res.barcos.length > 0) {
-        listEl.innerHTML='';
+        var html='<div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;margin-bottom:8px">O selecciona uno guardado:</div>';
         res.barcos.forEach(function(barco){
-          var btn = document.createElement('button');
-          btn.textContent = barco;
-          btn.style.cssText='width:100%;padding:14px;margin-bottom:10px;background:white;border:2px solid #003d82;border-radius:8px;font-size:15px;font-weight:700;color:#003d82;cursor:pointer;text-align:left';
-          btn.onclick = function(){ selectBarco(barco); };
-          listEl.appendChild(btn);
+          html+='<button onclick="selectBarco(\''+barco+'\')" style="width:100%;padding:11px 14px;margin-bottom:8px;background:#f0f4ff;border:1.5px solid #c5d8ff;border-radius:8px;font-size:14px;font-weight:700;color:#003d82;cursor:pointer;text-align:left">'+barco+'</button>';
         });
-      } else {
-        listEl.innerHTML='<div style="text-align:center;color:#888;padding:14px;font-size:13px">No hay barcos disponibles.<br>Pide al administrador que añada los barcos desde el panel.</div>';
+        sug.innerHTML=html;
       }
     })
-    .catch(function(){
-      listEl.innerHTML='<div style="text-align:center;color:#c62828;padding:14px;font-size:13px">Error de conexión. Comprueba internet.</div>';
-    });
+    .catch(function(){});
+}
+
+function confirmarBarco() {
+  var nombre = document.getElementById('barco-input').value.trim().toUpperCase();
+  if (!nombre) { document.getElementById('barco-err').textContent='Escribe el nombre del barco.'; return; }
+  selectBarco(nombre);
 }
 
 function selectBarco(barco) {
