@@ -8,7 +8,7 @@ var EMAIL_DESTINO = 'jose@viamar-ibiza.com';
 var USERS_SHEET = 'Usuarios';
 var INSPECTIONS_SHEET = 'Inspecciones';
 var DRIVE_FOLDER_NAME = 'Inspecciones-Viamar'; // Carpeta raíz en Drive
-var ANTHROPIC_API_KEY = ''; // Pon aqui tu API Key de Anthropic
+var ANTHROPIC_API_KEY = PropertiesService.getScriptProperties().getProperty('ANTHROPIC_API_KEY') || '';
 
 // ========== FUNCIONES PRINCIPALES ==========
 
