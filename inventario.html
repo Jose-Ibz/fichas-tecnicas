@@ -110,10 +110,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
       <p>Inventario de Embarcación</p>
     </div>
     <div class="login-field">
-      <label>Embarcación</label>
-      <input type="text" id="l-barco" placeholder="Nombre del barco" style="text-transform:uppercase" />
-    </div>
-    <div class="login-field">
       <label>Usuario</label>
       <input type="text" id="l-user" autocomplete="username" placeholder="Tu usuario" />
     </div>
@@ -123,6 +119,19 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
     </div>
     <button class="btn-login" id="btn-login" onclick="doLogin()">ENTRAR</button>
     <div class="login-error" id="login-err"></div>
+  </div>
+</div>
+
+<!-- SELECCIÓN DE BARCO -->
+<div id="barco-screen" style="display:none;min-height:100vh;background:linear-gradient(135deg,#003d82,#0066cc);padding:20px;align-items:center;justify-content:center">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>NÁUTICA VIAMAR</h1>
+      <p id="barco-user-label">Selecciona la embarcación</p>
+    </div>
+    <div id="barco-list" style="margin-bottom:16px"></div>
+    <div class="login-error" id="barco-err"></div>
+    <button onclick="doLogout()" style="width:100%;padding:10px;background:none;border:1.5px solid #ddd;border-radius:8px;color:#888;font-size:13px;cursor:pointer;margin-top:8px">← Volver al login</button>
   </div>
 </div>
 
@@ -156,6 +165,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
 
   <!-- ITEMS -->
   <div class="inv-list" id="inv-list"></div>
+
+  <!-- ITEMS EXTRA -->
+  <div class="inv-list" id="inv-list-extra" style="padding-top:0"></div>
+  <div style="padding:0 12px 10px">
+    <button onclick="addCustomItem()" style="width:100%;padding:12px;background:white;border:2px dashed #003d82;border-radius:10px;color:#003d82;font-size:13px;font-weight:700;cursor:pointer">+ Añadir artículo extra</button>
+  </div>
 
   <!-- NOTAS -->
   <div class="notas-card">
@@ -222,10 +237,8 @@ var isOnline = navigator.onLine;
 
 /* ============ LOGIN ============ */
 function doLogin() {
-  var barco = document.getElementById('l-barco').value.trim().toUpperCase();
   var u = document.getElementById('l-user').value.trim();
   var p = document.getElementById('l-pass').value.trim();
-  if (!barco) { document.getElementById('login-err').textContent='Introduce el nombre de la embarcación'; return; }
   if (!u || !p) { document.getElementById('login-err').textContent='Introduce usuario y contraseña'; return; }
   document.getElementById('btn-login').disabled = true;
   document.getElementById('btn-login').textContent = 'Entrando...';
@@ -235,11 +248,10 @@ function doLogin() {
       var res; try{res=JSON.parse(t);}catch(e){res={success:false,message:'Error de servidor'};}
       if (res.success) {
         invUser = res.user;
-        invBarco = barco;
         document.getElementById('login-screen').style.display='none';
-        document.getElementById('app-screen').style.display='block';
-        document.getElementById('hdr-boat').textContent = invBarco;
-        initApp();
+        document.getElementById('barco-user-label').textContent='Hola '+invUser+' — ¿qué barco vas a inventariar?';
+        document.getElementById('barco-screen').style.display='flex';
+        loadBarcos();
       } else {
         document.getElementById('login-err').textContent = res.message || 'Usuario o contraseña incorrectos';
         document.getElementById('btn-login').disabled=false;
@@ -253,10 +265,46 @@ function doLogin() {
     });
 }
 
+function loadBarcos() {
+  var listEl = document.getElementById('barco-list');
+  listEl.innerHTML='<div style="text-align:center;color:#888;padding:14px;font-size:13px">Cargando barcos...</div>';
+  fetch(SCRIPT_URL+'?action=getBarcos')
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if (res.success && res.barcos && res.barcos.length > 0) {
+        listEl.innerHTML='';
+        res.barcos.forEach(function(barco){
+          var btn = document.createElement('button');
+          btn.textContent = barco;
+          btn.style.cssText='width:100%;padding:14px;margin-bottom:10px;background:white;border:2px solid #003d82;border-radius:8px;font-size:15px;font-weight:700;color:#003d82;cursor:pointer;text-align:left';
+          btn.onclick = function(){ selectBarco(barco); };
+          listEl.appendChild(btn);
+        });
+      } else {
+        listEl.innerHTML='<div style="text-align:center;color:#888;padding:14px;font-size:13px">No hay barcos disponibles.<br>Pide al administrador que añada los barcos desde el panel.</div>';
+      }
+    })
+    .catch(function(){
+      listEl.innerHTML='<div style="text-align:center;color:#c62828;padding:14px;font-size:13px">Error de conexión. Comprueba internet.</div>';
+    });
+}
+
+function selectBarco(barco) {
+  invBarco = barco;
+  document.getElementById('barco-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  document.getElementById('hdr-boat').textContent = invBarco;
+  currentInvId = null;
+  photoData = {};
+  initApp();
+}
+
 function doLogout() {
   if (pendingInventarios.length > 0 && !confirm('Hay inventarios pendientes de sincronizar. ¿Salir igualmente?')) return;
   invUser=null; invBarco=null; currentInvId=null; photoData={}; offlinePhotos={};
   document.getElementById('app-screen').style.display='none';
+  document.getElementById('barco-screen').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('btn-login').disabled=false;
   document.getElementById('btn-login').textContent='ENTRAR';
@@ -281,13 +329,38 @@ function initApp() {
 function renderItems(loadedData) {
   var container = document.getElementById('inv-list');
   container.innerHTML = '';
+
+  // render custom items stored in loadedData
+  var extraContainer = document.getElementById('inv-list-extra');
+  extraContainer.innerHTML = '';
+  customItems = [];
+  Object.keys(loadedData).forEach(function(k) {
+    if (k.indexOf('custom_') === 0) {
+      var d = loadedData[k] || {};
+      customItems.push({key: k, label: d.label||'', cantidad: d.cantidad||'', obs: d.obs||''});
+    }
+  });
+  customItems.forEach(function(ci) { renderCustomItemCard(ci); });
+
   ITEMS.forEach(function(item, idx) {
     var data = loadedData[item.key] || {};
     var qty = data.cantidad !== undefined ? data.cantidad : '';
     var obs = data.obs || '';
+    var caducidad = data.caducidad || '';
     var div = document.createElement('div');
     div.className = 'item-card';
     var hasPhoto = photoData[item.key+'_foto'] ? true : false;
+
+    // Campo extra de caducidad solo para bengalas
+    var cadField = '';
+    if (item.key === 'bengalas') {
+      cadField = '<div style="padding:0 14px 10px;display:flex;align-items:center;gap:10px">'+
+        '<label style="font-size:10px;font-weight:700;color:#e65100;text-transform:uppercase;white-space:nowrap">⏳ Caducidad</label>'+
+        '<input type="text" class="item-cad" data-key="bengalas" placeholder="MM/AAAA" value="'+escH(caducidad)+'" style="width:110px;padding:7px 10px;border:1.5px solid #ff9800;border-radius:7px;font-size:13px;outline:none;font-weight:600;color:#e65100" />'+
+        '<span style="font-size:11px;color:#999">mes y año de caducidad</span>'+
+      '</div>';
+    }
+
     div.innerHTML =
       '<div class="item-header">'+
         '<div class="item-num">'+(idx+1)+'</div>'+
@@ -309,10 +382,54 @@ function renderItems(loadedData) {
           '</button>'+
         '</div>'+
       '</div>'+
-      '<div class="photo-preview" id="preview-'+item.key+'"></div>';
+      '<div class="photo-preview" id="preview-'+item.key+'"></div>'+
+      cadField;
     container.appendChild(div);
     if (hasPhoto) showPhotoPreview(item.key);
   });
+}
+
+/* ============ CUSTOM ITEMS ============ */
+var customItems = [];
+var customCounter = 0;
+
+function addCustomItem() {
+  customCounter++;
+  var key = 'custom_' + Date.now();
+  customItems.push({key: key, label: '', cantidad: '', obs: ''});
+  renderCustomItemCard({key: key, label: '', cantidad: '', obs: ''});
+}
+
+function renderCustomItemCard(ci) {
+  var container = document.getElementById('inv-list-extra');
+  var div = document.createElement('div');
+  div.className = 'item-card';
+  div.id = 'custom-card-'+ci.key;
+  div.innerHTML =
+    '<div class="item-header">'+
+      '<div class="item-num" style="background:#888">+</div>'+
+      '<input type="text" class="custom-label" data-key="'+ci.key+'" value="'+escH(ci.label)+'" placeholder="Nombre del artículo..." '+
+        'style="flex:1;border:none;font-size:14px;font-weight:700;color:#1a2e4a;outline:none;background:transparent" />'+
+      '<button onclick="removeCustomItem(\''+ci.key+'\')" style="background:none;border:none;color:#aaa;font-size:18px;cursor:pointer;padding:0 4px">✕</button>'+
+    '</div>'+
+    '<div class="item-body">'+
+      '<div>'+
+        '<label>Cantidad</label>'+
+        '<input class="item-qty" type="number" min="0" data-key="'+ci.key+'" value="'+escH(String(ci.cantidad))+'" placeholder="0" />'+
+      '</div>'+
+      '<div>'+
+        '<label>Observaciones</label>'+
+        '<textarea class="item-obs" data-key="'+ci.key+'" placeholder="Observaciones...">'+escH(ci.obs)+'</textarea>'+
+      '</div>'+
+      '<div><label>&nbsp;</label><div style="width:48px"></div></div>'+
+    '</div>';
+  container.appendChild(div);
+}
+
+function removeCustomItem(key) {
+  customItems = customItems.filter(function(x){return x.key!==key;});
+  var card = document.getElementById('custom-card-'+key);
+  if (card) card.remove();
 }
 
 /* ============ PHOTO HANDLING ============ */
@@ -376,9 +493,26 @@ function collectItems() {
     var obsEl = document.querySelector('.item-obs[data-key="'+item.key+'"]');
     var qty = qtyEl ? qtyEl.value.trim() : '';
     var obs = obsEl ? obsEl.value.trim() : '';
-    if (qty !== '' || obs !== '') {
-      result[item.key] = { cantidad: qty, obs: obs };
+    var entry = {};
+    if (qty !== '') entry.cantidad = qty;
+    if (obs !== '') entry.obs = obs;
+    // caducidad solo para bengalas
+    if (item.key === 'bengalas') {
+      var cadEl = document.querySelector('.item-cad[data-key="bengalas"]');
+      var cad = cadEl ? cadEl.value.trim() : '';
+      if (cad) entry.caducidad = cad;
     }
+    if (Object.keys(entry).length > 0) result[item.key] = entry;
+  });
+  // artículos custom
+  document.querySelectorAll('.custom-label').forEach(function(el) {
+    var key = el.getAttribute('data-key');
+    var label = el.value.trim();
+    var qtyEl = document.querySelector('.item-qty[data-key="'+key+'"]');
+    var obsEl = document.querySelector('.item-obs[data-key="'+key+'"]');
+    var qty = qtyEl ? qtyEl.value.trim() : '';
+    var obs = obsEl ? obsEl.value.trim() : '';
+    if (label) result[key] = {label: label, cantidad: qty, obs: obs};
   });
   return result;
 }
@@ -612,7 +746,6 @@ function formatDateES(iso) {
 }
 
 // Enter key in login
-document.getElementById('l-barco').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('l-user').focus();});
 document.getElementById('l-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('l-pass').focus();});
 document.getElementById('l-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 </script>
