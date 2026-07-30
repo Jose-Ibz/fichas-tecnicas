@@ -110,8 +110,12 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
       <p>Inventario de Embarcación</p>
     </div>
     <div class="login-field">
+      <label>Embarcación</label>
+      <input type="text" id="l-barco" placeholder="Nombre del barco" style="text-transform:uppercase" />
+    </div>
+    <div class="login-field">
       <label>Usuario</label>
-      <input type="text" id="l-user" autocomplete="username" placeholder="Usuario del barco" />
+      <input type="text" id="l-user" autocomplete="username" placeholder="Tu usuario" />
     </div>
     <div class="login-field">
       <label>Contraseña</label>
@@ -181,7 +185,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
 <input type="file" id="photo-input" accept="image/*" capture="environment" style="display:none" />
 
 <script>
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzzzCQwSIDcavJNmJKMV8vc3osVrV1SUaEZ3E_xYCdd8cBJJ0qPZDbGSS8qlJFPk7Qa9g/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOOfIJT996LypxXqzekuwAgWQLXw6C79MlOzfJJeZTASGG2DoXNidPsdlVt8D3USfPZg/exec';
 
 var ITEMS = [
   {key:'defensas',       label:'Defensas'},
@@ -218,18 +222,20 @@ var isOnline = navigator.onLine;
 
 /* ============ LOGIN ============ */
 function doLogin() {
+  var barco = document.getElementById('l-barco').value.trim().toUpperCase();
   var u = document.getElementById('l-user').value.trim();
   var p = document.getElementById('l-pass').value.trim();
+  if (!barco) { document.getElementById('login-err').textContent='Introduce el nombre de la embarcación'; return; }
   if (!u || !p) { document.getElementById('login-err').textContent='Introduce usuario y contraseña'; return; }
   document.getElementById('btn-login').disabled = true;
   document.getElementById('btn-login').textContent = 'Entrando...';
-  fetch(SCRIPT_URL+'?action=loginInventario&user='+encodeURIComponent(u)+'&pass='+encodeURIComponent(p))
+  fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIComponent(p)+'&username='+encodeURIComponent(u)+'&password='+encodeURIComponent(p))
     .then(function(r){return r.text();})
     .then(function(t){
       var res; try{res=JSON.parse(t);}catch(e){res={success:false,message:'Error de servidor'};}
       if (res.success) {
         invUser = res.user;
-        invBarco = res.embarcacion;
+        invBarco = barco;
         document.getElementById('login-screen').style.display='none';
         document.getElementById('app-screen').style.display='block';
         document.getElementById('hdr-boat').textContent = invBarco;
@@ -606,8 +612,9 @@ function formatDateES(iso) {
 }
 
 // Enter key in login
-document.getElementById('l-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('l-barco').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('l-user').focus();});
 document.getElementById('l-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('l-pass').focus();});
+document.getElementById('l-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
 </script>
 </body>
 </html>
