@@ -429,15 +429,7 @@ tr:hover td{background:#fafbff}
   <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
 </div>
 </div>
-<div class="chart-card" style="overflow:hidden;padding:0">
-<div style="padding:18px 22px 12px;display:flex;justify-content:space-between;align-items:center">
-  <h3 style="margin:0">📍 Ubicaciones</h3>
-  <button class="btn btn-outline btn-xs" onclick="showPage('inventarios')">Ver inventarios →</button>
-</div>
-<div id="widget-ubicaciones" style="padding:0 20px 12px;max-height:260px;overflow-y:auto">
-  <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
-</div>
-</div>
+<div class="chart-card"></div>
 </div>
 
 <div class="table-card" style="margin-bottom:22px">
@@ -661,7 +653,6 @@ tr:hover td{background:#fafbff}
 <div class="inv-tabs">
   <button class="inv-tab active" id="inv-tab-lista" onclick="setInvTab('lista')">📋 Lista de Inventarios</button>
   <button class="inv-tab" id="inv-tab-barcos" onclick="setInvTab('barcos')">🚤 Barcos</button>
-  <button class="inv-tab" id="inv-tab-accesos" onclick="setInvTab('accesos')">🔑 Accesos</button>
   <button class="inv-tab" id="inv-tab-incidencias" onclick="setInvTab('incidencias')">🚨 Incidencias</button>
 </div>
 
@@ -700,17 +691,6 @@ tr:hover td{background:#fafbff}
     <button class="btn btn-primary btn-sm" onclick="openBarcoModal(null)">+ Nuevo barco</button>
   </div>
   <div id="barcos-list">
-    <div style="text-align:center;color:#888;padding:30px">Cargando...</div>
-  </div>
-</div>
-
-<!-- TAB ACCESOS -->
-<div class="inv-section" id="inv-section-accesos">
-  <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center">
-    <p style="font-size:13px;color:#555">Gestiona los usuarios y contraseñas de cada barco para el formulario de inventario.</p>
-    <button class="btn btn-primary btn-sm" onclick="openAccesoModal(null)">+ Nuevo acceso</button>
-  </div>
-  <div id="accesos-list">
     <div style="text-align:center;color:#888;padding:30px">Cargando...</div>
   </div>
 </div>
@@ -865,41 +845,6 @@ tr:hover td{background:#fafbff}
   </div>
 </div>
 
-<!-- MODAL ACCESO -->
-<div class="acceso-modal-overlay" id="acceso-modal">
-  <div class="acceso-modal">
-    <div class="acceso-modal-top">
-      <h3 id="acceso-modal-title">Nuevo acceso</h3>
-      <button onclick="closeAccesoModal()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
-    </div>
-    <div class="acceso-modal-body">
-      <div class="acceso-field">
-        <label>Nombre del barco *</label>
-        <input type="text" id="acc-barco" placeholder="Ej: VENUS" style="text-transform:uppercase" />
-      </div>
-      <div class="acceso-field">
-        <label>Usuario *</label>
-        <input type="text" id="acc-user" placeholder="Ej: venus" autocomplete="off" />
-      </div>
-      <div class="acceso-field">
-        <label>Contraseña *</label>
-        <input type="text" id="acc-pass" placeholder="Ej: venus2026" autocomplete="off" />
-      </div>
-      <div class="acceso-field">
-        <label>Estado</label>
-        <select id="acc-activo">
-          <option value="SI">Activo</option>
-          <option value="NO">Inactivo</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:10px;margin-top:6px">
-        <button class="btn btn-secondary" onclick="closeAccesoModal()" style="flex:1">Cancelar</button>
-        <button class="btn btn-primary" onclick="saveAcceso()" style="flex:1">Guardar</button>
-      </div>
-      <div id="acceso-msg" style="margin-top:10px;font-size:13px;min-height:18px;text-align:center"></div>
-    </div>
-  </div>
-</div>
 
 </div><!-- /main -->
 
@@ -1272,7 +1217,6 @@ if(alertas.length>0){
 
 renderWidgetTareas();
 renderWidgetBengalas();
-renderWidgetUbicaciones();
 renderIncidenciasWidget();
 }
 
@@ -1319,40 +1263,6 @@ function renderWidgetBengalas(){
       '</div>'+
       '<span style="font-size:11px;font-weight:700;color:'+color+'">'+etiqueta+'</span>'+
     '</div>';
-  });
-  container.innerHTML=html;
-}
-
-function renderWidgetUbicaciones(){
-  var container = document.getElementById('widget-ubicaciones');
-  if(!container) return;
-  // Inventario más reciente por barco
-  var porBarco = {};
-  allInventarios.forEach(function(inv){
-    var barco = inv.embarcacion||'';
-    if(!porBarco[barco] || inv.fechaCreacion > porBarco[barco].fechaCreacion) {
-      porBarco[barco] = inv;
-    }
-  });
-  var lista = [];
-  Object.keys(porBarco).forEach(function(barco){
-    var items = porBarco[barco].items || {};
-    var colch = (items.colchonetas||{}).ubicacion||'';
-    var lona  = (items.lona_fondeo||{}).ubicacion||'';
-    if(colch || lona) lista.push({barco:barco, colch:colch, lona:lona});
-  });
-  lista.sort(function(a,b){return a.barco.localeCompare(b.barco);});
-  if(lista.length===0){
-    container.innerHTML='<div style="color:#888;font-size:13px;padding:10px 0">Sin ubicaciones registradas aún.</div>';
-    return;
-  }
-  var html='';
-  lista.forEach(function(it){
-    html+='<div style="padding:9px 0;border-bottom:1px solid #f0f0f0">'+
-      '<div style="font-weight:700;color:#1a2e4a;font-size:13px;margin-bottom:4px">'+escHtml(it.barco)+'</div>';
-    if(it.colch) html+='<div style="font-size:12px;color:#555"><span style="color:#1565c0;font-weight:700">🛏 Colchonetas:</span> '+escHtml(it.colch)+'</div>';
-    if(it.lona)  html+='<div style="font-size:12px;color:#555;margin-top:2px"><span style="color:#1565c0;font-weight:700">⛵ Lona fondeo:</span> '+escHtml(it.lona)+'</div>';
-    html+='</div>';
   });
   container.innerHTML=html;
 }
@@ -2287,7 +2197,7 @@ else if(id==='fotos')applyGalleryFilter();
 else if(id==='barco')renderBarcoPage();
 else if(id==='asistente')initAsistente();
 else if(id==='tareas')renderTareas();
-else if(id==='inventarios'){renderInventariosTable();renderBarcosList();renderAccesos();}
+else if(id==='inventarios'){renderInventariosTable();renderBarcosList();}
 else if(id==='usuarios')renderUsuariosTable();
 }
 
@@ -2679,7 +2589,6 @@ function saveBarco(){
 
 // ====== INVENTARIOS ======
 var allInventarios=[];
-var allAccesos=[];
 
 var INV_ITEMS=[
   {key:'defensas',          label:'Defensas'},
@@ -2726,13 +2635,6 @@ function loadInventarios(){
         '<tr><td colspan="6" style="text-align:center;color:#c62828;padding:20px">Error de conexión</td></tr>';
     });
 
-  fetch(SCRIPT_URL_INV+'?action=getInventarioAccesos')
-    .then(function(r){return r.text();})
-    .then(function(t){
-      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
-      if(res.success){ allAccesos=res.accesos||[]; renderAccesos(); }
-    })
-    .catch(function(){});
 }
 
 function renderInventariosTable(){
@@ -2809,68 +2711,6 @@ function setInvTab(tab){
   document.getElementById('inv-section-'+tab).classList.add('active');
 }
 
-function renderAccesos(){
-  var container=document.getElementById('accesos-list');
-  if(!container) return;
-  if(allAccesos.length===0){
-    container.innerHTML='<div style="text-align:center;color:#888;padding:30px">No hay accesos creados. Crea uno con el botón "+ Nuevo acceso".</div>';
-    return;
-  }
-  var html='';
-  allAccesos.forEach(function(acc){
-    var activo=String(acc.activo||'').toUpperCase()==='SI';
-    html+='<div class="acceso-card">'+
-      '<div>'+
-        '<div class="acceso-barco">'+escHtml(acc.embarcacion||'-')+'</div>'+
-        '<div class="acceso-user">Usuario: '+escHtml(acc.usuario||'-')+'</div>'+
-      '</div>'+
-      '<div style="display:flex;gap:10px;align-items:center">'+
-        '<span class="acceso-badge '+(activo?'activo':'inactivo')+'">'+(activo?'Activo':'Inactivo')+'</span>'+
-        '<button class="btn btn-outline btn-xs" onclick="openAccesoModal(\''+escHtml(acc.embarcacion)+'\')">Editar</button>'+
-      '</div>'+
-    '</div>';
-  });
-  container.innerHTML=html;
-}
-
-function openAccesoModal(barco){
-  var acc=barco ? allAccesos.find(function(x){return x.embarcacion===barco;}) : null;
-  document.getElementById('acceso-modal-title').textContent=acc?'Editar acceso':'Nuevo acceso';
-  document.getElementById('acc-barco').value=acc?acc.embarcacion:'';
-  document.getElementById('acc-barco').readOnly=!!acc;
-  document.getElementById('acc-user').value=acc?acc.usuario:'';
-  document.getElementById('acc-pass').value='';
-  document.getElementById('acc-activo').value=acc?(String(acc.activo||'SI').toUpperCase()||'SI'):'SI';
-  document.getElementById('acceso-msg').textContent='';
-  document.getElementById('acceso-modal').classList.add('active');
-}
-
-function closeAccesoModal(){
-  document.getElementById('acceso-modal').classList.remove('active');
-}
-
-function saveAcceso(){
-  var barco=document.getElementById('acc-barco').value.trim().toUpperCase();
-  var user=document.getElementById('acc-user').value.trim();
-  var pass=document.getElementById('acc-pass').value.trim();
-  var activo=document.getElementById('acc-activo').value;
-  var msgEl=document.getElementById('acceso-msg');
-  if(!barco||!user||!pass){msgEl.style.color='#c62828';msgEl.textContent='Rellena todos los campos.';return;}
-  msgEl.style.color='#003d82';msgEl.textContent='Guardando...';
-  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'saveInventarioAcceso',acceso:{embarcacion:barco,usuario:user,password:pass,activo:activo}})})
-    .then(function(r){return r.text();})
-    .then(function(t){
-      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
-      if(res.success){
-        msgEl.style.color='#2e7d32';msgEl.textContent='Guardado correctamente.';
-        loadInventarios();
-        setTimeout(closeAccesoModal,1200);
-      } else {
-        msgEl.style.color='#c62828';msgEl.textContent='Error: '+(res.message||'Sin detalles');
-      }
-    })
-    .catch(function(){msgEl.style.color='#c62828';msgEl.textContent='Error de conexión.';});
-}
 </script>
 </body>
 </html>
