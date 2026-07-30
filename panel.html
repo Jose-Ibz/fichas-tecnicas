@@ -429,7 +429,15 @@ tr:hover td{background:#fafbff}
   <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
 </div>
 </div>
-<div class="chart-card"></div>
+<div class="chart-card" style="overflow:hidden;padding:0">
+<div style="padding:18px 22px 12px;display:flex;justify-content:space-between;align-items:center">
+  <h3 style="margin:0">📍 Ubicaciones en Taller</h3>
+  <button class="btn btn-outline btn-xs" onclick="showPage('inventarios');setInvTab('lista')">Ver inventarios →</button>
+</div>
+<div id="widget-ubicaciones-taller" style="padding:0 22px 18px">
+  <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
+</div>
+</div>
 </div>
 
 <div class="table-card" style="margin-bottom:22px">
@@ -661,7 +669,13 @@ tr:hover td{background:#fafbff}
   <div class="filters-bar" style="margin-bottom:18px">
     <div class="filter-group">
       <label>Barco</label>
-      <input type="text" id="inv-filter-barco" placeholder="Filtrar por barco..." oninput="renderInventariosTable()" style="min-width:200px">
+      <input type="text" id="inv-filter-barco" placeholder="Filtrar por barco..." oninput="renderInventariosTable()" style="min-width:180px">
+    </div>
+    <div class="filter-group">
+      <label>Año</label>
+      <select id="inv-filter-ano" onchange="renderInventariosTable()">
+        <option value="">Todos</option>
+      </select>
     </div>
     <div style="margin-left:auto;font-size:13px;color:#888;align-self:center" id="inv-count-txt"></div>
   </div>
@@ -811,7 +825,11 @@ tr:hover td{background:#fafbff}
         <h3 id="inv-detail-title">Inventario</h3>
         <div style="font-size:12px;opacity:.75;margin-top:3px" id="inv-detail-sub"></div>
       </div>
-      <button onclick="closeInvDetail()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="printInventario(false)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🖨️ Sin fotos</button>
+        <button onclick="printInventario(true)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🖨️ Con fotos</button>
+        <button onclick="closeInvDetail()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
+      </div>
     </div>
     <div class="inv-detail-body" id="inv-detail-body" style="max-height:70vh;overflow-y:auto"></div>
   </div>
@@ -1217,6 +1235,7 @@ if(alertas.length>0){
 
 renderWidgetTareas();
 renderWidgetBengalas();
+renderWidgetUbicacionesTaller();
 renderIncidenciasWidget();
 }
 
@@ -2624,7 +2643,7 @@ function loadInventarios(){
         allInventarios=res.inventarios||[];
         renderInventariosTable();
         renderWidgetBengalas();
-        renderWidgetUbicaciones();
+        renderWidgetUbicacionesTaller();
       } else {
         document.getElementById('inv-table-body').innerHTML=
           '<tr><td colspan="6" style="text-align:center;color:#c62828;padding:20px">Error al cargar inventarios</td></tr>';
@@ -2638,35 +2657,74 @@ function loadInventarios(){
 }
 
 function renderInventariosTable(){
-  var filter=(document.getElementById('inv-filter-barco')||{}).value||'';
-  filter=filter.toLowerCase().trim();
-  var list=filter ? allInventarios.filter(function(x){return (x.embarcacion||'').toLowerCase().includes(filter);}) : allInventarios;
+  var filterBarco=(document.getElementById('inv-filter-barco')||{}).value||'';
+  filterBarco=filterBarco.toLowerCase().trim();
+  var filterAno=(document.getElementById('inv-filter-ano')||{}).value||'';
+
+  // Populate year dropdown
+  var anoSel=document.getElementById('inv-filter-ano');
+  if(anoSel){
+    var years={};
+    allInventarios.forEach(function(x){
+      var yr=(x.fecha||'').split('-')[0]||(x.fecha||'').split('/')[2]||'';
+      if(yr) years[yr]=true;
+    });
+    var sortedYears=Object.keys(years).sort().reverse();
+    var currentVal=anoSel.value;
+    anoSel.innerHTML='<option value="">Todos</option>';
+    sortedYears.forEach(function(y){
+      anoSel.innerHTML+='<option value="'+y+'"'+(currentVal===y?' selected':'')+'>'+y+'</option>';
+    });
+  }
+
+  var list=allInventarios.filter(function(x){
+    var matchBarco=!filterBarco||(x.embarcacion||'').toLowerCase().includes(filterBarco);
+    var yr=(x.fecha||'').split('-')[0]||(x.fecha||'').split('/')[2]||'';
+    var matchAno=!filterAno||yr===filterAno;
+    return matchBarco&&matchAno;
+  });
+
   var cntEl=document.getElementById('inv-count-txt');
   if(cntEl) cntEl.textContent=list.length+' inventario(s)';
   var tb=document.getElementById('inv-table-body');
   if(!tb) return;
   if(list.length===0){
-    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Sin inventarios'+(filter?' para ese filtro':'')+'. Use el formulario móvil para crear uno.</td></tr>';
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Sin inventarios para ese filtro.</td></tr>';
     return;
   }
-  var html='';
+
+  // Group by year
+  var byYear={};
   list.forEach(function(inv){
-    var items=inv.items||{};
-    var filled=Object.keys(items).filter(function(k){var d=items[k];return d&&(d.cantidad!==''||d.obs);}).length;
-    var fotos=Object.keys(inv.fotosUrls||{}).length;
-    html+='<tr>'+
-      '<td><strong>'+escHtml(inv.embarcacion||'-')+'</strong></td>'+
-      '<td>'+escHtml(inv.fecha||'-')+'</td>'+
-      '<td>'+escHtml(inv.realizadoPor||'-')+'</td>'+
-      '<td>'+filled+' / '+INV_ITEMS.length+'</td>'+
-      '<td>'+fotos+'</td>'+
-      '<td><button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+escHtml(inv.id)+'\')">Ver</button></td>'+
-    '</tr>';
+    var yr=(inv.fecha||'').split('-')[0]||(inv.fecha||'').split('/')[2]||'Sin año';
+    if(!byYear[yr]) byYear[yr]=[];
+    byYear[yr].push(inv);
+  });
+  var sortedYrs=Object.keys(byYear).sort().reverse();
+
+  var html='';
+  sortedYrs.forEach(function(yr){
+    html+='<tr><td colspan="6" style="background:#e8edf5;font-weight:700;font-size:12px;color:#1a2e4a;padding:6px 14px;letter-spacing:.5px">📅 '+yr+'</td></tr>';
+    byYear[yr].forEach(function(inv){
+      var items=inv.items||{};
+      var filled=Object.keys(items).filter(function(k){var d=items[k];return d&&(d.cantidad!==''||d.obs);}).length;
+      var fotos=Object.keys(inv.fotosUrls||{}).length;
+      html+='<tr>'+
+        '<td><strong>'+escHtml(inv.embarcacion||'-')+'</strong></td>'+
+        '<td>'+escHtml(inv.fecha||'-')+'</td>'+
+        '<td>'+escHtml(inv.realizadoPor||'-')+'</td>'+
+        '<td>'+filled+' / '+INV_ITEMS.length+'</td>'+
+        '<td>'+fotos+'</td>'+
+        '<td><button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+escHtml(inv.id)+'\')">Ver</button></td>'+
+      '</tr>';
+    });
   });
   tb.innerHTML=html;
 }
 
+var currentInvId=null;
 function openInvDetail(id){
+  currentInvId=id;
   var inv=allInventarios.find(function(x){return x.id===id;});
   if(!inv) return;
   document.getElementById('inv-detail-title').textContent=inv.embarcacion||'-';
@@ -2709,6 +2767,116 @@ function setInvTab(tab){
   document.querySelectorAll('.inv-section').forEach(function(s){s.classList.remove('active');});
   document.getElementById('inv-tab-'+tab).classList.add('active');
   document.getElementById('inv-section-'+tab).classList.add('active');
+}
+
+function printInventario(withPhotos){
+  var inv=allInventarios.find(function(x){return x.id===currentInvId;});
+  if(!inv) return;
+  var items=inv.items||{};
+  var urls=inv.fotosUrls||{};
+  var rows='';
+  INV_ITEMS.forEach(function(it){
+    var d=items[it.key]||{};
+    var qty=d.cantidad!==undefined&&d.cantidad!=='' ? d.cantidad : '-';
+    var obs=d.obs||'';
+    var ubic=d.ubicacion||'';
+    var fotoHtml='';
+    if(withPhotos&&urls[it.key+'_foto']){
+      fotoHtml='<br><img src="'+urls[it.key+'_foto']+'" style="max-width:200px;max-height:150px;margin-top:6px;border-radius:4px">';
+    }
+    rows+='<tr><td>'+it.label+'</td><td style="text-align:center">'+qty+'</td><td>'+obs+(ubic?'<br><small>📍 '+ubic+'</small>':'')+'</td>'+
+      (withPhotos?'<td>'+fotoHtml+'</td>':'')+
+    '</tr>';
+  });
+
+  // Custom items
+  var customHtml='';
+  var customItems=inv.customItems||[];
+  if(customItems.length>0){
+    customHtml='<h3 style="margin-top:18px">Material extra</h3><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;border-bottom:2px solid #1a2e4a;padding:6px">Descripción</th><th style="border-bottom:2px solid #1a2e4a;padding:6px">Cant.</th>'+(withPhotos?'<th style="border-bottom:2px solid #1a2e4a;padding:6px">Foto</th>':'')+' </tr></thead><tbody>';
+    customItems.forEach(function(ci){
+      var cfoto='';
+      if(withPhotos&&urls[ci.key+'_foto']){cfoto='<img src="'+urls[ci.key+'_foto']+'" style="max-width:200px;max-height:150px;margin-top:4px;border-radius:4px">';}
+      customHtml+='<tr><td style="padding:5px 6px;border-bottom:1px solid #eee">'+escHtml(ci.desc||ci.key)+'</td><td style="padding:5px 6px;text-align:center;border-bottom:1px solid #eee">'+escHtml(String(ci.cantidad||'-'))+'</td>'+(withPhotos?'<td style="padding:5px 6px;border-bottom:1px solid #eee">'+cfoto+'</td>':'')+' </tr>';
+    });
+    customHtml+='</tbody></table>';
+  }
+
+  // Incidencias del inventario
+  var incHtml='';
+  var incDeLaInsp=allIncidencias.filter(function(x){return x.embarcacion===(inv.embarcacion||'');});
+  if(incDeLaInsp.length>0){
+    incHtml='<h3 style="margin-top:18px;color:#c62828">⚠️ Incidencias</h3>';
+    incDeLaInsp.forEach(function(inc){
+      incHtml+='<div style="background:#fff5f5;border-left:3px solid #f44336;padding:8px 12px;margin-bottom:6px;border-radius:4px;font-size:13px">'+
+        '<strong>'+(inc.resuelta==='SI'?'✅ RESUELTA':'🔴 ABIERTA')+'</strong> · '+escHtml(inc.descripcion||'')+'</div>';
+    });
+  }
+
+  var notas=inv.notas?('<div style="margin-top:16px;padding:12px;background:#f5f7fa;border-radius:6px;font-size:13px"><strong>Observaciones:</strong> '+escHtml(inv.notas)+'</div>'):'';
+  var extraCol=withPhotos?'<th style="border-bottom:2px solid #1a2e4a;padding:6px">Foto</th>':'';
+
+  var html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>Inventario '+escHtml(inv.embarcacion||'')+'</title>'+
+    '<style>body{font-family:Arial,sans-serif;padding:20px;color:#222}h1{color:#1a2e4a;margin-bottom:4px}h2{font-size:14px;color:#555;font-weight:normal;margin:0 0 16px}table{width:100%;border-collapse:collapse;font-size:13px}th{background:#1a2e4a;color:white;padding:7px 10px;text-align:left}td{padding:6px 10px;border-bottom:1px solid #eee}tr:nth-child(even){background:#f9f9f9}@media print{button{display:none}}</style>'+
+    '</head><body>'+
+    '<h1>'+escHtml(inv.embarcacion||'-')+'</h1>'+
+    '<h2>Fecha: '+escHtml(inv.fecha||'-')+' · Realizado por: '+escHtml(inv.realizadoPor||'-')+'</h2>'+
+    '<table><thead><tr><th>Artículo</th><th style="text-align:center">Cantidad</th><th>Observaciones</th>'+extraCol+'</tr></thead><tbody>'+rows+'</tbody></table>'+
+    customHtml+notas+incHtml+
+    '<div style="margin-top:30px;font-size:11px;color:#aaa;border-top:1px solid #eee;padding-top:8px">Náutica Viamar · Impreso el '+new Date().toLocaleDateString('es-ES')+'</div>'+
+    '<script>window.onload=function(){window.print();}<\/script>'+
+    '</body></html>';
+
+  var win=window.open('','_blank','width=900,height=700');
+  if(win){win.document.write(html);win.document.close();}
+}
+
+function renderWidgetUbicacionesTaller(){
+  var container=document.getElementById('widget-ubicaciones-taller');
+  if(!container) return;
+
+  // Detectar barcos con varada activa (inspección tipo varada, no cerrada)
+  var varadasActivas={};
+  (allInspections||[]).forEach(function(ins){
+    if((ins.tipo||'').toLowerCase()==='varada' && (ins.estado||'').toUpperCase()!=='CERRADA'){
+      varadasActivas[(ins.embarcacion||'').toLowerCase()]=true;
+    }
+  });
+
+  // Para cada barco en varada, buscar el inventario más reciente
+  var porBarco={};
+  allInventarios.forEach(function(inv){
+    var barco=(inv.embarcacion||'').toLowerCase();
+    if(!varadasActivas[barco]) return;
+    if(!porBarco[barco]||inv.fechaCreacion>porBarco[barco].fechaCreacion) porBarco[barco]=inv;
+  });
+
+  var barcos=Object.keys(porBarco);
+  if(barcos.length===0){
+    container.innerHTML='<div style="color:#888;font-size:13px;padding:10px 0">No hay barcos en taller con inventario registrado.</div>';
+    return;
+  }
+
+  var html='';
+  barcos.forEach(function(barco){
+    var inv=porBarco[barco];
+    var items=inv.items||{};
+    var ubics=[];
+    if(items.colchonetas&&items.colchonetas.ubicacion) ubics.push({label:'Colchonetas',ubic:items.colchonetas.ubicacion,cant:items.colchonetas.cantidad||''});
+    if(items.lona_fondeo&&items.lona_fondeo.ubicacion) ubics.push({label:'Lona fondeo',ubic:items.lona_fondeo.ubicacion,cant:items.lona_fondeo.cantidad||''});
+    if(ubics.length===0) return;
+    html+='<div style="margin-bottom:12px;padding:10px 12px;background:#f0f4ff;border-radius:8px;border-left:3px solid #1a2e4a">'+
+      '<div style="font-weight:700;font-size:13px;color:#1a2e4a;margin-bottom:6px">🚤 '+escHtml(inv.embarcacion||barco)+'</div>';
+    ubics.forEach(function(u){
+      html+='<div style="font-size:12px;color:#444;display:flex;gap:6px;align-items:center;margin-bottom:3px">'+
+        '<span style="background:#1a2e4a;color:white;border-radius:4px;padding:1px 6px;font-size:10px">'+escHtml(u.label)+'</span>'+
+        '<span>📍 '+escHtml(u.ubic)+(u.cant?' ('+escHtml(String(u.cant))+')':'')+'</span>'+
+      '</div>';
+    });
+    html+='</div>';
+  });
+
+  container.innerHTML=html||'<div style="color:#888;font-size:13px;padding:10px 0">Sin ubicaciones registradas para los barcos en taller.</div>';
 }
 
 </script>
