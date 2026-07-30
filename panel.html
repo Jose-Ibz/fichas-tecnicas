@@ -2756,7 +2756,7 @@ function doDeleteInventario(){
   if(!confirm('¿Está seguro de que desea borrar el inventario de "'+inv.embarcacion+'" ('+inv.fecha+')?\n\nEsta acción no se puede deshacer.')) return;
   var btn=document.querySelector('[onclick="doDeleteInventario()"]');
   if(btn){btn.textContent='Borrando...';btn.disabled=true;}
-  fetch(INV_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteInventario',id:currentInvId})})
+  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'deleteInventario',id:currentInvId})})
     .then(function(r){return r.json();})
     .then(function(res){
       if(res.success){
