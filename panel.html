@@ -33,7 +33,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#eef2f7;min-height:100vh
 .topbar-actions{display:flex;gap:10px;align-items:center}
 
 /* ---- STAT CARDS ---- */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:28px}
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;margin-bottom:28px}
 .stat-card{background:white;border-radius:12px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.06);display:flex;align-items:center;gap:16px}
 .stat-icon{width:52px;height:52px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
 .stat-icon.blue{background:#e3f0ff}
@@ -329,6 +329,9 @@ tr:hover td{background:#fafbff}
 <div class="nav-item" onclick="showPage('inspecciones')" id="nav-inspecciones">
 <span class="nav-icon">🔍</span><span>Inspecciones</span>
 </div>
+<div class="nav-item" onclick="showPage('inventarios')" id="nav-inventarios">
+<span class="nav-icon">📦</span><span>Inventarios</span>
+</div>
 <div class="nav-item" onclick="showPage('fotos')" id="nav-fotos">
 <span class="nav-icon">📷</span><span>Galería Drive</span>
 </div>
@@ -343,9 +346,6 @@ tr:hover td{background:#fafbff}
 </div>
 <div class="nav-item" onclick="showPage('tareas')" id="nav-tareas">
 <span class="nav-icon">📋</span><span>Trabajos Pendientes</span>
-</div>
-<div class="nav-item" onclick="showPage('inventarios')" id="nav-inventarios">
-<span class="nav-icon">📦</span><span>Inventarios</span>
 </div>
 <div class="nav-item" onclick="showPage('usuarios')" id="nav-usuarios" style="display:none">
 <span class="nav-icon">👥</span><span>Usuarios</span>
@@ -388,6 +388,10 @@ tr:hover td{background:#fafbff}
 <div class="stat-card">
 <div class="stat-icon purple">📷</div>
 <div><div class="stat-value" id="stat-fotos">-</div><div class="stat-label">Fotos en Drive</div></div>
+</div>
+<div class="stat-card" style="cursor:pointer" onclick="showPage('inventarios')">
+<div class="stat-icon" style="background:#e8f5e9">📦</div>
+<div><div class="stat-value" id="stat-inventarios">-</div><div class="stat-label">Inventarios</div></div>
 </div>
 </div>
 <div id="alertas-seguridad" style="display:none;margin-bottom:22px"></div>
@@ -433,6 +437,16 @@ tr:hover td{background:#fafbff}
 <div id="widget-ubicaciones" style="padding:0 20px 12px;max-height:260px;overflow-y:auto">
   <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
 </div>
+</div>
+</div>
+
+<div class="table-card" style="margin-bottom:22px">
+<div class="table-header" style="background:#fff8f8">
+<h3>🚨 Incidencias Abiertas</h3>
+<button class="btn btn-outline btn-sm" onclick="showPage('inventarios');setInvTab('incidencias')">Ver todas →</button>
+</div>
+<div id="widget-incidencias" style="padding:8px 0">
+  <div style="color:#888;font-size:13px;padding:8px 22px">Sin incidencias abiertas. ✓</div>
 </div>
 </div>
 
@@ -648,6 +662,7 @@ tr:hover td{background:#fafbff}
   <button class="inv-tab active" id="inv-tab-lista" onclick="setInvTab('lista')">📋 Lista de Inventarios</button>
   <button class="inv-tab" id="inv-tab-barcos" onclick="setInvTab('barcos')">🚤 Barcos</button>
   <button class="inv-tab" id="inv-tab-accesos" onclick="setInvTab('accesos')">🔑 Accesos</button>
+  <button class="inv-tab" id="inv-tab-incidencias" onclick="setInvTab('incidencias')">🚨 Incidencias</button>
 </div>
 
 <!-- TAB LISTA -->
@@ -699,7 +714,49 @@ tr:hover td{background:#fafbff}
     <div style="text-align:center;color:#888;padding:30px">Cargando...</div>
   </div>
 </div>
+
+<!-- TAB INCIDENCIAS -->
+<div class="inv-section" id="inv-section-incidencias">
+  <div class="filters-bar" style="margin-bottom:18px">
+    <div class="filter-group">
+      <label>Estado</label>
+      <select id="inc-filter-estado" onchange="renderIncidenciasTab()">
+        <option value="abiertas">Solo abiertas</option>
+        <option value="todas">Todas</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Barco</label>
+      <input type="text" id="inc-filter-barco" placeholder="Filtrar por barco..." oninput="renderIncidenciasTab()" style="min-width:180px">
+    </div>
+    <div style="margin-left:auto;align-self:center">
+      <button class="btn btn-outline btn-sm" onclick="loadIncidencias()">🔄 Actualizar</button>
+    </div>
+  </div>
+  <div class="table-card">
+    <table>
+      <thead><tr>
+        <th>Barco</th><th>Descripción</th><th>Fecha</th><th>Por</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="inc-table-body">
+        <tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 </div><!-- /page-inventarios -->
+
+<!-- MODAL INCIDENCIA -->
+<div id="inc-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-top" style="background:#b71c1c">
+      <h2>⚠️ Incidencia</h2>
+      <button class="modal-close" onclick="closeIncModal()">✕</button>
+    </div>
+    <div class="modal-body" id="inc-modal-body"></div>
+  </div>
+</div>
 
 <!-- USUARIOS -->
 <div id="page-usuarios" class="page">
@@ -923,6 +980,7 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
     loadTareas();
     loadInventarios();
     loadBarcos();
+    loadIncidencias();
     if((res.role||'').toLowerCase()==='administrador'){
       document.getElementById('nav-usuarios').style.display='flex';
       loadUsuarios();
@@ -1110,6 +1168,7 @@ document.getElementById('stat-total').textContent=allInspections.length;
 document.getElementById('stat-varadas').textContent=varadas;
 document.getElementById('stat-botaduras').textContent=botaduras;
 document.getElementById('stat-fotos').textContent=totalFotos;
+document.getElementById('stat-inventarios').textContent=allInventarios.length||'-';
 
 // Monthly chart (last 6 months)
 var now=new Date();
@@ -1214,6 +1273,7 @@ if(alertas.length>0){
 renderWidgetTareas();
 renderWidgetBengalas();
 renderWidgetUbicaciones();
+renderIncidenciasWidget();
 }
 
 function renderWidgetBengalas(){
@@ -1295,6 +1355,136 @@ function renderWidgetUbicaciones(){
     html+='</div>';
   });
   container.innerHTML=html;
+}
+
+// ====== INCIDENCIAS ======
+var allIncidencias = [];
+
+function loadIncidencias() {
+  fetch(SCRIPT_URL_INV+'?action=getIncidencias')
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        allIncidencias = res.incidencias||[];
+        renderIncidenciasWidget();
+        renderIncidenciasTab();
+      }
+    })
+    .catch(function(){});
+}
+
+function renderIncidenciasWidget() {
+  var container = document.getElementById('widget-incidencias');
+  if(!container) return;
+  var abiertas = allIncidencias.filter(function(i){return i.resuelta!=='SI';});
+  if(abiertas.length===0){
+    container.innerHTML='<div style="color:#2e7d32;font-size:13px;padding:8px 22px">✓ Sin incidencias abiertas.</div>';
+    return;
+  }
+  var porBarco = {};
+  abiertas.forEach(function(inc){
+    var b=inc.embarcacion||'Sin barco';
+    if(!porBarco[b]) porBarco[b]=[];
+    porBarco[b].push(inc);
+  });
+  var html='';
+  Object.keys(porBarco).sort().forEach(function(barco){
+    var items=porBarco[barco];
+    html+='<div style="padding:10px 22px;border-bottom:1px solid #f0f0f0">'+
+      '<div style="font-weight:700;color:#b71c1c;font-size:13px;margin-bottom:5px">'+escHtml(barco)+
+        ' <span style="font-size:11px;color:#888;font-weight:400">('+items.length+')</span></div>';
+    items.slice(0,3).forEach(function(inc){
+      html+='<div style="display:flex;align-items:center;justify-content:space-between;padding:3px 0;font-size:12px">'+
+        '<div style="color:#555;flex:1;padding-right:10px">'+escHtml(inc.descripcion)+'</div>'+
+        '<button onclick="openIncModal(\''+inc.id+'\')" class="btn btn-xs" style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;white-space:nowrap">Gestionar</button>'+
+      '</div>';
+    });
+    if(items.length>3) html+='<div style="font-size:11px;color:#aaa;padding-top:3px">+'+(items.length-3)+' más...</div>';
+    html+='</div>';
+  });
+  container.innerHTML=html;
+}
+
+function renderIncidenciasTab() {
+  var tbody=document.getElementById('inc-table-body');
+  if(!tbody) return;
+  var estadoEl=document.getElementById('inc-filter-estado');
+  var barcoEl=document.getElementById('inc-filter-barco');
+  var estado=estadoEl?estadoEl.value:'abiertas';
+  var filtroBarco=barcoEl?(barcoEl.value||'').toLowerCase():'';
+  var lista=allIncidencias.filter(function(inc){
+    if(estado==='abiertas' && inc.resuelta==='SI') return false;
+    if(filtroBarco && !(inc.embarcacion||'').toLowerCase().includes(filtroBarco)) return false;
+    return true;
+  });
+  if(lista.length===0){
+    tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Sin incidencias.</td></tr>';
+    return;
+  }
+  tbody.innerHTML=lista.map(function(inc){
+    var resuelta=inc.resuelta==='SI';
+    return '<tr>'+
+      '<td><strong>'+escHtml(inc.embarcacion||'—')+'</strong></td>'+
+      '<td style="max-width:280px;white-space:normal">'+escHtml(inc.descripcion||'—')+'</td>'+
+      '<td style="white-space:nowrap;font-size:12px">'+escHtml(inc.fecha||'—')+'</td>'+
+      '<td style="font-size:12px">'+escHtml(inc.realizadoPor||'—')+'</td>'+
+      '<td>'+(resuelta?'<span class="badge badge-completed">✓ Resuelta</span>':'<span class="badge badge-partial">⚠ Abierta</span>')+'</td>'+
+      '<td><button onclick="openIncModal(\''+inc.id+'\')" class="btn btn-xs '+(resuelta?'btn-secondary':'btn-primary')+'">'+(resuelta?'Ver':'Resolver')+'</button></td>'+
+    '</tr>';
+  }).join('');
+}
+
+var currentIncId=null;
+function openIncModal(id){
+  var inc=allIncidencias.find(function(x){return x.id===id;});
+  if(!inc) return;
+  currentIncId=id;
+  var resuelta=inc.resuelta==='SI';
+  document.getElementById('inc-modal-body').innerHTML=
+    '<div style="background:#fff5f5;border-radius:8px;padding:14px;margin-bottom:18px;border-left:4px solid #d32f2f">'+
+      '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">'+
+        escHtml(inc.embarcacion||'')+' · '+escHtml(inc.fecha||'')+'</div>'+
+      '<div style="font-size:15px;color:#b71c1c;font-weight:600">'+escHtml(inc.descripcion||'')+'</div>'+
+      (inc.realizadoPor?'<div style="font-size:12px;color:#aaa;margin-top:4px">Reportado por: '+escHtml(inc.realizadoPor)+'</div>':'')+
+    '</div>'+
+    '<div style="margin-bottom:18px">'+
+      '<label style="display:block;font-size:12px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:6px">Observaciones / solución aplicada</label>'+
+      '<textarea id="inc-obs-input" placeholder="Describe cómo se resolvió la incidencia..." '+
+        'style="width:100%;padding:10px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:13px;resize:vertical;min-height:80px;outline:none;font-family:inherit;color:#333" '+(resuelta?'readonly':'')+'>'+escHtml(inc.observaciones||'')+'</textarea>'+
+    '</div>'+
+    (resuelta?
+      '<div style="text-align:center;color:#2e7d32;font-weight:700;padding:10px;background:#e8f5e9;border-radius:8px">✓ Esta incidencia ya está resuelta.</div>':
+      '<button onclick="doResolverIncidencia()" class="btn btn-success" style="width:100%;padding:13px;font-size:15px">✓ Marcar como resuelta</button>'
+    )+
+    '<div id="inc-modal-msg" style="margin-top:10px;font-size:13px;text-align:center;min-height:18px"></div>';
+  document.getElementById('inc-modal').classList.add('active');
+}
+function closeIncModal(){
+  document.getElementById('inc-modal').classList.remove('active');
+  currentIncId=null;
+}
+function doResolverIncidencia(){
+  if(!currentIncId) return;
+  var obs=(document.getElementById('inc-obs-input')||{value:''}).value.trim();
+  var msgEl=document.getElementById('inc-modal-msg');
+  msgEl.style.color='#003d82'; msgEl.textContent='Guardando...';
+  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'resolverIncidencia',id:currentIncId,observaciones:obs})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res;try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        var inc=allIncidencias.find(function(x){return x.id===currentIncId;});
+        if(inc){inc.resuelta='SI';inc.observaciones=obs;}
+        msgEl.style.color='#2e7d32'; msgEl.textContent='✓ Resuelta correctamente.';
+        setTimeout(function(){
+          closeIncModal();
+          renderIncidenciasWidget();
+          renderIncidenciasTab();
+        },900);
+      }else{msgEl.style.color='#c62828';msgEl.textContent='Error: '+(res.message||'Sin detalles');}
+    })
+    .catch(function(){msgEl.style.color='#c62828';msgEl.textContent='Error de conexión.';});
 }
 
 function rowHtml(i){

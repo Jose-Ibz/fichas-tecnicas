@@ -183,6 +183,18 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
     <textarea id="inv-notas" placeholder="Notas, observaciones..."></textarea>
   </div>
 
+  <!-- INCIDENCIAS -->
+  <div style="padding:0 12px 10px">
+    <div style="background:white;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #d32f2f">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <label style="font-size:12px;font-weight:700;color:#b71c1c;text-transform:uppercase;letter-spacing:.5px">⚠️ Incidencias a reportar</label>
+        <span style="font-size:11px;color:#aaa">Se verán en el panel del jefe</span>
+      </div>
+      <div id="inc-list"></div>
+      <button onclick="addIncidencia()" style="width:100%;padding:11px;background:none;border:2px dashed #ef9a9a;border-radius:8px;color:#c62828;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">+ Añadir incidencia</button>
+    </div>
+  </div>
+
   <!-- SAVE BAR -->
   <div class="save-bar">
     <button class="btn-save" id="btn-save" onclick="doSave()">GUARDAR INVENTARIO</button>
@@ -558,7 +570,8 @@ function doSave() {
     realizadoPor: invUser,
     items: items,
     fotosUrls: {},
-    notas: notas
+    notas: notas,
+    incidencias: collectIncidencias()
   };
   currentInvId = invData.id;
 
@@ -734,6 +747,7 @@ function loadInventario(inv) {
   }
   document.getElementById('inv-notas').value = inv.notas || '';
   renderItems(inv.items || {});
+  restoreIncidencias(inv.incidencias || []);
   photoData = {};
   showMsg('Inventario del '+inv.fecha+' cargado. Puedes editarlo y guardar.','info');
 }
@@ -772,6 +786,51 @@ function formatDateES(iso) {
   if (!iso) return '';
   var p=iso.split('-');
   return (p[2]||'')+'/'+( p[1]||'')+'/'+( p[0]||'');
+}
+
+/* ============ INCIDENCIAS ============ */
+var incidencias = [];
+
+function addIncidencia() {
+  var id = 'INC_' + Date.now();
+  incidencias.push({id: id, descripcion: ''});
+  renderIncidenciaItem(id, '');
+}
+
+function renderIncidenciaItem(id, desc) {
+  var container = document.getElementById('inc-list');
+  var div = document.createElement('div');
+  div.id = 'inc-item-'+id;
+  div.style.cssText = 'margin-bottom:8px;display:flex;gap:8px;align-items:flex-start';
+  div.innerHTML =
+    '<textarea class="inc-desc" data-id="'+id+'" placeholder="Describe la incidencia..." '+
+      'style="flex:1;padding:8px 10px;border:1.5px solid #ef9a9a;border-radius:7px;font-size:13px;resize:none;height:52px;outline:none;font-family:inherit;color:#b71c1c;background:#fff5f5">'+escH(desc)+'</textarea>'+
+    '<button onclick="removeIncidencia(\''+id+'\')" style="background:none;border:none;color:#ccc;font-size:20px;cursor:pointer;padding:4px 2px;flex-shrink:0;line-height:1">✕</button>';
+  container.appendChild(div);
+}
+
+function removeIncidencia(id) {
+  incidencias = incidencias.filter(function(x){return x.id !== id;});
+  var el = document.getElementById('inc-item-'+id);
+  if (el) el.remove();
+}
+
+function collectIncidencias() {
+  var result = [];
+  document.querySelectorAll('.inc-desc').forEach(function(el) {
+    var desc = el.value.trim();
+    if (desc) result.push({id: el.getAttribute('data-id'), descripcion: desc});
+  });
+  return result;
+}
+
+function restoreIncidencias(incArr) {
+  incidencias = [];
+  document.getElementById('inc-list').innerHTML = '';
+  (incArr||[]).forEach(function(inc) {
+    incidencias.push({id: inc.id, descripcion: inc.descripcion||''});
+    renderIncidenciaItem(inc.id, inc.descripcion||'');
+  });
 }
 
 // Enter key in login
