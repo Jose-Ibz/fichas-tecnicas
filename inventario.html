@@ -197,6 +197,7 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
 
   <!-- SAVE BAR -->
   <div class="save-bar">
+    <button onclick="addIncidenciaRapida()" style="padding:15px 16px;background:#b71c1c;color:white;border:none;border-radius:10px;font-size:20px;cursor:pointer;flex-shrink:0;line-height:1" title="Añadir incidencia">⚠️</button>
     <button class="btn-save" id="btn-save" onclick="doSave()">GUARDAR INVENTARIO</button>
   </div>
 </div>
@@ -822,6 +823,13 @@ function collectIncidencias() {
     if (desc) result.push({id: el.getAttribute('data-id'), descripcion: desc});
   });
   return result;
+}
+
+function addIncidenciaRapida() {
+  addIncidencia();
+  setTimeout(function(){
+    document.getElementById('inc-list').scrollIntoView({behavior:'smooth', block:'center'});
+  }, 80);
 }
 
 function restoreIncidencias(incArr) {
