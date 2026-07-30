@@ -1076,11 +1076,48 @@ function handleAIQuery(question, history) {
       }
     } catch(e) { Logger.log('tareasContext error: '+e); }
 
-    var dataContext = inspContext + invContext + incContext + tareasContext;
+    // ---- Barcos registrados ----
+    var barcosContext = '';
+    try {
+      var barcosSheet = ss.getSheetByName('Barcos');
+      if (barcosSheet) {
+        var barcosRows = barcosSheet.getDataRange().getValues();
+        var barcosActivos = [], barcosInactivos = [];
+        for (var bi = 1; bi < barcosRows.length; bi++) {
+          var br = barcosRows[bi];
+          if (!br[0]) continue;
+          var activo = String(br[1]||'SI').toUpperCase() === 'SI';
+          if (activo) barcosActivos.push(String(br[0]));
+          else barcosInactivos.push(String(br[0]));
+        }
+        barcosContext = '\n\nBARCOS REGISTRADOS: ' + (barcosActivos.length + barcosInactivos.length) + ' total.\n';
+        if (barcosActivos.length > 0) barcosContext += '  Activos: ' + barcosActivos.join(', ') + '\n';
+        if (barcosInactivos.length > 0) barcosContext += '  Inactivos: ' + barcosInactivos.join(', ');
+      }
+    } catch(e) { Logger.log('barcosContext error: '+e); }
+
+    // ---- Técnicos (usuarios) ----
+    var tecnicosContext = '';
+    try {
+      var usersSheet = ss.getSheetByName(USERS_SHEET);
+      if (usersSheet) {
+        var usersRows = usersSheet.getDataRange().getValues();
+        var tecnicos = [];
+        for (var ui = 1; ui < usersRows.length; ui++) {
+          var ur = usersRows[ui];
+          if (!ur[0] || String(ur[3]||'SI').toUpperCase() !== 'SI') continue;
+          tecnicos.push(String(ur[0]) + ' (' + String(ur[2]||'Técnico') + ')');
+        }
+        if (tecnicos.length > 0)
+          tecnicosContext = '\n\nTÉCNICOS ACTIVOS: ' + tecnicos.join(', ');
+      }
+    } catch(e) { Logger.log('tecnicosContext error: '+e); }
+
+    var dataContext = inspContext + invContext + incContext + tareasContext + barcosContext + tecnicosContext;
 
     var systemPrompt =
       'Eres el asistente inteligente del taller de Náutica Viamar, concesionario oficial Volvo Penta en Ibiza. ' +
-      'Tienes acceso completo a: fichas técnicas de inspección de embarcaciones, inventarios de material por barco, incidencias abiertas y trabajos pendientes. ' +
+      'Tienes acceso completo a toda la base de datos del taller: fichas técnicas de inspección, inventarios de seguridad por barco, incidencias, trabajos pendientes, barcos registrados y técnicos. ' +
       'Responde siempre en español, de forma clara, concisa y profesional. ' +
       'Si te preguntan por un barco concreto, busca TODOS sus registros (inspecciones e inventarios). ' +
       'Si detectas caducidades próximas o vencidas (ITB, pirotecnia, balsa, radiobaliza, VHF, bengalas), ' +
