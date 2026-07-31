@@ -560,7 +560,7 @@ tr:hover td{background:#fafbff}
 <div id="pie-legend" class="pie-legend"></div>
 </div>
 <div class="chart-card">
-<h3>✅ Verificaciones más Fallidas</h3>
+<h3>📝 Verificaciones con más Notas</h3>
 <div id="chart-verif-fails" class="bar-chart"></div>
 </div>
 </div>
@@ -1587,28 +1587,27 @@ document.getElementById('pie-legend').innerHTML=`
   <div class="legend-item"><div class="legend-dot" style="background:#003d82"></div>Varadas (${varadas})</div>
   <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>Botaduras (${botaduras})</div>`;
 
-// Verification failures
-var verifCounts=new Array(52).fill(0);
-var verifTotal=new Array(52).fill(0);
+// Verificaciones con más notas
+var notaCounts=new Array(52).fill(0);
 var verifLabels=['Fotos de sentinas','Foto proa','Foto amura babor','Foto amura estribor','Foto aleta babor','Foto aleta estribor','Foto colas','Foto ejes/IPS','Limpieza sentinas','Sistema dirección','Presión aceite motor','Amperímetro','Voltímetro','Cuenta horas','Temperatura motor','Temperatura agua','Nivel de aceite','Nivel de agua','Bombas de achique','Funcionamiento WC','Estado baterías','Luces navegación','Luces señal','Pulsador start','Inversor','Alarma sentinas','Bocina','Extintores','Aros salvavidas','Chalecos','Bengalas','Cabo remolque','Pérdidas aceite/agua','Desgaste escobillas','Comprobar próxima ITB','Revisión casco','Revisión hélice','Revisión timón','Ánodos','Soportes motor','Silentbloks','Gomas escape','Fuelles cola','Sonda','Válvulas fondo','Cierres eje','Tobera proa','Filtros agua','Filtros gas-oil','Refrigerante','Aceite hidráulico'];
 allInspections.forEach(i=>{
   try{
-    var v=i._verif||{};
+    var n=i._notas||{};
     for(var j=0;j<52;j++){
-      verifTotal[j]++;
-      if(!v['v'+j])verifCounts[j]++;
+      if(n['v'+j]&&String(n['v'+j]).trim()) notaCounts[j]++;
     }
   }catch(e){}
 });
-var failRates=verifLabels.map((l,j)=>({label:l,rate:verifTotal[j]?Math.round(verifCounts[j]/verifTotal[j]*100):0}));
-failRates.sort((a,b)=>b.rate-a.rate);
-var top8=failRates.slice(0,8);
-document.getElementById('chart-verif-fails').innerHTML=top8.map(x=>`
+var notaRates=verifLabels.map((l,j)=>({label:l,count:notaCounts[j]}));
+notaRates.sort((a,b)=>b.count-a.count);
+var top8=notaRates.filter(x=>x.count>0).slice(0,8);
+var maxN=top8.length?top8[0].count:1;
+document.getElementById('chart-verif-fails').innerHTML=top8.length?top8.map(x=>`
   <div class="bar-row">
     <div class="bar-label">${x.label.length>20?x.label.substr(0,18)+'...':x.label}</div>
-    <div class="bar-track"><div class="bar-fill" style="width:${x.rate}%;background:#f44336">${x.rate>10?x.rate+'%':''}</div></div>
-    <div class="bar-count" style="color:#f44336">${x.rate}%</div>
-  </div>`).join('');
+    <div class="bar-track"><div class="bar-fill" style="width:${Math.round(x.count/maxN*100)}%;background:#1565c0">${x.count>1?x.count:''}</div></div>
+    <div class="bar-count" style="color:#1565c0">${x.count}</div>
+  </div>`).join(''):'<div style="color:#888;font-size:13px;padding:10px 0">Sin notas registradas aún.</div>';
 
 // Boats full
 var boatCounts={};
