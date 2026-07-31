@@ -2960,7 +2960,11 @@ function doResolverPresupuesto(){
 }
 
 function printPresupuestos(){
-  var pendientes=allPresupuestos.filter(function(p){return p.resuelto!=='SI';});
+  var filterBarco=((document.getElementById('pres-filter-barco')||{}).value||'').toLowerCase().trim();
+  var pendientes=allPresupuestos.filter(function(p){
+    if(p.resuelto==='SI') return false;
+    return !filterBarco||(p.embarcacion||'').toLowerCase().includes(filterBarco);
+  });
   if(pendientes.length===0){alert('No hay presupuestos pendientes.');return;}
   var porBarco={};
   pendientes.forEach(function(p){
