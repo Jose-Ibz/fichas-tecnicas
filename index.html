@@ -1025,6 +1025,15 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <div id="message-area" class="message-area"></div>
 <div class="loading" id="loading">⏳ Procesando...</div>
 
+<!-- SECCIÓN PRESUPUESTOS -->
+<div style="margin:18px 0;background:white;border-radius:10px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.08);border-left:4px solid #e65100">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <label style="font-weight:700;font-size:14px;color:#e65100">💰 Para hacer presupuesto</label>
+    <button type="button" onclick="addPresupuesto()" style="background:#e65100;color:white;border:none;border-radius:7px;padding:6px 13px;font-size:13px;font-weight:700;cursor:pointer">+ Añadir</button>
+  </div>
+  <div id="pres-list"></div>
+</div>
+
 <div class="buttons">
 <button class="btn btn-primary" onclick="saveInspection()">💾 GUARDAR INSPECCIÓN</button>
 <button class="btn btn-secondary" onclick="clearForm()">🗑️ LIMPIAR FORMULARIO</button>
@@ -1791,7 +1800,8 @@ seguridad:{
   vhfTiene:document.getElementById('seg-vhf-tiene').value,
   vhfBateria:document.getElementById('seg-vhf-bateria').value,
   vhfFecha:document.getElementById('seg-vhf-fecha').value
-}
+},
+presupuestos:collectPresupuestos()
 };
 
 // Guardar backup local (sin fotos para no llenar storage)
@@ -1979,6 +1989,7 @@ if(container){container.innerHTML='';container.style.display='none';}
 }
 
 data={checklistPrevio:{},verificaciones:{},notas:{},medidoresBabor:{},medidoresEstribor:{},medidoresCentral:{},photoReport:{},photoFiles:{},verificationPhotoFiles:{},alerts:{}};
+clearPresupuestos();
 lastVarada=null;
 esContinuacion=false;
 inheritedFotosUrls={};
@@ -2534,6 +2545,72 @@ if(window.location.search.indexOf('resetQueue=1')!==-1){
 initOfflineSystem();
 console.log('Sistema offline inicializado');
 });
+
+// ========== PRESUPUESTOS ==========
+var presData = {}; // fotos de presupuestos
+
+function addPresupuesto() {
+  var id = 'PRES_' + Date.now();
+  var container = document.getElementById('pres-list');
+  var div = document.createElement('div');
+  div.id = 'pres-item-' + id;
+  div.style.cssText = 'margin-bottom:8px;background:#fff8f5;border-radius:8px;border:1.5px solid #ffccbc;overflow:hidden';
+  div.innerHTML =
+    '<div style="display:flex;gap:8px;align-items:flex-start;padding:8px">' +
+      '<textarea data-id="' + id + '" placeholder="Describir qué hay que presupuestar..." ' +
+        'style="flex:1;padding:7px 9px;border:1.5px solid #ffccbc;border-radius:7px;font-size:13px;resize:vertical;min-height:56px;outline:none;font-family:Arial,sans-serif"></textarea>' +
+      '<button type="button" onclick="triggerPresPhoto(\'' + id + '\')" id="presbtn-' + id + '" ' +
+        'style="background:#e65100;color:white;border:none;border-radius:7px;padding:7px 9px;cursor:pointer;font-size:12px;white-space:nowrap;font-weight:700">📷<br>Foto</button>' +
+      '<button type="button" onclick="removePresupuesto(\'' + id + '\')" ' +
+        'style="background:#ffccbc;border:none;border-radius:7px;padding:7px 9px;cursor:pointer;font-size:14px;color:#bf360c">✕</button>' +
+    '</div>' +
+    '<div id="pres-preview-' + id + '" style="padding:0 8px 6px;display:none"></div>' +
+    '<input type="file" id="presinput-' + id + '" accept="image/*" capture="environment" style="display:none" onchange="onPresPhoto(this,\'' + id + '\')">';
+  container.appendChild(div);
+}
+
+function removePresupuesto(id) {
+  var el = document.getElementById('pres-item-' + id);
+  if (el) el.remove();
+  delete presData[id + '_foto'];
+}
+
+function triggerPresPhoto(id) {
+  document.getElementById('presinput-' + id).click();
+}
+
+function onPresPhoto(input, id) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    presData[id + '_foto'] = e.target.result;
+    var preview = document.getElementById('pres-preview-' + id);
+    if (preview) {
+      preview.style.display = 'block';
+      preview.innerHTML = '<img src="' + e.target.result + '" style="max-width:100%;max-height:120px;border-radius:6px">';
+    }
+    var btn = document.getElementById('presbtn-' + id);
+    if (btn) { btn.style.background = '#2e7d32'; btn.innerHTML = '📷<br>OK'; }
+  };
+  reader.readAsDataURL(file);
+}
+
+function collectPresupuestos() {
+  var items = [];
+  document.querySelectorAll('#pres-list [data-id]').forEach(function(ta) {
+    var id = ta.getAttribute('data-id');
+    var desc = ta.value.trim();
+    if (!desc) return;
+    items.push({ id: id, desc: desc, tienefoto: !!presData[id + '_foto'] });
+  });
+  return items;
+}
+
+function clearPresupuestos() {
+  document.getElementById('pres-list').innerHTML = '';
+  presData = {};
+}
 
 </script>
 </body>

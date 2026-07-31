@@ -36,6 +36,8 @@ function doGet(e) {
       return handleGetInventarioAccesos();
     } else if (action === 'getUsuarios') {
       return handleGetUsuarios();
+    } else if (action === 'getPresupuestos') {
+      return handleGetPresupuestos(e.parameter.resuelto);
     }
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -78,6 +80,10 @@ function doPost(e) {
       return handleSaveUsuario(data.usuario);
     } else if (action === 'toggleUsuario') {
       return handleToggleUsuario(data.username, data.activo);
+    } else if (action === 'resolverPresupuesto') {
+      return handleResolverPresupuesto(data.id, data.observaciones);
+    } else if (action === 'deletePresupuesto') {
+      return handleDeletePresupuesto(data.id);
     }
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -369,6 +375,13 @@ function handleSaveInspection(inspData) {
       closeVarada(inspData.varadaImportada);
     }
     
+    // Guardar presupuestos (no crítico)
+    try {
+      savePresupuestosFromFicha(inspData, id);
+    } catch(pErr) {
+      Logger.log('Presupuestos no guardados (no crítico): ' + pErr.toString());
+    }
+
     // Enviar email (no crítico — si falla no bloquea el guardado)
     try {
       enviarEmailNotificacion(inspData, id, fecha);
@@ -941,6 +954,104 @@ function handleCompletarTarea(id) {
   }
 }
 
+// ========== PRESUPUESTOS ==========
+
+function getPresupuestosSheet() {
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sh = ss.getSheetByName('Presupuestos');
+  if (!sh) {
+    sh = ss.insertSheet('Presupuestos');
+    sh.appendRow(['ID','Embarcacion','InspeccionID','Descripcion','FechaCreacion','Resuelto','Observaciones','ResueltoPor','Tecnico']);
+    sh.getRange(1,1,1,9).setFontWeight('bold');
+  }
+  return sh;
+}
+
+function savePresupuestosFromFicha(inspData, inspId) {
+  if (!inspData.presupuestos || inspData.presupuestos.length === 0) return;
+  var sh = getPresupuestosSheet();
+  var existing = sh.getDataRange().getValues();
+  var existingIds = {};
+  for (var i = 1; i < existing.length; i++) existingIds[String(existing[i][0])] = true;
+  var ahora = new Date();
+  inspData.presupuestos.forEach(function(p) {
+    if (!p.id || existingIds[p.id]) return;
+    sh.appendRow([
+      p.id,
+      inspData.embarcacion || '',
+      inspId,
+      p.desc || '',
+      ahora,
+      'NO',
+      '',
+      '',
+      inspData.tecnico || ''
+    ]);
+  });
+}
+
+function handleGetPresupuestos(resuelto) {
+  try {
+    var sh = getPresupuestosSheet();
+    var rows = sh.getDataRange().getValues();
+    var lista = [];
+    for (var i = 1; i < rows.length; i++) {
+      var r = rows[i];
+      if (!r[0]) continue;
+      var esResuelto = String(r[5]||'NO').toUpperCase() === 'SI';
+      if (resuelto === 'SI' && !esResuelto) continue;
+      if (resuelto === 'NO' && esResuelto) continue;
+      lista.push({
+        id: String(r[0]),
+        embarcacion: String(r[1]||''),
+        inspeccionId: String(r[2]||''),
+        descripcion: String(r[3]||''),
+        fechaCreacion: r[4] ? Utilities.formatDate(new Date(r[4]), Session.getScriptTimeZone(), 'dd/MM/yyyy') : '',
+        resuelto: String(r[5]||'NO'),
+        observaciones: String(r[6]||''),
+        resueltoPor: String(r[7]||''),
+        tecnico: String(r[8]||'')
+      });
+    }
+    lista.sort(function(a,b){ return b.fechaCreacion.localeCompare(a.fechaCreacion); });
+    return ContentService.createTextOutput(JSON.stringify({success:true, presupuestos:lista})).setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:e.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleResolverPresupuesto(id, observaciones) {
+  try {
+    var sh = getPresupuestosSheet();
+    var rows = sh.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(id)) {
+        sh.getRange(i+1, 6, 1, 2).setValues([['SI', observaciones||'']]);
+        return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:'No encontrado'})).setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:e.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleDeletePresupuesto(id) {
+  try {
+    var sh = getPresupuestosSheet();
+    var rows = sh.getDataRange().getValues();
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][0]) === String(id)) {
+        sh.deleteRow(i+1);
+        return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:'No encontrado'})).setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:e.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
 // ========== ASISTENTE IA ==========
 
 function handleAIQuery(question, history) {
@@ -1113,11 +1224,30 @@ function handleAIQuery(question, history) {
       }
     } catch(e) { Logger.log('tecnicosContext error: '+e); }
 
-    var dataContext = inspContext + invContext + incContext + tareasContext + barcosContext + tecnicosContext;
+    // ---- Presupuestos pendientes ----
+    var presContext = '';
+    try {
+      var presSheet = ss.getSheetByName('Presupuestos');
+      if (presSheet) {
+        var presRows = presSheet.getDataRange().getValues();
+        var presAbiertas = [], presResueltas = 0;
+        for (var pi = 1; pi < presRows.length; pi++) {
+          var pr = presRows[pi];
+          if (!pr[0]) continue;
+          if (String(pr[5]||'NO').toUpperCase() === 'SI') { presResueltas++; continue; }
+          presAbiertas.push('  💰 '+String(pr[1]||'')+': "'+String(pr[3]||'')+'" ('+String(pr[8]||'')+', '+Utilities.formatDate(new Date(pr[4]||new Date()), Session.getScriptTimeZone(), 'dd/MM/yyyy')+')');
+        }
+        presContext = '\n\nPRESUPUESTOS PENDIENTES: '+presAbiertas.length+' pendientes, '+presResueltas+' aprobados/rechazados.\n';
+        if (presAbiertas.length > 0) presContext += presAbiertas.join('\n');
+        else presContext += 'Sin presupuestos pendientes.';
+      }
+    } catch(e) { Logger.log('presContext error: '+e); }
+
+    var dataContext = inspContext + invContext + incContext + tareasContext + barcosContext + tecnicosContext + presContext;
 
     var systemPrompt =
       'Eres el asistente inteligente del taller de Náutica Viamar, concesionario oficial Volvo Penta en Ibiza. ' +
-      'Tienes acceso completo a toda la base de datos del taller: fichas técnicas de inspección, inventarios de seguridad por barco, incidencias, trabajos pendientes, barcos registrados y técnicos. ' +
+      'Tienes acceso completo a toda la base de datos del taller: fichas técnicas de inspección, inventarios de seguridad por barco, incidencias, trabajos pendientes, presupuestos pendientes, barcos registrados y técnicos. ' +
       'Responde siempre en español, de forma clara, concisa y profesional. ' +
       'Si te preguntan por un barco concreto, busca TODOS sus registros (inspecciones e inventarios). ' +
       'Si detectas caducidades próximas o vencidas (ITB, pirotecnia, balsa, radiobaliza, VHF, bengalas), ' +

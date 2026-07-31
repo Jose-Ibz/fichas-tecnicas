@@ -332,6 +332,9 @@ tr:hover td{background:#fafbff}
 <div class="nav-item" onclick="showPage('inventarios')" id="nav-inventarios">
 <span class="nav-icon">📦</span><span>Inventarios</span>
 </div>
+<div class="nav-item" onclick="showPage('presupuestos')" id="nav-presupuestos">
+<span class="nav-icon">💰</span><span>Presupuestos</span>
+</div>
 <div class="nav-item" onclick="showPage('fotos')" id="nav-fotos">
 <span class="nav-icon">📷</span><span>Galería Drive</span>
 </div>
@@ -436,6 +439,16 @@ tr:hover td{background:#fafbff}
 </div>
 <div id="widget-incidencias" style="padding:8px 0">
   <div style="color:#888;font-size:13px;padding:8px 22px">Sin incidencias abiertas. ✓</div>
+</div>
+</div>
+
+<div class="table-card" style="margin-bottom:22px">
+<div class="table-header" style="background:#fff8f0">
+<h3>💰 Presupuestos Pendientes</h3>
+<button class="btn btn-outline btn-sm" onclick="showPage('presupuestos')">Ver todos →</button>
+</div>
+<div id="widget-presupuestos" style="padding:8px 0">
+  <div style="color:#888;font-size:13px;padding:8px 22px">Sin presupuestos pendientes. ✓</div>
 </div>
 </div>
 
@@ -730,6 +743,49 @@ tr:hover td{background:#fafbff}
 
 </div><!-- /page-inventarios -->
 
+<!-- PAGE PRESUPUESTOS -->
+<div id="page-presupuestos" class="page">
+  <div class="page-header">
+    <h1>💰 Presupuestos</h1>
+    <button class="btn btn-primary btn-sm" onclick="loadPresupuestos()">🔄 Actualizar</button>
+  </div>
+  <div class="filters-bar" style="margin-bottom:18px">
+    <div class="filter-group">
+      <label>Estado</label>
+      <select id="pres-filter-estado" onchange="renderPresupuestosTab()">
+        <option value="NO">Pendientes</option>
+        <option value="">Todos</option>
+        <option value="SI">Resueltos</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Barco</label>
+      <input type="text" id="pres-filter-barco" placeholder="Filtrar por barco..." oninput="renderPresupuestosTab()" style="min-width:180px">
+    </div>
+  </div>
+  <div class="table-card">
+    <table>
+      <thead><tr>
+        <th>Embarcación</th><th>Descripción</th><th>Técnico</th><th>Fecha</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="pres-table-body">
+        <tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div><!-- /page-presupuestos -->
+
+<!-- MODAL PRESUPUESTO -->
+<div id="pres-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-top" style="background:#e65100">
+      <h2>💰 Presupuesto</h2>
+      <button class="modal-close" onclick="closePresModal()">✕</button>
+    </div>
+    <div class="modal-body" id="pres-modal-body"></div>
+  </div>
+</div>
+
 <!-- MODAL INCIDENCIA -->
 <div id="inc-modal" class="modal-overlay">
   <div class="modal-box" style="max-width:520px">
@@ -934,6 +990,7 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
     loadInventarios();
     loadBarcos();
     loadIncidencias();
+    loadPresupuestos();
     if((res.role||'').toLowerCase()==='administrador'){
       document.getElementById('nav-usuarios').style.display='flex';
       loadUsuarios();
@@ -1226,6 +1283,7 @@ if(alertas.length>0){
 renderWidgetTareas();
 renderWidgetBengalas();
 renderIncidenciasWidget();
+renderPresupuestosWidget();
 }
 
 function renderWidgetBengalas(){
@@ -2205,6 +2263,7 @@ else if(id==='barco')renderBarcoPage();
 else if(id==='asistente')initAsistente();
 else if(id==='tareas')renderTareas();
 else if(id==='inventarios'){renderInventariosTable();renderBarcosList();}
+else if(id==='presupuestos')renderPresupuestosTab();
 else if(id==='usuarios')renderUsuariosTable();
 }
 
@@ -2777,6 +2836,146 @@ function doDeleteInventario(){
       alert('Error de conexión: '+e.message);
       if(btn){btn.textContent='🗑️ Borrar';btn.disabled=false;}
     });
+}
+
+// ====== PRESUPUESTOS ======
+var allPresupuestos = [];
+var currentPresId = null;
+
+function loadPresupuestos() {
+  fetch(SCRIPT_URL+'?action=getPresupuestos')
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        allPresupuestos=res.presupuestos||[];
+        renderPresupuestosWidget();
+        renderPresupuestosTab();
+      }
+    })
+    .catch(function(){});
+}
+
+function renderPresupuestosWidget() {
+  var container=document.getElementById('widget-presupuestos');
+  if(!container) return;
+  var pendientes=allPresupuestos.filter(function(p){return p.resuelto!=='SI';});
+  if(pendientes.length===0){
+    container.innerHTML='<div style="color:#2e7d32;font-size:13px;padding:8px 22px">✓ Sin presupuestos pendientes.</div>';
+    return;
+  }
+  var html='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  pendientes.slice(0,5).forEach(function(p){
+    html+='<tr style="border-bottom:1px solid #f5e6d0">'+
+      '<td style="padding:9px 22px;font-weight:700;color:#1a2e4a;width:30%">'+escHtml(p.embarcacion)+'</td>'+
+      '<td style="padding:9px 10px;color:#555">'+escHtml(p.descripcion)+'</td>'+
+      '<td style="padding:9px 22px;text-align:right"><button class="btn btn-outline btn-xs" onclick="openPresModal(\''+p.id+'\')">Ver</button></td>'+
+    '</tr>';
+  });
+  html+='</table>';
+  if(pendientes.length>5) html+='<div style="font-size:12px;color:#888;padding:6px 22px">...y '+(pendientes.length-5)+' más</div>';
+  container.innerHTML=html;
+}
+
+function renderPresupuestosTab() {
+  var filterEstado=(document.getElementById('pres-filter-estado')||{value:''}).value;
+  var filterBarco=((document.getElementById('pres-filter-barco')||{}).value||'').toLowerCase().trim();
+  var list=allPresupuestos.filter(function(p){
+    var matchEstado=!filterEstado||(filterEstado==='SI'?p.resuelto==='SI':p.resuelto!=='SI');
+    var matchBarco=!filterBarco||(p.embarcacion||'').toLowerCase().includes(filterBarco);
+    return matchEstado&&matchBarco;
+  });
+  var tb=document.getElementById('pres-table-body');
+  if(!tb) return;
+  if(list.length===0){
+    tb.innerHTML='<tr><td colspan="6" style="text-align:center;color:#888;padding:30px">Sin presupuestos para ese filtro.</td></tr>';
+    return;
+  }
+  var html='';
+  list.forEach(function(p){
+    var badge=p.resuelto==='SI'
+      ?'<span class="badge" style="background:#2e7d32;color:white">Resuelto</span>'
+      :'<span class="badge" style="background:#e65100;color:white">Pendiente</span>';
+    html+='<tr>'+
+      '<td><strong>'+escHtml(p.embarcacion)+'</strong></td>'+
+      '<td>'+escHtml(p.descripcion)+'</td>'+
+      '<td>'+escHtml(p.tecnico)+'</td>'+
+      '<td>'+escHtml(p.fechaCreacion)+'</td>'+
+      '<td>'+badge+'</td>'+
+      '<td><button class="btn btn-outline btn-xs" onclick="openPresModal(\''+p.id+'\')">Ver</button></td>'+
+    '</tr>';
+  });
+  tb.innerHTML=html;
+}
+
+function openPresModal(id) {
+  var p=allPresupuestos.find(function(x){return x.id===id;});
+  if(!p) return;
+  currentPresId=id;
+  var resuelto=p.resuelto==='SI';
+  document.getElementById('pres-modal-body').innerHTML=
+    '<div style="background:#fff8f5;border-radius:8px;padding:14px;margin-bottom:18px;border-left:4px solid #e65100">'+
+      '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">'+
+        escHtml(p.embarcacion)+' · '+escHtml(p.fechaCreacion)+' · Técnico: '+escHtml(p.tecnico)+'</div>'+
+      '<div style="font-size:15px;color:#222;line-height:1.5">'+escHtml(p.descripcion)+'</div>'+
+    '</div>'+
+    (resuelto
+      ?'<div style="background:#f1f8e9;border-radius:8px;padding:12px;margin-bottom:14px;font-size:13px;color:#33691e"><strong>Observaciones:</strong> '+escHtml(p.observaciones||'—')+'</div>'
+      :'<div style="margin-bottom:14px"><label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:6px">Observaciones (aprobado / rechazado / pendiente cliente…)</label>'+
+        '<textarea id="pres-obs-input" rows="3" style="width:100%;padding:9px;border:1.5px solid #ffccbc;border-radius:8px;font-size:13px;resize:vertical;font-family:Arial,sans-serif" placeholder="Ej: Cliente aprobó. Pendiente piezas."></textarea></div>'+
+        '<button onclick="doResolverPresupuesto()" class="btn btn-success" style="width:100%;padding:13px;font-size:15px;background:#e65100;border-color:#e65100">✓ Marcar como resuelto</button>'
+    )+
+    '<button onclick="doDeletePresupuesto()" style="width:100%;margin-top:8px;padding:10px;background:none;border:1px solid #ccc;border-radius:8px;cursor:pointer;font-size:13px;color:#888">🗑️ Eliminar</button>'+
+    '<div id="pres-modal-msg" style="margin-top:10px;font-size:13px;text-align:center;min-height:18px"></div>';
+  document.getElementById('pres-modal').classList.add('active');
+}
+
+function closePresModal(){
+  document.getElementById('pres-modal').classList.remove('active');
+  currentPresId=null;
+}
+
+function doResolverPresupuesto(){
+  if(!currentPresId) return;
+  var obs=(document.getElementById('pres-obs-input')||{value:''}).value.trim();
+  var msgEl=document.getElementById('pres-modal-msg');
+  msgEl.style.color='#003d82'; msgEl.textContent='Guardando...';
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'resolverPresupuesto',id:currentPresId,observaciones:obs})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        var p=allPresupuestos.find(function(x){return x.id===currentPresId;});
+        if(p){p.resuelto='SI';p.observaciones=obs;}
+        closePresModal();
+        renderPresupuestosWidget();
+        renderPresupuestosTab();
+      } else {
+        msgEl.style.color='#c62828'; msgEl.textContent='Error: '+(res.message||'Error desconocido');
+      }
+    })
+    .catch(function(){msgEl.style.color='#c62828';msgEl.textContent='Error de conexión.';});
+}
+
+function doDeletePresupuesto(){
+  if(!currentPresId) return;
+  if(!confirm('¿Eliminar este presupuesto? Esta acción no se puede deshacer.')) return;
+  var msgEl=document.getElementById('pres-modal-msg');
+  msgEl.style.color='#003d82'; msgEl.textContent='Eliminando...';
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deletePresupuesto',id:currentPresId})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        allPresupuestos=allPresupuestos.filter(function(x){return x.id!==currentPresId;});
+        closePresModal();
+        renderPresupuestosWidget();
+        renderPresupuestosTab();
+      } else {
+        msgEl.style.color='#c62828'; msgEl.textContent='Error: '+(res.message||'');
+      }
+    })
+    .catch(function(){msgEl.style.color='#c62828';msgEl.textContent='Error de conexión.';});
 }
 
 function setInvTab(tab){
