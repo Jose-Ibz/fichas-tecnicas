@@ -724,7 +724,7 @@ function openHist() {
         var d = document.createElement('div');
         d.className='hist-item';
         var fCount = inv.fotosUrls ? Object.keys(inv.fotosUrls).length : 0;
-        d.innerHTML='<h4>'+escH(inv.fecha)+'</h4><p>Por: '+escH(inv.realizadoPor||'-')+' &bull; '+fCount+' foto(s)</p>';
+        d.innerHTML='<h4>'+escH(inv.embarcacion||invBarco)+'</h4><p>'+escH(inv.fecha)+' &bull; Por: '+escH(inv.realizadoPor||'-')+' &bull; '+fCount+' foto(s)</p>';
         d.onclick = function(){loadInventario(inv);};
         list.appendChild(d);
       });
