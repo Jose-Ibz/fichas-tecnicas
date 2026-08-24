@@ -473,6 +473,8 @@ var currentPhotoKey = null;
 function triggerPhoto(key) {
   currentPhotoKey = key;
   var inp = document.getElementById('photo-input');
+  inp.removeAttribute('capture');
+  inp.value = '';
   inp.onchange = function(e) { handlePhotoFile(e, key); };
   inp.click();
 }
