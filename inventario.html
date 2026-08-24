@@ -183,6 +183,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
     <textarea id="inv-notas" placeholder="Notas, observaciones..."></textarea>
   </div>
 
+  <!-- ANTIHUMEDADES -->
+  <div style="padding:0 12px 10px">
+    <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;gap:14px">
+      <input type="checkbox" id="chk-antihumedades" style="width:22px;height:22px;cursor:pointer;accent-color:#1565c0;flex-shrink:0">
+      <label for="chk-antihumedades" style="font-size:14px;font-weight:700;color:#1a2e4a;cursor:pointer">💧 Antihumedades aplicados</label>
+    </div>
+  </div>
+
   <!-- INCIDENCIAS -->
   <div style="padding:0 12px 10px">
     <div style="background:white;border-radius:10px;padding:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);border-left:4px solid #d32f2f">
@@ -574,6 +582,7 @@ function doSave() {
     items: items,
     fotosUrls: {},
     notas: notas,
+    antihumedades: document.getElementById('chk-antihumedades').checked,
     incidencias: collectIncidencias()
   };
   currentInvId = invData.id;
@@ -749,6 +758,7 @@ function loadInventario(inv) {
     if (parts.length===3) document.getElementById('inv-fecha').value=parts[2]+'-'+parts[1]+'-'+parts[0];
   }
   document.getElementById('inv-notas').value = inv.notas || '';
+  document.getElementById('chk-antihumedades').checked = inv.antihumedades === true || inv.antihumedades === 'true';
   renderItems(inv.items || {});
   restoreIncidencias(inv.incidencias || []);
   photoData = {};

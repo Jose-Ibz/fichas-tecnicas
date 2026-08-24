@@ -2798,6 +2798,8 @@ function openInvDetail(id){
       '<div>'+fotoHtml+'</div>'+
     '</div>';
   });
+  html+='<div style="margin-top:14px;padding:10px 14px;background:'+(inv.antihumedades?'#e8f5e9':'#fff8f0')+';border-radius:8px;font-size:13px;font-weight:700;color:'+(inv.antihumedades?'#2e7d32':'#999')+'">'+
+    (inv.antihumedades?'✅':'☐')+' Antihumedades aplicados</div>';
   if(inv.notas){
     html+='<div style="margin-top:16px;padding-top:14px;border-top:2px solid #eee">'+
       '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Observaciones generales</div>'+
