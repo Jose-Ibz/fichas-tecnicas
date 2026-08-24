@@ -1307,6 +1307,7 @@ function renderWidgetBengalas(){
     if(b.caducidad) {
       var parts = b.caducidad.split('/');
       var mes = parseInt(parts[0])||0, anio = parseInt(parts[1])||0;
+      if(anio>0 && anio<100) anio+=2000;
       lista.push({barco:barco, caducidad:b.caducidad, mes:mes, anio:anio, cantidad:b.cantidad||'-'});
     }
   });
