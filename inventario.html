@@ -213,6 +213,19 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
 <!-- LOADING -->
 <div id="loading"><div id="loading-box">Cargando...</div></div>
 
+<!-- MODAL INVENTARIO RECIENTE -->
+<div id="inv-reciente-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;align-items:center;justify-content:center;padding:20px">
+  <div style="background:white;border-radius:16px;padding:24px;width:100%;max-width:420px;box-shadow:0 8px 32px rgba(0,0,0,.25)">
+    <div style="font-size:22px;text-align:center;margin-bottom:10px">📋</div>
+    <h3 style="font-size:16px;font-weight:800;color:#1a2e4a;text-align:center;margin:0 0 8px">Inventario reciente encontrado</h3>
+    <p style="font-size:13px;color:#555;text-align:center;margin:0 0 16px"><strong id="inv-reciente-nombre"></strong> tiene un inventario del <strong id="inv-reciente-fecha"></strong> por <strong id="inv-reciente-por"></strong>.<br>¿Quieres continuar ese inventario o crear uno nuevo?</p>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button onclick="invRecienteAbrir()" style="padding:13px;background:#003d82;color:white;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">📂 Abrir inventario anterior</button>
+      <button onclick="invRecienteNuevo()" style="padding:13px;background:white;color:#003d82;border:2px solid #003d82;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">➕ Crear inventario nuevo</button>
+    </div>
+  </div>
+</div>
+
 <!-- HISTORY MODAL -->
 <div id="hist-modal" onclick="closeHist(event)">
   <div id="hist-box">
@@ -318,12 +331,49 @@ function confirmarBarco() {
 
 function selectBarco(barco) {
   invBarco = barco;
+  // Consulta si existe inventario reciente (<8 meses) para este barco
+  fetch(SCRIPT_URL+'?action=getInventario&embarcacion='+encodeURIComponent(barco))
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      var ahora=new Date();
+      var limite=new Date(ahora); limite.setMonth(limite.getMonth()-8);
+      var reciente=null;
+      if(res.success && res.inventarios && res.inventarios.length>0){
+        res.inventarios.forEach(function(inv){
+          var f=new Date(inv.fecha);
+          if(f>=limite && (!reciente || f>new Date(reciente.fecha))) reciente=inv;
+        });
+      }
+      if(reciente){
+        _pendingBarco={barco:barco, inv:reciente};
+        document.getElementById('inv-reciente-nombre').textContent=barco;
+        document.getElementById('inv-reciente-fecha').textContent=reciente.fecha||'-';
+        document.getElementById('inv-reciente-por').textContent=reciente.realizadoPor||'-';
+        document.getElementById('inv-reciente-modal').style.display='flex';
+      } else {
+        _abrirBarco(barco, null);
+      }
+    })
+    .catch(function(){ _abrirBarco(barco, null); });
+}
+
+var _pendingBarco=null;
+function _abrirBarco(barco, inv){
   document.getElementById('barco-screen').style.display='none';
   document.getElementById('app-screen').style.display='block';
-  document.getElementById('hdr-boat').textContent = invBarco;
+  document.getElementById('hdr-boat').textContent = barco;
   currentInvId = null;
   photoData = {};
-  initApp();
+  if(inv){ loadInventario(inv); } else { initApp(); }
+}
+function invRecienteAbrir(){
+  document.getElementById('inv-reciente-modal').style.display='none';
+  if(_pendingBarco) _abrirBarco(_pendingBarco.barco, _pendingBarco.inv);
+}
+function invRecienteNuevo(){
+  document.getElementById('inv-reciente-modal').style.display='none';
+  if(_pendingBarco) _abrirBarco(_pendingBarco.barco, null);
 }
 
 function doLogout() {

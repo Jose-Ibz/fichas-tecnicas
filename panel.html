@@ -744,9 +744,12 @@ tr:hover td{background:#fafbff}
 
 <!-- TAB ANTIHUMEDADES -->
 <div class="inv-section" id="inv-section-antihumedades">
-  <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+  <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
     <p style="font-size:13px;color:#555">Barcos con inventario reciente (&lt;6 meses) que <strong>no tienen antihumedades aplicados</strong>.</p>
-    <button class="btn btn-outline btn-sm" onclick="renderAntihumedadesTab()">🔄 Actualizar</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-outline btn-sm" onclick="renderAntihumedadesTab()">🔄 Actualizar</button>
+      <button class="btn btn-primary btn-sm" onclick="printAntihumedades()">🖨️ Imprimir orden</button>
+    </div>
   </div>
   <div id="antihumedades-list"></div>
 </div>
@@ -3097,6 +3100,62 @@ function renderAntihumedadesTab(){
   html+='</tbody></table></div>';
   html+='<p style="font-size:12px;color:#888;margin-top:10px;text-align:right">'+pendientes.length+' barco(s) pendiente(s) de antihumedades</p>';
   el.innerHTML=html;
+}
+
+function printAntihumedades(){
+  var ahora=new Date();
+  var limite=new Date(ahora); limite.setMonth(limite.getMonth()-6);
+  var porBarco={};
+  (allInventarios||[]).forEach(function(inv){
+    var barco=(inv.embarcacion||'').trim();
+    if(!barco) return;
+    var f=new Date(inv.fecha);
+    if(!porBarco[barco] || f>new Date(porBarco[barco].fecha)) porBarco[barco]=inv;
+  });
+  var pendientes=[];
+  Object.keys(porBarco).sort().forEach(function(barco){
+    var inv=porBarco[barco];
+    var f=new Date(inv.fecha);
+    if(f>=limite && inv.antihumedades!==true && inv.antihumedades!=='true') pendientes.push(inv);
+  });
+
+  var fecha=ahora.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  var rows='';
+  pendientes.forEach(function(inv,i){
+    rows+='<tr><td style="width:32px;text-align:center">'+(i+1)+'</td>'+
+      '<td style="font-weight:700;font-size:15px">'+escHtml(inv.embarcacion||'-')+'</td>'+
+      '<td style="color:#555;font-size:13px">'+escHtml(inv.fecha||'-')+'</td>'+
+      '<td style="text-align:center">☐</td></tr>';
+  });
+  if(!rows) rows='<tr><td colspan="4" style="text-align:center;color:#888;padding:20px">Sin barcos pendientes</td></tr>';
+
+  var w=window.open('','_blank','width=800,height=700');
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Orden Antihumedades</title><style>'+
+    'body{font-family:Arial,sans-serif;padding:32px;color:#111}'+
+    'h1{font-size:20px;margin:0 0 4px}'+
+    '.subtitle{font-size:13px;color:#555;margin-bottom:24px}'+
+    'table{width:100%;border-collapse:collapse}'+
+    'th{background:#003d82;color:white;padding:10px 12px;font-size:13px;text-align:left}'+
+    'td{padding:12px;border-bottom:1px solid #ddd;vertical-align:middle}'+
+    'tr:nth-child(even) td{background:#f5f8ff}'+
+    '.firma{margin-top:40px;display:flex;gap:60px}'+
+    '.firma-box{flex:1;border-top:1px solid #aaa;padding-top:8px;font-size:12px;color:#555}'+
+    '@media print{button{display:none}}'+
+  '</style></head><body>'+
+  '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+    '<div><h1>💧 Orden de Trabajo — Antihumedades</h1><div class="subtitle">Barcos pendientes de aplicar antihumedades · Fecha: '+fecha+'</div></div>'+
+    '<button onclick="window.print()" style="padding:10px 20px;background:#003d82;color:white;border:none;border-radius:6px;font-size:14px;cursor:pointer">🖨️ Imprimir</button>'+
+  '</div>'+
+  '<table><thead><tr><th>#</th><th>Embarcación</th><th>Último inventario</th><th>✅ Hecho</th></tr></thead>'+
+  '<tbody>'+rows+'</tbody></table>'+
+  '<div class="firma">'+
+    '<div class="firma-box">Técnico responsable</div>'+
+    '<div class="firma-box">Fecha realización</div>'+
+    '<div class="firma-box">Firma</div>'+
+  '</div>'+
+  '</body></html>');
+  w.document.close();
+  setTimeout(function(){w.print();},600);
 }
 
 function printInventario(withPhotos){
