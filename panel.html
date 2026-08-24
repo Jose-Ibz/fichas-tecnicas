@@ -3054,7 +3054,8 @@ function renderAntihumedadesTab(){
   var el=document.getElementById('antihumedades-list');
   if(!el) return;
   var ahora=new Date();
-  var limite=new Date(ahora); limite.setMonth(limite.getMonth()-6);
+  var limite6m=new Date(ahora); limite6m.setMonth(limite6m.getMonth()-6);
+  var limite3m=new Date(ahora); limite3m.setMonth(limite3m.getMonth()-3);
 
   // Para cada barco, coger su inventario más reciente
   var porBarco={};
@@ -3062,56 +3063,86 @@ function renderAntihumedadesTab(){
     var barco=(inv.embarcacion||'').trim();
     if(!barco) return;
     var f=new Date(inv.fecha);
-    if(!porBarco[barco] || f>new Date(porBarco[barco].fecha)){
-      porBarco[barco]=inv;
-    }
+    if(!porBarco[barco] || f>new Date(porBarco[barco].fecha)) porBarco[barco]=inv;
   });
 
-  // Filtrar: fecha >= hace 6 meses Y antihumedades !== true
-  var pendientes=[];
+  var pendientes=[];  // sin antihumedades, inventario < 6 meses
+  var renovar=[];     // antihumedades aplicados pero hace >3 meses
+
   Object.keys(porBarco).sort().forEach(function(barco){
     var inv=porBarco[barco];
-    var f=new Date(inv.fecha);
-    if(f>=limite && inv.antihumedades!==true && inv.antihumedades!=='true'){
+    var fInv=new Date(inv.fecha);
+    var aplicado=inv.antihumedades===true||inv.antihumedades==='true';
+    if(aplicado && inv.antihumedadesFecha){
+      var fAnti=new Date(inv.antihumedadesFecha);
+      if(fAnti<=limite3m) renovar.push(inv);
+    } else if(!aplicado && fInv>=limite6m){
       pendientes.push(inv);
     }
   });
 
-  if(pendientes.length===0){
-    el.innerHTML='<div style="text-align:center;padding:40px;color:#2e7d32;font-weight:700;font-size:15px">✅ Todos los barcos con inventario reciente tienen antihumedades aplicados.</div>';
-    return;
+  var html='';
+
+  // SECCIÓN: A RENOVAR (>3 meses)
+  if(renovar.length>0){
+    html+='<div style="margin-bottom:24px">';
+    html+='<div style="background:#c62828;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px">🔴 Antihumedades a renovar (más de 3 meses)</div>';
+    html+='<div class="table-card" style="border-radius:0 0 8px 8px;margin:0"><table><thead><tr><th>Embarcación</th><th>Aplicados el</th><th>Tiempo transcurrido</th><th></th></tr></thead><tbody>';
+    renovar.forEach(function(inv){
+      var id=escHtml(inv.id);
+      var barco=escHtml(inv.embarcacion||'-');
+      var fAnti=new Date(inv.antihumedadesFecha);
+      var dias=Math.floor((ahora-fAnti)/86400000);
+      var meses=Math.floor(dias/30);
+      var fechaStr=fAnti.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+      html+='<tr style="background:#fff3f3" id="anti-row-'+id+'">';
+      html+='<td><strong>'+barco+'</strong></td>';
+      html+='<td>'+fechaStr+'</td>';
+      html+='<td style="color:#c62828;font-weight:700">'+meses+' mes'+(meses!==1?'es':'')+' ('+dias+' días)</td>';
+      html+='<td style="white-space:nowrap"><button class="btn btn-sm" style="background:#c62828;color:white;border:none;margin-right:6px" onclick="applyAntihumedades(\''+id+'\',this)">🔄 Renovar</button>'+
+            '<button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver</button></td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
   }
 
-  var html='<div class="table-card"><table><thead><tr><th>Embarcación</th><th>Último inventario</th><th>Realizado por</th><th style="text-align:center">Antihumedades</th><th></th></tr></thead><tbody>';
-  pendientes.forEach(function(inv){
-    var fecha=inv.fecha||'-';
-    var por=escHtml(inv.realizadoPor||'-');
-    var barco=escHtml(inv.embarcacion||'-');
-    var id=escHtml(inv.id);
-    html+='<tr style="background:#fff8e1" id="anti-row-'+id+'">';
-    html+='<td><strong>'+barco+'</strong></td>';
-    html+='<td>'+escHtml(fecha)+'</td>';
-    html+='<td>'+por+'</td>';
-    html+='<td style="text-align:center;font-size:20px">💧</td>';
-    html+='<td style="white-space:nowrap"><button class="btn btn-sm" style="background:#2e7d32;color:white;border:none;margin-right:6px" onclick="applyAntihumedades(\''+id+'\',this)">✅ Aplicar</button>'+
-          '<button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver</button></td>';
-    html+='</tr>';
-  });
-  html+='</tbody></table></div>';
-  html+='<p style="font-size:12px;color:#888;margin-top:10px;text-align:right">'+pendientes.length+' barco(s) pendiente(s) de antihumedades</p>';
+  // SECCIÓN: PENDIENTES (sin antihumedades, inventario reciente)
+  if(pendientes.length>0){
+    html+='<div>';
+    html+='<div style="background:#e65100;color:white;padding:10px 16px;border-radius:8px 8px 0 0;font-weight:700;font-size:13px">🟠 Sin antihumedades aplicados (inventario &lt;6 meses)</div>';
+    html+='<div class="table-card" style="border-radius:0 0 8px 8px;margin:0"><table><thead><tr><th>Embarcación</th><th>Último inventario</th><th>Por</th><th></th></tr></thead><tbody>';
+    pendientes.forEach(function(inv){
+      var id=escHtml(inv.id);
+      var barco=escHtml(inv.embarcacion||'-');
+      html+='<tr style="background:#fff8e1" id="anti-row-'+id+'">';
+      html+='<td><strong>'+barco+'</strong></td>';
+      html+='<td>'+escHtml(inv.fecha||'-')+'</td>';
+      html+='<td>'+escHtml(inv.realizadoPor||'-')+'</td>';
+      html+='<td style="white-space:nowrap"><button class="btn btn-sm" style="background:#2e7d32;color:white;border:none;margin-right:6px" onclick="applyAntihumedades(\''+id+'\',this)">✅ Aplicar</button>'+
+            '<button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver</button></td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table></div></div>';
+  }
+
+  if(!html){
+    html='<div style="text-align:center;padding:40px;color:#2e7d32;font-weight:700;font-size:15px">✅ Todos los barcos tienen antihumedades al día.</div>';
+  }
   el.innerHTML=html;
 }
 
 function applyAntihumedades(id, btn){
   btn.disabled=true;
   btn.textContent='Guardando...';
-  fetch(SCRIPT_URL_INV, {method:'POST', body:JSON.stringify({action:'setAntihumedades', id:id, valor:true})})
+  var hoy=new Date(); var y=hoy.getFullYear(),m=String(hoy.getMonth()+1).padStart(2,'0'),d=String(hoy.getDate()).padStart(2,'0');
+  var fechaHoy=y+'-'+m+'-'+d;
+  fetch(SCRIPT_URL_INV, {method:'POST', body:JSON.stringify({action:'setAntihumedades', id:id, valor:true, fecha:fechaHoy})})
     .then(function(r){return r.text();})
     .then(function(t){
       var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
       if(res.success){
         var inv=allInventarios.find(function(x){return x.id===id;});
-        if(inv) inv.antihumedades=true;
+        if(inv){ inv.antihumedades=true; inv.antihumedadesFecha=fechaHoy; }
         var row=document.getElementById('anti-row-'+id);
         if(row){
           row.style.background='#e8f5e9';

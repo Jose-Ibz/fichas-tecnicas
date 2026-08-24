@@ -64,7 +64,7 @@ function doPost(e) {
     } else if (action === 'deleteInventario') {
       return handleDeleteInventario(data.id);
     } else if (action === 'setAntihumedades') {
-      return handleSetAntihumedades(data.id, data.valor);
+      return handleSetAntihumedades(data.id, data.valor, data.fecha);
     }
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -157,7 +157,8 @@ function handleGetInventario(embarcacion) {
           fotosUrls: data[i][5] ? JSON.parse(data[i][5]) : {},
           notas: data[i][6],
           fechaCreacion: data[i][7],
-          antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true'
+          antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true',
+          antihumedadesFecha: data[i][9] ? String(data[i][9]) : ''
         });
       }
     }
@@ -190,7 +191,8 @@ function handleGetInventarios() {
         fotosUrls: data[i][5] ? JSON.parse(data[i][5]) : {},
         notas: data[i][6],
         fechaCreacion: data[i][7],
-        antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true'
+        antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true',
+        antihumedadesFecha: data[i][9] ? String(data[i][9]) : ''
       });
     }
     inventarios.sort(function(a,b){ return a.fechaCreacion > b.fechaCreacion ? -1 : 1; });
@@ -220,7 +222,8 @@ function handleSaveInventario(invData) {
       JSON.stringify(fotosUrls),
       invData.notas || '',
       new Date().toISOString(),
-      invData.antihumedades === true || invData.antihumedades === 'true' ? true : false
+      invData.antihumedades === true || invData.antihumedades === 'true' ? true : false,
+      invData.antihumedadesFecha || ''
     ];
     var existing = sh.getDataRange().getValues();
     var updated = false;
@@ -482,14 +485,17 @@ function handleDeleteInventario(id) {
   }
 }
 
-function handleSetAntihumedades(id, valor) {
+function handleSetAntihumedades(id, valor, fecha) {
   try {
     var sh = getInventariosSheet();
     var data = sh.getDataRange().getValues();
+    var hoy = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0]) === String(id)) {
-        sh.getRange(i+1, 9).setValue(valor === true || valor === 'true' ? true : false);
-        return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+        var aplicado = valor === true || valor === 'true';
+        sh.getRange(i+1, 9).setValue(aplicado);
+        sh.getRange(i+1, 10).setValue(aplicado ? (fecha || hoy) : '');
+        return ContentService.createTextOutput(JSON.stringify({success:true, fecha: aplicado ? (fecha || hoy) : ''})).setMimeType(ContentService.MimeType.JSON);
       }
     }
     return ContentService.createTextOutput(JSON.stringify({success:false, message:'Inventario no encontrado'})).setMimeType(ContentService.MimeType.JSON);

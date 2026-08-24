@@ -173,9 +173,15 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#f0f4f8;min-height:100vh
 
   <!-- ANTIHUMEDADES -->
   <div style="padding:0 12px 10px">
-    <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;align-items:center;gap:14px">
-      <input type="checkbox" id="chk-antihumedades" style="width:22px;height:22px;cursor:pointer;accent-color:#1565c0;flex-shrink:0">
-      <label for="chk-antihumedades" style="font-size:14px;font-weight:700;color:#1a2e4a;cursor:pointer">💧 Antihumedades aplicados</label>
+    <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08)">
+      <div style="display:flex;align-items:center;gap:14px">
+        <input type="checkbox" id="chk-antihumedades" style="width:22px;height:22px;cursor:pointer;accent-color:#1565c0;flex-shrink:0" onchange="onAntihumedadesChange()">
+        <label for="chk-antihumedades" style="font-size:14px;font-weight:700;color:#1a2e4a;cursor:pointer">💧 Antihumedades aplicados</label>
+      </div>
+      <div id="anti-fecha-wrap" style="display:none;margin-top:10px;display:none">
+        <label style="font-size:12px;color:#555;font-weight:600">Fecha de aplicación:</label>
+        <input type="date" id="anti-fecha" style="margin-left:8px;padding:6px 10px;border:1.5px solid #c5d8ff;border-radius:7px;font-size:14px;color:#1a2e4a">
+      </div>
     </div>
   </div>
 
@@ -321,6 +327,17 @@ function loadBarcos() {
       }
     })
     .catch(function(){});
+}
+
+function onAntihumedadesChange() {
+  var checked = document.getElementById('chk-antihumedades').checked;
+  var wrap = document.getElementById('anti-fecha-wrap');
+  wrap.style.display = checked ? 'block' : 'none';
+  if (checked && !document.getElementById('anti-fecha').value) {
+    var hoy = new Date();
+    var y = hoy.getFullYear(), m = String(hoy.getMonth()+1).padStart(2,'0'), d = String(hoy.getDate()).padStart(2,'0');
+    document.getElementById('anti-fecha').value = y+'-'+m+'-'+d;
+  }
 }
 
 function confirmarBarco() {
@@ -633,6 +650,7 @@ function doSave() {
     fotosUrls: {},
     notas: notas,
     antihumedades: document.getElementById('chk-antihumedades').checked,
+    antihumedadesFecha: document.getElementById('chk-antihumedades').checked ? (document.getElementById('anti-fecha').value || '') : '',
     incidencias: collectIncidencias()
   };
   currentInvId = invData.id;
@@ -808,7 +826,15 @@ function loadInventario(inv) {
     if (parts.length===3) document.getElementById('inv-fecha').value=parts[2]+'-'+parts[1]+'-'+parts[0];
   }
   document.getElementById('inv-notas').value = inv.notas || '';
-  document.getElementById('chk-antihumedades').checked = inv.antihumedades === true || inv.antihumedades === 'true';
+  var antih = inv.antihumedades === true || inv.antihumedades === 'true';
+  document.getElementById('chk-antihumedades').checked = antih;
+  if(antih && inv.antihumedadesFecha){
+    document.getElementById('anti-fecha').value = inv.antihumedadesFecha;
+    document.getElementById('anti-fecha-wrap').style.display='block';
+  } else {
+    document.getElementById('anti-fecha').value='';
+    document.getElementById('anti-fecha-wrap').style.display='none';
+  }
   renderItems(inv.items || {});
   restoreIncidencias(inv.incidencias || []);
   photoData = {};
