@@ -63,6 +63,8 @@ function doPost(e) {
       return handleResolverIncidencia(data.id, data.observaciones);
     } else if (action === 'deleteInventario') {
       return handleDeleteInventario(data.id);
+    } else if (action === 'setAntihumedades') {
+      return handleSetAntihumedades(data.id, data.valor);
     }
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -118,8 +120,8 @@ function getInventariosSheet() {
   var sh = ss.getSheetByName(INVENTARIOS_SHEET);
   if (!sh) {
     sh = ss.insertSheet(INVENTARIOS_SHEET);
-    sh.appendRow(['ID','Embarcacion','Fecha','RealizadoPor','Items_JSON','FotosUrls_JSON','Notas','FechaCreacion']);
-    sh.getRange(1,1,1,8).setFontWeight('bold');
+    sh.appendRow(['ID','Embarcacion','Fecha','RealizadoPor','Items_JSON','FotosUrls_JSON','Notas','FechaCreacion','Antihumedades']);
+    sh.getRange(1,1,1,9).setFontWeight('bold');
   }
   return sh;
 }
@@ -154,7 +156,8 @@ function handleGetInventario(embarcacion) {
           items: data[i][4] ? JSON.parse(data[i][4]) : {},
           fotosUrls: data[i][5] ? JSON.parse(data[i][5]) : {},
           notas: data[i][6],
-          fechaCreacion: data[i][7]
+          fechaCreacion: data[i][7],
+          antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true'
         });
       }
     }
@@ -186,7 +189,8 @@ function handleGetInventarios() {
         items: data[i][4] ? JSON.parse(data[i][4]) : {},
         fotosUrls: data[i][5] ? JSON.parse(data[i][5]) : {},
         notas: data[i][6],
-        fechaCreacion: data[i][7]
+        fechaCreacion: data[i][7],
+        antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true'
       });
     }
     inventarios.sort(function(a,b){ return a.fechaCreacion > b.fechaCreacion ? -1 : 1; });
@@ -215,7 +219,8 @@ function handleSaveInventario(invData) {
       JSON.stringify(invData.items || {}),
       JSON.stringify(fotosUrls),
       invData.notas || '',
-      new Date().toISOString()
+      new Date().toISOString(),
+      invData.antihumedades === true || invData.antihumedades === 'true' ? true : false
     ];
     var existing = sh.getDataRange().getValues();
     var updated = false;
@@ -468,6 +473,22 @@ function handleDeleteInventario(id) {
     for (var i = 1; i < data.length; i++) {
       if (String(data[i][0]) === String(id)) {
         sh.deleteRow(i + 1);
+        return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
+      }
+    }
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:'Inventario no encontrado'})).setMimeType(ContentService.MimeType.JSON);
+  } catch(error) {
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:'Error: '+error.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+
+function handleSetAntihumedades(id, valor) {
+  try {
+    var sh = getInventariosSheet();
+    var data = sh.getDataRange().getValues();
+    for (var i = 1; i < data.length; i++) {
+      if (String(data[i][0]) === String(id)) {
+        sh.getRange(i+1, 9).setValue(valor === true || valor === 'true' ? true : false);
         return ContentService.createTextOutput(JSON.stringify({success:true})).setMimeType(ContentService.MimeType.JSON);
       }
     }
