@@ -664,6 +664,7 @@ tr:hover td{background:#fafbff}
   <button class="inv-tab active" id="inv-tab-lista" onclick="setInvTab('lista')">📋 Lista de Inventarios</button>
   <button class="inv-tab" id="inv-tab-barcos" onclick="setInvTab('barcos')">🚤 Barcos</button>
   <button class="inv-tab" id="inv-tab-incidencias" onclick="setInvTab('incidencias')">🚨 Incidencias</button>
+  <button class="inv-tab" id="inv-tab-antihumedades" onclick="setInvTab('antihumedades')">💧 Antihumedades</button>
 </div>
 
 <!-- TAB LISTA -->
@@ -739,6 +740,15 @@ tr:hover td{background:#fafbff}
       </tbody>
     </table>
   </div>
+</div>
+
+<!-- TAB ANTIHUMEDADES -->
+<div class="inv-section" id="inv-section-antihumedades">
+  <div style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between">
+    <p style="font-size:13px;color:#555">Barcos con inventario reciente (&lt;6 meses) que <strong>no tienen antihumedades aplicados</strong>.</p>
+    <button class="btn btn-outline btn-sm" onclick="renderAntihumedadesTab()">🔄 Actualizar</button>
+  </div>
+  <div id="antihumedades-list"></div>
 </div>
 
 </div><!-- /page-inventarios -->
@@ -3037,6 +3047,56 @@ function setInvTab(tab){
   document.querySelectorAll('.inv-section').forEach(function(s){s.classList.remove('active');});
   document.getElementById('inv-tab-'+tab).classList.add('active');
   document.getElementById('inv-section-'+tab).classList.add('active');
+  if(tab==='antihumedades') renderAntihumedadesTab();
+}
+
+function renderAntihumedadesTab(){
+  var el=document.getElementById('antihumedades-list');
+  if(!el) return;
+  var ahora=new Date();
+  var limite=new Date(ahora); limite.setMonth(limite.getMonth()-6);
+
+  // Para cada barco, coger su inventario más reciente
+  var porBarco={};
+  (allInventarios||[]).forEach(function(inv){
+    var barco=(inv.embarcacion||'').trim();
+    if(!barco) return;
+    var f=new Date(inv.fecha);
+    if(!porBarco[barco] || f>new Date(porBarco[barco].fecha)){
+      porBarco[barco]=inv;
+    }
+  });
+
+  // Filtrar: fecha >= hace 6 meses Y antihumedades !== true
+  var pendientes=[];
+  Object.keys(porBarco).sort().forEach(function(barco){
+    var inv=porBarco[barco];
+    var f=new Date(inv.fecha);
+    if(f>=limite && inv.antihumedades!==true && inv.antihumedades!=='true'){
+      pendientes.push(inv);
+    }
+  });
+
+  if(pendientes.length===0){
+    el.innerHTML='<div style="text-align:center;padding:40px;color:#2e7d32;font-weight:700;font-size:15px">✅ Todos los barcos con inventario reciente tienen antihumedades aplicados.</div>';
+    return;
+  }
+
+  var html='<div class="table-card"><table><thead><tr><th>Embarcación</th><th>Último inventario</th><th>Realizado por</th><th>Acción</th></tr></thead><tbody>';
+  pendientes.forEach(function(inv){
+    var fecha=inv.fecha||'-';
+    var por=escHtml(inv.realizadoPor||'-');
+    var barco=escHtml(inv.embarcacion||'-');
+    html+='<tr style="background:#fff8e1">';
+    html+='<td><strong>'+barco+'</strong></td>';
+    html+='<td>'+escHtml(fecha)+'</td>';
+    html+='<td>'+por+'</td>';
+    html+='<td><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+escHtml(inv.id)+'\')">📋 Ver inventario</button></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+  html+='<p style="font-size:12px;color:#888;margin-top:10px;text-align:right">'+pendientes.length+' barco(s) pendiente(s) de antihumedades</p>';
+  el.innerHTML=html;
 }
 
 function printInventario(withPhotos){
