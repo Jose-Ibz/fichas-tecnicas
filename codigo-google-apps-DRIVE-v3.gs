@@ -1694,7 +1694,7 @@ function backupSemanal() {
     if (EMAIL_DESTINO) {
       MailApp.sendEmail({
         to: EMAIL_DESTINO,
-        subject: '✅ Backup Viamar completado — ' + fecha,
+        subject: '✅ Backup Fichas Técnicas/Inventario completado — ' + fecha,
         body: 'Se ha creado correctamente la copia de seguridad "' + nombreCopia + '" en la carpeta Drive: ' + DRIVE_FOLDER_NAME + '/Backups\n\nSe mantienen los últimos 8 backups (8 semanas).'
       });
     }
@@ -1703,7 +1703,7 @@ function backupSemanal() {
     if (EMAIL_DESTINO) {
       MailApp.sendEmail({
         to: EMAIL_DESTINO,
-        subject: '❌ Error en backup Viamar',
+        subject: '❌ Error en backup Fichas Técnicas/Inventario',
         body: 'Error: ' + e.toString()
       });
     }
