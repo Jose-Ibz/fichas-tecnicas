@@ -319,8 +319,10 @@ tr:hover td{background:#fafbff}
 <!-- SIDEBAR -->
 <div class="sidebar">
 <div class="sidebar-logo">
-<img src="LOGO-viamar.jpg" alt="Viamar" style="width:150px;max-width:100%;filter:brightness(0) invert(1);margin-bottom:6px;display:block;margin-left:auto;margin-right:auto">
-<p style="font-size:11px;opacity:.65;margin-top:2px">Fichas Técnicas v3.0</p>
+<div style="background:white;border-radius:10px;padding:8px 12px;display:inline-block;margin-bottom:6px">
+  <img src="LOGO-viamar.jpg" alt="Viamar" style="width:140px;max-width:100%;display:block">
+</div>
+<p style="font-size:11px;opacity:.65;margin-top:4px">Fichas Técnicas v3.0</p>
 </div>
 <div class="sidebar-nav">
 <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
@@ -1441,6 +1443,8 @@ function renderWidgetAntihumedades(){
 
   var html='<table style="width:100%;border-collapse:collapse;font-size:13px">';
   filas.forEach(function(f){
+    var inv=porBarco[f.barco];
+    var invId=inv?escHtml(inv.id):'';
     var fechaStr=f.fAnti ? f.fAnti.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     var renovarStr=f.fRenovar ? f.fRenovar.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
     var estadoTxt;
@@ -1451,8 +1455,8 @@ function renderWidgetAntihumedades(){
     html+='<tr style="border-bottom:1px solid #eee">'+
       '<td style="padding:7px 4px;font-size:18px;width:28px">'+f.icono+'</td>'+
       '<td style="padding:7px 6px;font-weight:700;color:#1a2e4a">'+escHtml(f.barco)+'</td>'+
-      '<td style="padding:7px 6px;color:#666">'+fechaStr+'</td>'+
-      '<td style="padding:7px 4px;font-weight:700;color:'+f.color+';white-space:nowrap">'+estadoTxt+'</td>'+
+      '<td style="padding:7px 6px;font-weight:700;color:'+f.color+';white-space:nowrap">'+estadoTxt+'</td>'+
+      '<td style="padding:4px 2px;white-space:nowrap">'+(invId?'<button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+invId+'\')">📋 Editar</button>':'')+'</td>'+
       '</tr>';
   });
   html+='</table>';
@@ -2904,8 +2908,13 @@ function openInvDetail(id){
       '<div>'+fotoHtml+'</div>'+
     '</div>';
   });
-  html+='<div style="margin-top:14px;padding:10px 14px;background:'+(inv.antihumedades?'#e8f5e9':'#fff8f0')+';border-radius:8px;font-size:13px;font-weight:700;color:'+(inv.antihumedades?'#2e7d32':'#999')+'">'+
-    (inv.antihumedades?'✅':'☐')+' Antihumedades aplicados</div>';
+  var antiAplic=inv.antihumedades===true||inv.antihumedades==='true';
+  var antiFecha=inv.antihumedadesFecha||'';
+  var antiFechaLabel=antiFecha ? ' · Aplicados: '+new Date(antiFecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
+  html+='<div style="margin-top:14px"><button id="btn-anti-detail" onclick="toggleAntihumedadesDetail()" style="width:100%;text-align:left;padding:12px 16px;border-radius:8px;border:2px solid '+(antiAplic?'#2e7d32':'#e0e0e0')+';background:'+(antiAplic?'#e8f5e9':'#fafafa')+';font-size:13px;font-weight:700;color:'+(antiAplic?'#2e7d32':'#999')+';cursor:pointer">'+
+    (antiAplic?'✅':'💧')+' Antihumedades aplicados'+antiFechaLabel+
+    '<span style="float:right;font-size:11px;font-weight:400;color:#888">'+(antiAplic?'Clic para marcar como NO aplicados':'Clic para marcar como aplicados')+'</span>'+
+  '</button></div>';
   if(inv.notas){
     html+='<div style="margin-top:16px;padding-top:14px;border-top:2px solid #eee">'+
       '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Observaciones generales</div>'+
@@ -3195,8 +3204,7 @@ function renderAntihumedadesTab(){
       html+='<td><strong>'+barco+'</strong></td>';
       html+='<td>'+fechaStr+'</td>';
       html+='<td style="color:#c62828;font-weight:700">'+meses+' mes'+(meses!==1?'es':'')+' ('+dias+' días)</td>';
-      html+='<td style="white-space:nowrap"><button class="btn btn-sm" style="background:#c62828;color:white;border:none;margin-right:6px" onclick="applyAntihumedades(\''+id+'\',this)">🔄 Renovar</button>'+
-            '<button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver</button></td>';
+      html+='<td><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver y editar</button></td>';
       html+='</tr>';
     });
     html+='</tbody></table></div></div>';
@@ -3214,8 +3222,7 @@ function renderAntihumedadesTab(){
       html+='<td><strong>'+barco+'</strong></td>';
       html+='<td>'+escHtml(inv.fecha||'-')+'</td>';
       html+='<td>'+escHtml(inv.realizadoPor||'-')+'</td>';
-      html+='<td style="white-space:nowrap"><button class="btn btn-sm" style="background:#2e7d32;color:white;border:none;margin-right:6px" onclick="applyAntihumedades(\''+id+'\',this)">✅ Aplicar</button>'+
-            '<button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver</button></td>';
+      html+='<td><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver y editar</button></td>';
       html+='</tr>';
     });
     html+='</tbody></table></div></div>';
@@ -3225,6 +3232,40 @@ function renderAntihumedadesTab(){
     html='<div style="text-align:center;padding:40px;color:#2e7d32;font-weight:700;font-size:15px">✅ Todos los barcos tienen antihumedades al día.</div>';
   }
   el.innerHTML=html;
+}
+
+function toggleAntihumedadesDetail(){
+  var inv=allInventarios.find(function(x){return x.id===currentInvId;});
+  if(!inv) return;
+  var nuevoValor=!(inv.antihumedades===true||inv.antihumedades==='true');
+  var btn=document.getElementById('btn-anti-detail');
+  if(btn){btn.textContent='Guardando...';btn.disabled=true;}
+  var hoy=new Date(); var y=hoy.getFullYear(),m=String(hoy.getMonth()+1).padStart(2,'0'),d=String(hoy.getDate()).padStart(2,'0');
+  var fechaHoy=y+'-'+m+'-'+d;
+  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'setAntihumedades',id:currentInvId,valor:nuevoValor,fecha:nuevoValor?fechaHoy:''})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      if(res.success){
+        inv.antihumedades=nuevoValor;
+        inv.antihumedadesFecha=nuevoValor?fechaHoy:'';
+        // Redibujar botón
+        var antiFechaLabel=nuevoValor?' · Aplicados: '+new Date(fechaHoy).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}):'';
+        if(btn){
+          btn.disabled=false;
+          btn.style.border='2px solid '+(nuevoValor?'#2e7d32':'#e0e0e0');
+          btn.style.background=nuevoValor?'#e8f5e9':'#fafafa';
+          btn.style.color=nuevoValor?'#2e7d32':'#999';
+          btn.innerHTML=(nuevoValor?'✅':'💧')+' Antihumedades aplicados'+antiFechaLabel+
+            '<span style="float:right;font-size:11px;font-weight:400;color:#888">'+(nuevoValor?'Clic para marcar como NO aplicados':'Clic para marcar como aplicados')+'</span>';
+        }
+        renderWidgetAntihumedades();
+      } else {
+        if(btn){btn.disabled=false;btn.textContent='Error — reintentar';}
+        alert('Error: '+(res.message||''));
+      }
+    })
+    .catch(function(){if(btn){btn.disabled=false;btn.textContent='Error — reintentar';}alert('Error de conexión');});
 }
 
 function applyAntihumedades(id, btn){
