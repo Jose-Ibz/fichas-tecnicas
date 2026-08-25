@@ -374,6 +374,7 @@ tr:hover td{background:#fafbff}
 <div class="topbar">
 <h1>📊 Dashboard</h1>
 <div class="topbar-actions">
+<button class="btn btn-outline btn-sm" onclick="exportarDatos()" id="btn-exportar">⬇️ Exportar datos</button>
 <button class="btn btn-outline" onclick="loadAllData()">🔄 Actualizar</button>
 </div>
 </div>
@@ -3790,6 +3791,55 @@ function renderWidgetUbicacionesTaller(){
   container.innerHTML=html||'<div style="color:#888;font-size:13px;padding:10px 0">Sin ubicaciones registradas para los barcos en taller.</div>';
 }
 
+
+// ====== EXPORTAR DATOS ======
+function exportarDatos(){
+  var btn=document.getElementById('btn-exportar');
+  btn.disabled=true; btn.textContent='⏳ Exportando...';
+  fetch(SCRIPT_URL+'?action=exportarDatos')
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false,message:'Respuesta inválida'};}
+      btn.disabled=false; btn.textContent='⬇️ Exportar datos';
+      if(!res.success){alert('Error al exportar: '+(res.message||''));return;}
+      var d=res.data;
+      var fecha=new Date().toISOString().slice(0,10);
+
+      // Construir CSV por hoja y unirlos en un ZIP... pero sin librería ZIP usamos JSON descargable
+      // En su lugar generamos un fichero Excel-compatible (CSV multi-hoja no existe, usamos JSON)
+      // Mejor: generar un HTML con tablas que Excel abre directamente
+      var html='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><style>th{background:#003d82;color:white}td,th{border:1px solid #ccc;padding:4px 8px;font-size:12px}</style></head><body>';
+      Object.keys(d).forEach(function(hoja){
+        if(hoja==='_exportado') return;
+        var filas=d[hoja];
+        if(!filas||!filas.length) return;
+        html+='<h2 style="font-family:Arial;color:#003d82;margin-top:20px">'+hoja+'</h2><table>';
+        var cols=Object.keys(filas[0]);
+        html+='<tr>'+cols.map(function(c){return '<th>'+c+'</th>';}).join('')+'</tr>';
+        filas.forEach(function(row){
+          html+='<tr>'+cols.map(function(c){
+            var v=row[c];
+            if(v instanceof Object) v=JSON.stringify(v);
+            return '<td>'+(v||'')+'</td>';
+          }).join('')+'</tr>';
+        });
+        html+='</table>';
+      });
+      html+='<p style="font-family:Arial;font-size:11px;color:#aaa;margin-top:20px">Exportado el '+fecha+' desde Náutica Viamar Fichas Técnicas v3.0</p></body></html>';
+
+      // Descargar como .xls
+      var blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+      var url=URL.createObjectURL(blob);
+      var a=document.createElement('a');
+      a.href=url; a.download='Backup_Viamar_'+fecha+'.xls';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a); URL.revokeObjectURL(url);
+    })
+    .catch(function(){
+      btn.disabled=false; btn.textContent='⬇️ Exportar datos';
+      alert('Error de conexión al exportar');
+    });
+}
 </script>
 </body>
 </html>

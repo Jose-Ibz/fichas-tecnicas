@@ -38,6 +38,8 @@ function doGet(e) {
       return handleGetUsuarios();
     } else if (action === 'getPresupuestos') {
       return handleGetPresupuestos(e.parameter.resuelto);
+    } else if (action === 'exportarDatos') {
+      return handleExportarDatos();
     }
 
     return ContentService.createTextOutput(JSON.stringify({
@@ -1627,5 +1629,107 @@ function handleToggleUsuario(username, activo) {
     return ContentService.createTextOutput(JSON.stringify({success:false,message:'Usuario no encontrado'})).setMimeType(ContentService.MimeType.JSON);
   } catch(error) {
     return ContentService.createTextOutput(JSON.stringify({success:false, message:error.toString()})).setMimeType(ContentService.MimeType.JSON);
+  }
+}
+// ========================================
+// BACKUP AUTOMÁTICO SEMANAL
+// ========================================
+
+/**
+ * Ejecutar manualmente UNA SOLA VEZ para instalar el trigger semanal:
+ *   crearTriggerBackup()
+ * Para eliminar el trigger:
+ *   eliminarTriggerBackup()
+ */
+
+function crearTriggerBackup() {
+  // Elimina triggers previos del mismo tipo para no duplicar
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'backupSemanal') ScriptApp.deleteTrigger(t);
+  });
+  ScriptApp.newTrigger('backupSemanal')
+    .timeBased()
+    .onWeekDay(ScriptApp.WeekDay.MONDAY)
+    .atHour(8)
+    .create();
+  Logger.log('Trigger semanal creado: backupSemanal cada lunes a las 8h');
+}
+
+function eliminarTriggerBackup() {
+  ScriptApp.getProjectTriggers().forEach(function(t) {
+    if (t.getHandlerFunction() === 'backupSemanal') ScriptApp.deleteTrigger(t);
+  });
+  Logger.log('Trigger eliminado');
+}
+
+function backupSemanal() {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var fecha = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd');
+    var nombreCopia = 'Backup_Viamar_FichasTecnicas_' + fecha;
+
+    // Buscar o crear carpeta Backups dentro de la carpeta raíz
+    var rootFolders = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
+    var rootFolder = rootFolders.hasNext() ? rootFolders.next() : DriveApp.createFolder(DRIVE_FOLDER_NAME);
+    var backupFolders = rootFolder.getFoldersByName('Backups');
+    var backupFolder = backupFolders.hasNext() ? backupFolders.next() : rootFolder.createFolder('Backups');
+
+    // Copiar el spreadsheet completo
+    var copia = ss.copy(nombreCopia);
+    DriveApp.getFileById(copia.getId()).moveTo(backupFolder);
+
+    // Eliminar backups con más de 8 semanas (mantener los últimos 8)
+    var archivos = backupFolder.getFilesByName('Backup_Viamar_FichasTecnicas_*');
+    var lista = [];
+    while (archivos.hasNext()) lista.push(archivos.next());
+    // Ordenar por fecha de creación, más antiguo primero
+    lista.sort(function(a, b) { return a.getDateCreated() - b.getDateCreated(); });
+    if (lista.length > 8) {
+      lista.slice(0, lista.length - 8).forEach(function(f) { f.setTrashed(true); });
+    }
+
+    Logger.log('Backup creado: ' + nombreCopia);
+
+    // Email de confirmación
+    if (EMAIL_DESTINO) {
+      MailApp.sendEmail({
+        to: EMAIL_DESTINO,
+        subject: '✅ Backup Viamar completado — ' + fecha,
+        body: 'Se ha creado correctamente la copia de seguridad "' + nombreCopia + '" en la carpeta Drive: ' + DRIVE_FOLDER_NAME + '/Backups\n\nSe mantienen los últimos 8 backups (8 semanas).'
+      });
+    }
+  } catch(e) {
+    Logger.log('Error en backup: ' + e.toString());
+    if (EMAIL_DESTINO) {
+      MailApp.sendEmail({
+        to: EMAIL_DESTINO,
+        subject: '❌ Error en backup Viamar',
+        body: 'Error: ' + e.toString()
+      });
+    }
+  }
+}
+
+// Exportar todos los datos como JSON (usado por el panel para descarga)
+function handleExportarDatos() {
+  try {
+    var ss = SpreadsheetApp.openById(SHEET_ID);
+    var resultado = {};
+    var hojas = ['Inspecciones', 'Inventarios', 'Incidencias', 'Trabajos', 'Barcos', 'Presupuestos'];
+    hojas.forEach(function(nombre) {
+      var sh = ss.getSheetByName(nombre);
+      if (!sh) return;
+      var data = sh.getDataRange().getValues();
+      var headers = data[0];
+      resultado[nombre] = data.slice(1).filter(function(r) { return r[0]; }).map(function(row) {
+        var obj = {};
+        headers.forEach(function(h, i) { obj[h] = row[i]; });
+        return obj;
+      });
+    });
+    resultado._exportado = new Date().toISOString();
+    return ContentService.createTextOutput(JSON.stringify({success:true, data:resultado})).setMimeType(ContentService.MimeType.JSON);
+  } catch(e) {
+    return ContentService.createTextOutput(JSON.stringify({success:false, message:e.toString()})).setMimeType(ContentService.MimeType.JSON);
   }
 }
