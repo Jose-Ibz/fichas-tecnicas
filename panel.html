@@ -913,14 +913,32 @@ tr:hover td{background:#fafbff}
         <h3 id="inv-detail-title">Inventario</h3>
         <div style="font-size:12px;opacity:.75;margin-top:3px" id="inv-detail-sub"></div>
       </div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <button onclick="printInventario(false)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🖨️ Sin fotos</button>
         <button onclick="printInventario(true)" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🖨️ Con fotos</button>
+        <button onclick="openInvEditFromDetail()" style="background:rgba(255,193,7,.85);border:none;color:#1a2e4a;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:700">✏️ Editar</button>
         <button onclick="doDeleteInventario()" style="background:rgba(211,47,47,.7);border:1px solid rgba(255,255,255,.3);color:white;border-radius:7px;padding:6px 11px;cursor:pointer;font-size:12px;font-weight:600">🗑️ Borrar</button>
         <button onclick="closeInvDetail()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
       </div>
     </div>
     <div class="inv-detail-body" id="inv-detail-body" style="max-height:70vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- MODAL EDICIÓN INVENTARIO -->
+<div class="inv-detail-overlay" id="inv-edit-modal">
+  <div class="inv-detail-box" style="max-width:740px">
+    <div class="inv-detail-top" style="background:#1a2e4a">
+      <div>
+        <h3 id="inv-edit-title">Editar inventario</h3>
+        <div style="font-size:12px;opacity:.75;margin-top:3px" id="inv-edit-sub"></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="saveInvEdit()" id="btn-save-inv-edit" style="background:#ffc107;border:none;color:#1a2e4a;border-radius:7px;padding:7px 16px;cursor:pointer;font-size:13px;font-weight:700">💾 Guardar</button>
+        <button onclick="closeInvEdit()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:7px 14px;cursor:pointer;font-size:14px">✕</button>
+      </div>
+    </div>
+    <div id="inv-edit-body" style="max-height:75vh;overflow-y:auto;padding:20px"></div>
   </div>
 </div>
 
@@ -2879,7 +2897,7 @@ function renderInventariosTable(){
         '<td>'+escHtml(inv.realizadoPor||'-')+'</td>'+
         '<td>'+filled+' / '+INV_ITEMS.length+'</td>'+
         '<td>'+fotos+'</td>'+
-        '<td><button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+escHtml(inv.id)+'\')">Ver</button></td>'+
+        '<td style="white-space:nowrap"><button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+escHtml(inv.id)+'\')">Ver</button> <button class="btn btn-xs" style="background:#ffc107;color:#1a2e4a;border:none;font-weight:700" onclick="openInvEdit(\''+escHtml(inv.id)+'\')">✏️ Editar</button></td>'+
       '</tr>';
     });
   });
@@ -2915,10 +2933,9 @@ function openInvDetail(id){
   var antiAplic=inv.antihumedades===true||inv.antihumedades==='true';
   var antiFecha=inv.antihumedadesFecha||'';
   var antiFechaLabel=antiFecha ? ' · Aplicados: '+new Date(antiFecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '';
-  html+='<div style="margin-top:14px"><button id="btn-anti-detail" onclick="toggleAntihumedadesDetail()" style="width:100%;text-align:left;padding:12px 16px;border-radius:8px;border:2px solid '+(antiAplic?'#2e7d32':'#e0e0e0')+';background:'+(antiAplic?'#e8f5e9':'#fafafa')+';font-size:13px;font-weight:700;color:'+(antiAplic?'#2e7d32':'#999')+';cursor:pointer">'+
+  html+='<div style="margin-top:14px;padding:12px 16px;border-radius:8px;border:2px solid '+(antiAplic?'#2e7d32':'#e0e0e0')+';background:'+(antiAplic?'#e8f5e9':'#fafafa')+';font-size:13px;font-weight:700;color:'+(antiAplic?'#2e7d32':'#999')+'">'+
     (antiAplic?'✅':'💧')+' Antihumedades aplicados'+antiFechaLabel+
-    '<span style="float:right;font-size:11px;font-weight:400;color:#888">'+(antiAplic?'Clic para marcar como NO aplicados':'Clic para marcar como aplicados')+'</span>'+
-  '</button></div>';
+  '</div>';
   if(inv.notas){
     html+='<div style="margin-top:16px;padding-top:14px;border-top:2px solid #eee">'+
       '<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:6px">Observaciones generales</div>'+
@@ -2931,6 +2948,135 @@ function openInvDetail(id){
 
 function closeInvDetail(){
   document.getElementById('inv-detail-modal').classList.remove('active');
+}
+
+function openInvEditFromDetail(){
+  closeInvDetail();
+  openInvEdit(currentInvId);
+}
+
+function openInvEdit(id){
+  var inv=allInventarios.find(function(x){return x.id===id;});
+  if(!inv) return;
+  currentInvId=id;
+  document.getElementById('inv-edit-title').textContent='✏️ '+escHtml(inv.embarcacion||'Inventario');
+  document.getElementById('inv-edit-sub').textContent='Fecha: '+(inv.fecha||'-')+' · Por: '+(inv.realizadoPor||'-');
+  var items=inv.items||{};
+
+  var html='';
+  // Items estándar
+  html+='<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin-bottom:10px;letter-spacing:.5px">Items del inventario</div>';
+  html+='<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:6px 10px;align-items:center;font-size:12px;font-weight:700;color:#888;margin-bottom:6px"><span>Artículo</span><span style="text-align:center">Cantidad</span><span>Observación</span></div>';
+  INV_ITEMS.forEach(function(it){
+    var d=items[it.key]||{};
+    var qty=d.cantidad!==undefined&&d.cantidad!==''?d.cantidad:'';
+    var obs=d.obs||'';
+    html+='<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:6px 10px;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5">'+
+      '<label style="font-size:13px;color:#1a2e4a;font-weight:600">'+escHtml(it.label)+'</label>'+
+      '<input type="number" data-key="'+it.key+'" data-field="cantidad" value="'+escHtml(String(qty))+'" min="0" style="padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;text-align:center;width:100%">'+
+      '<input type="text" data-key="'+it.key+'" data-field="obs" value="'+escHtml(obs)+'" placeholder="obs..." style="padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;width:100%">'+
+    '</div>';
+  });
+
+  // Items extra (solo lectura si existen)
+  var extraKeys=Object.keys(items).filter(function(k){return !INV_ITEMS.find(function(it){return it.key===k;});});
+  if(extraKeys.length>0){
+    html+='<div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;margin:14px 0 8px;letter-spacing:.5px">Items extra</div>';
+    extraKeys.forEach(function(k){
+      var d=items[k]||{};
+      html+='<div style="display:grid;grid-template-columns:1fr 80px 1fr;gap:6px 10px;align-items:center;padding:5px 0;border-bottom:1px solid #f5f5f5">'+
+        '<label style="font-size:13px;color:#555;font-weight:600">'+escHtml(k)+'</label>'+
+        '<input type="number" data-key="'+escHtml(k)+'" data-field="cantidad" value="'+escHtml(String(d.cantidad||''))+'" min="0" style="padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;text-align:center;width:100%">'+
+        '<input type="text" data-key="'+escHtml(k)+'" data-field="obs" value="'+escHtml(d.obs||'')+'" placeholder="obs..." style="padding:5px 8px;border:1.5px solid #ddd;border-radius:6px;font-size:13px;width:100%">'+
+      '</div>';
+    });
+  }
+
+  // Antihumedades
+  var antiAplic=inv.antihumedades===true||inv.antihumedades==='true';
+  var antiFecha=inv.antihumedadesFecha||'';
+  html+='<div style="margin-top:18px;padding:14px 16px;border-radius:10px;background:#f0f4ff;border:1.5px solid #c5d8ff">';
+  html+='<div style="display:flex;align-items:center;gap:14px;margin-bottom:8px">';
+  html+='<input type="checkbox" id="edit-antihumedades" '+(antiAplic?'checked':'')+' style="width:20px;height:20px;accent-color:#1565c0;cursor:pointer" onchange="document.getElementById(\'edit-anti-fecha-wrap\').style.display=this.checked?\'flex\':\'none\'">';
+  html+='<label for="edit-antihumedades" style="font-size:14px;font-weight:700;color:#1a2e4a;cursor:pointer">💧 Antihumedades aplicados</label>';
+  html+='</div>';
+  html+='<div id="edit-anti-fecha-wrap" style="display:'+(antiAplic?'flex':'none')+';align-items:center;gap:10px">';
+  html+='<label style="font-size:12px;font-weight:600;color:#555">Fecha de aplicación:</label>';
+  html+='<input type="date" id="edit-anti-fecha" value="'+escHtml(antiFecha)+'" style="padding:6px 10px;border:1.5px solid #c5d8ff;border-radius:7px;font-size:13px">';
+  html+='</div></div>';
+
+  // Notas
+  html+='<div style="margin-top:16px">';
+  html+='<label style="font-size:12px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px">Observaciones generales</label>';
+  html+='<textarea id="edit-notas" rows="3" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:8px;font-size:13px;resize:vertical">'+escHtml(inv.notas||'')+'</textarea>';
+  html+='</div>';
+  html+='<div id="inv-edit-msg" style="margin-top:10px;font-size:13px;font-weight:600;min-height:20px"></div>';
+
+  document.getElementById('inv-edit-body').innerHTML=html;
+  document.getElementById('inv-edit-modal').classList.add('active');
+}
+
+function closeInvEdit(){
+  document.getElementById('inv-edit-modal').classList.remove('active');
+}
+
+function saveInvEdit(){
+  var inv=allInventarios.find(function(x){return x.id===currentInvId;});
+  if(!inv) return;
+  var btn=document.getElementById('btn-save-inv-edit');
+  var msg=document.getElementById('inv-edit-msg');
+  btn.disabled=true; btn.textContent='Guardando...';
+  msg.textContent='';
+
+  // Recoger items
+  var items={};
+  document.querySelectorAll('#inv-edit-body input[data-key]').forEach(function(inp){
+    var key=inp.dataset.key;
+    var field=inp.dataset.field;
+    if(!items[key]) items[key]={};
+    items[key][field]=inp.value;
+  });
+  // Eliminar entradas vacías
+  Object.keys(items).forEach(function(k){
+    if(items[k].cantidad===''&&!items[k].obs) delete items[k];
+  });
+
+  var antiAplic=document.getElementById('edit-antihumedades').checked;
+  var antiFecha=antiAplic?(document.getElementById('edit-anti-fecha').value||''):'';
+  var notas=document.getElementById('edit-notas').value.trim();
+
+  var invData={
+    id:inv.id,
+    embarcacion:inv.embarcacion,
+    fecha:inv.fecha,
+    realizadoPor:inv.realizadoPor,
+    items:items,
+    fotosUrls:inv.fotosUrls||{},
+    notas:notas,
+    antihumedades:antiAplic,
+    antihumedadesFecha:antiFecha
+  };
+
+  fetch(SCRIPT_URL_INV,{method:'POST',body:JSON.stringify({action:'saveInventario',data:invData})})
+    .then(function(r){return r.text();})
+    .then(function(t){
+      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
+      btn.disabled=false; btn.textContent='💾 Guardar';
+      if(res.success){
+        // Actualizar en memoria
+        inv.items=items; inv.notas=notas; inv.antihumedades=antiAplic; inv.antihumedadesFecha=antiFecha;
+        msg.style.color='#2e7d32'; msg.textContent='✅ Guardado correctamente';
+        renderInventariosTable();
+        renderWidgetAntihumedades();
+        setTimeout(function(){closeInvEdit();},1000);
+      } else {
+        msg.style.color='#c62828'; msg.textContent='Error: '+(res.message||'No se pudo guardar');
+      }
+    })
+    .catch(function(){
+      btn.disabled=false; btn.textContent='💾 Guardar';
+      msg.style.color='#c62828'; msg.textContent='Error de conexión';
+    });
 }
 
 function doDeleteInventario(){
