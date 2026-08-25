@@ -432,6 +432,16 @@ tr:hover td{background:#fafbff}
 </div>
 </div>
 
+<div class="chart-card" style="overflow:hidden;padding:0;margin-top:28px;margin-bottom:28px">
+<div style="padding:18px 22px 12px;display:flex;justify-content:space-between;align-items:center">
+  <h3 style="margin:0">💧 Estado Antihumedades</h3>
+  <button class="btn btn-outline btn-xs" onclick="showPage('inventarios');setInvTab('antihumedades')">Gestionar →</button>
+</div>
+<div id="widget-antihumedades" style="padding:0 20px 12px;max-height:280px;overflow-y:auto">
+  <div style="color:#888;font-size:13px;padding:10px 0">Sin datos aún.</div>
+</div>
+</div>
+
 <div class="table-card" style="margin-bottom:22px">
 <div class="table-header" style="background:#fff8f8">
 <h3>🚨 Incidencias Abiertas</h3>
@@ -1313,6 +1323,7 @@ if(alertas.length>0){
 
 renderWidgetTareas();
 renderWidgetBengalas();
+renderWidgetAntihumedades();
 renderIncidenciasWidget();
 renderPresupuestosWidget();
 }
@@ -1379,6 +1390,73 @@ function loadIncidencias() {
       }
     })
     .catch(function(){});
+}
+
+function renderWidgetAntihumedades(){
+  var container=document.getElementById('widget-antihumedades');
+  if(!container) return;
+  var ahora=new Date();
+  var limite6m=new Date(ahora); limite6m.setMonth(limite6m.getMonth()-6);
+
+  // Inventario más reciente por barco
+  var porBarco={};
+  (allInventarios||[]).forEach(function(inv){
+    var barco=(inv.embarcacion||'').trim();
+    if(!barco) return;
+    var f=new Date(inv.fecha);
+    if(!porBarco[barco]||f>new Date(porBarco[barco].fecha)) porBarco[barco]=inv;
+  });
+
+  var filas=[];
+  Object.keys(porBarco).forEach(function(barco){
+    var inv=porBarco[barco];
+    var aplicado=inv.antihumedades===true||inv.antihumedades==='true';
+    var fAnti=inv.antihumedadesFecha ? new Date(inv.antihumedadesFecha) : null;
+
+    if(aplicado && fAnti){
+      var fRenovar=new Date(fAnti); fRenovar.setMonth(fRenovar.getMonth()+3);
+      var dias=Math.ceil((fRenovar-ahora)/86400000);
+      var icono, color, orden;
+      if(dias<0){icono='⚠️'; color='#c62828'; orden=0;}
+      else if(dias<=15){icono='🔶'; color='#e65100'; orden=1;}
+      else{icono='✅'; color='#2e7d32'; orden=2;}
+      filas.push({barco:barco, fAnti:fAnti, fRenovar:fRenovar, dias:dias, icono:icono, color:color, orden:orden, aplicado:true});
+    } else if(!aplicado && new Date(inv.fecha)>=limite6m){
+      filas.push({barco:barco, fAnti:null, fRenovar:null, dias:null, icono:'💧', color:'#e65100', orden:1, aplicado:false});
+    }
+  });
+
+  if(filas.length===0){
+    container.innerHTML='<div style="color:#2e7d32;font-size:13px;padding:10px 0">✅ Todos los barcos tienen antihumedades al día.</div>';
+    return;
+  }
+
+  // Ordenar: primero caducados/urgentes, luego por fecha de aplicación de más antigua a más moderna
+  filas.sort(function(a,b){
+    if(a.orden!==b.orden) return a.orden-b.orden;
+    var fa=a.fAnti?a.fAnti.getTime():0;
+    var fb=b.fAnti?b.fAnti.getTime():0;
+    return fa-fb; // más antiguo primero
+  });
+
+  var html='<table style="width:100%;border-collapse:collapse;font-size:13px">';
+  filas.forEach(function(f){
+    var fechaStr=f.fAnti ? f.fAnti.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    var renovarStr=f.fRenovar ? f.fRenovar.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+    var estadoTxt;
+    if(!f.aplicado) estadoTxt='Sin aplicar';
+    else if(f.dias<0) estadoTxt='Caducado';
+    else if(f.dias<=15) estadoTxt='Renovar en '+f.dias+'d';
+    else estadoTxt='Renovar: '+renovarStr;
+    html+='<tr style="border-bottom:1px solid #eee">'+
+      '<td style="padding:7px 4px;font-size:18px;width:28px">'+f.icono+'</td>'+
+      '<td style="padding:7px 6px;font-weight:700;color:#1a2e4a">'+escHtml(f.barco)+'</td>'+
+      '<td style="padding:7px 6px;color:#666">'+fechaStr+'</td>'+
+      '<td style="padding:7px 4px;font-weight:700;color:'+f.color+';white-space:nowrap">'+estadoTxt+'</td>'+
+      '</tr>';
+  });
+  html+='</table>';
+  container.innerHTML=html;
 }
 
 function renderIncidenciasWidget() {
