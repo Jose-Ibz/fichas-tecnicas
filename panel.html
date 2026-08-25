@@ -374,7 +374,7 @@ tr:hover td{background:#fafbff}
 <div class="topbar">
 <h1>📊 Dashboard</h1>
 <div class="topbar-actions">
-<button class="btn btn-outline btn-sm" onclick="exportarDatos()" id="btn-exportar">⬇️ Exportar datos</button>
+<button class="btn btn-outline btn-sm" onclick="exportarDatos()" id="btn-exportar">💾 Backup</button>
 <button class="btn btn-outline" onclick="loadAllData()">🔄 Actualizar</button>
 </div>
 </div>
@@ -3800,7 +3800,7 @@ function exportarDatos(){
     .then(function(r){return r.text();})
     .then(function(t){
       var res; try{res=JSON.parse(t);}catch(e){res={success:false,message:'Respuesta inválida'};}
-      btn.disabled=false; btn.textContent='⬇️ Exportar datos';
+      btn.disabled=false; btn.textContent='💾 Backup';
       if(!res.success){alert('Error al exportar: '+(res.message||''));return;}
       var d=res.data;
       var fecha=new Date().toISOString().slice(0,10);
@@ -3836,7 +3836,7 @@ function exportarDatos(){
       document.body.removeChild(a); URL.revokeObjectURL(url);
     })
     .catch(function(){
-      btn.disabled=false; btn.textContent='⬇️ Exportar datos';
+      btn.disabled=false; btn.textContent='💾 Backup';
       alert('Error de conexión al exportar');
     });
 }
