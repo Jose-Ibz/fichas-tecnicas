@@ -996,7 +996,28 @@ tr:hover td{background:#fafbff}
       <textarea id="tarea-desc" rows="3" placeholder="Describe el trabajo a realizar..."></textarea>
     </div>
     <div class="tarea-form-group">
-      <label>Fecha tope</label>
+      <label>Tipo de trabajo</label>
+      <div style="display:flex;gap:16px;margin-top:4px">
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+          <input type="radio" name="tarea-tipo" id="tarea-tipo-unica" value="unica" onchange="onTareaTipoChange()" checked> Trabajo único
+        </label>
+        <label style="display:flex;align-items:center;gap:6px;font-weight:400;cursor:pointer">
+          <input type="radio" name="tarea-tipo" id="tarea-tipo-periodica" value="periodica" onchange="onTareaTipoChange()"> 🔄 Periódico
+        </label>
+      </div>
+    </div>
+    <div id="tarea-intervalo-wrap" style="display:none" class="tarea-form-group">
+      <label>Repetir cada</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="tarea-intervalo-num" min="1" max="365" value="1" style="width:70px">
+        <select id="tarea-intervalo-unidad" style="flex:1">
+          <option value="dias">días</option>
+          <option value="meses" selected>meses</option>
+        </select>
+      </div>
+    </div>
+    <div class="tarea-form-group">
+      <label id="tarea-fecha-label">Fecha tope</label>
       <input type="date" id="tarea-fecha">
     </div>
     <div class="tarea-form-group">
@@ -1011,6 +1032,27 @@ tr:hover td{background:#fafbff}
 </div>
 </div>
 </div><!-- /app -->
+
+<!-- MODAL COMPLETAR TAREA -->
+<div id="completar-tarea-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,20,.55);z-index:9999;display:none;align-items:center;justify-content:center">
+<div style="background:#fff;border-radius:14px;padding:28px 28px 22px;max-width:380px;width:92%;box-shadow:0 8px 40px rgba(0,0,0,.25)">
+  <h3 style="margin:0 0 16px;font-size:17px;color:#003d82">✓ Marcar como hecho</h3>
+  <input type="hidden" id="completar-tarea-id">
+  <div style="margin-bottom:14px">
+    <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:6px">¿Quién lo ha hecho? *</label>
+    <select id="completar-realizado-por" style="width:100%;padding:9px 12px;border:1.5px solid #ccd4e0;border-radius:8px;font-size:14px">
+      <option value="">— Seleccionar técnico —</option>
+    </select>
+  </div>
+  <div id="completar-periodica-info" style="display:none;background:#e3f0ff;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#003d82">
+    🔄 <b>Trabajo periódico:</b> se creará automáticamente el siguiente para la fecha indicada.
+  </div>
+  <div style="display:flex;gap:10px;margin-top:6px">
+    <button onclick="confirmarCompletar()" class="btn btn-success" style="flex:1">✓ Confirmar</button>
+    <button onclick="cerrarCompletarModal()" class="btn btn-secondary">Cancelar</button>
+  </div>
+</div>
+</div>
 
 <!-- DETAIL MODAL -->
 <div id="detail-modal" class="modal-overlay">
@@ -2272,17 +2314,20 @@ function renderTareaCard(t, modo){
   var urg = t.estado==='COMPLETADO' ? 'completada' : tareaUrgencia(t.fechaTope);
   var urgClass = urg==='completada' ? 'completada' : urg;
   var fechaLbl = tareaFechaLabel(t.fechaTope);
+  var periodica = t.periodica===true || t.periodica==='true';
+  var badgePer = periodica ? '<span style="background:#e3f0ff;color:#003d82;border-radius:10px;padding:1px 8px;font-size:10px;font-weight:700;margin-left:6px">🔄 cada '+t.intervaloNum+' '+(t.intervaloUnidad==='dias'?'d':'m')+'</span>' : '';
   var actions = '';
   if(t.estado!=='COMPLETADO'){
     actions = '<button class="btn btn-success btn-xs" onclick="completarTarea(\''+t.id+'\')">✓ Hecho</button>'
             + '<button class="btn btn-outline btn-xs" onclick="openTareaModal(\''+t.id+'\')">✏ Editar</button>';
   } else {
     var fc = t.fechaCompletado ? new Date(t.fechaCompletado).toLocaleDateString('es-ES') : '';
-    actions = '<span style="font-size:11px;color:#aaa">Completado'+( fc ? '<br>'+fc : '')+'</span>';
+    var rp = t.realizadoPor ? '<br><span style="color:#4caf50">'+escHtml(t.realizadoPor)+'</span>' : '';
+    actions = '<span style="font-size:11px;color:#aaa;text-align:right">Completado'+(fc?'<br>'+fc:'')+rp+'</span>';
   }
   return '<div class="tarea-card '+urgClass+'">'
     + '<div>'
-    + '<div class="tarea-barco">'+escHtml(t.embarcacion||'—')+'</div>'
+    + '<div class="tarea-barco">'+escHtml(t.embarcacion||'—')+badgePer+'</div>'
     + '<div class="tarea-desc">'+escHtml(t.descripcion||'')+'</div>'
     + '<div class="tarea-meta">'
     + (fechaLbl ? '<span class="tarea-fecha '+urgClass+'">📅 '+escHtml(fechaLbl)+'</span>' : '')
@@ -2377,7 +2422,7 @@ function renderWidgetTareas(){
       +'<div style="width:8px;height:8px;border-radius:50%;background:'+col+';margin-top:5px;flex-shrink:0"></div>'
       +'<div style="flex:1;min-width:0">'
       +'<div style="font-weight:700;font-size:13px;color:#1a2e4a">'+escHtml(t.embarcacion||'—')+'</div>'
-      +'<div style="font-size:12px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(t.descripcion||'')+'</div>'
+      +'<div style="font-size:12px;color:#555;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+escHtml(t.descripcion||'')+(t.periodica===true||t.periodica==='true'?'<span style="background:#e3f0ff;color:#003d82;border-radius:8px;padding:0 5px;font-size:10px;margin-left:5px">🔄</span>':'')+'</div>'
       +'</div>'
       +'<div style="font-size:11px;font-weight:700;color:'+col+';white-space:nowrap;margin-top:3px">'+fechaLbl+'</div>'
       +'<button onclick="completarTarea(\''+t.id+'\')" title="Marcar como hecho" style="background:none;border:1px solid #4caf50;color:#4caf50;border-radius:5px;padding:2px 7px;font-size:11px;cursor:pointer;flex-shrink:0">✓</button>'
@@ -2385,9 +2430,14 @@ function renderWidgetTareas(){
   }).join('');
 }
 
+function onTareaTipoChange(){
+  var periodica = document.querySelector('input[name="tarea-tipo"]:checked').value === 'periodica';
+  document.getElementById('tarea-intervalo-wrap').style.display = periodica ? '' : 'none';
+  document.getElementById('tarea-fecha-label').textContent = periodica ? 'Primera fecha de ejecución' : 'Fecha tope';
+}
+
 function openTareaModal(id){
   document.getElementById('tarea-id').value = id||'';
-  // Populate datalist with known boats
   var barcos=[...new Set(allInspections.map(function(i){return i.embarcacion||'';}).filter(Boolean))].sort();
   document.getElementById('tarea-barcos-list').innerHTML=barcos.map(function(b){return '<option value="'+escHtml(b)+'">'; }).join('');
 
@@ -2399,13 +2449,23 @@ function openTareaModal(id){
     document.getElementById('tarea-desc').value=t.descripcion||'';
     document.getElementById('tarea-fecha').value=t.fechaTope||'';
     document.getElementById('tarea-notas').value=t.notas||'';
+    var periodica = t.periodica === true || t.periodica === 'true';
+    document.getElementById('tarea-tipo-periodica').checked = periodica;
+    document.getElementById('tarea-tipo-unica').checked = !periodica;
+    document.getElementById('tarea-intervalo-num').value = t.intervaloNum||1;
+    document.getElementById('tarea-intervalo-unidad').value = t.intervaloUnidad||'meses';
   } else {
     document.getElementById('tarea-modal-title').textContent='Nuevo trabajo';
     document.getElementById('tarea-barco').value='';
     document.getElementById('tarea-desc').value='';
     document.getElementById('tarea-fecha').value='';
     document.getElementById('tarea-notas').value='';
+    document.getElementById('tarea-tipo-unica').checked=true;
+    document.getElementById('tarea-tipo-periodica').checked=false;
+    document.getElementById('tarea-intervalo-num').value=1;
+    document.getElementById('tarea-intervalo-unidad').value='meses';
   }
+  onTareaTipoChange();
   document.getElementById('tarea-modal').classList.add('active');
 }
 
@@ -2417,6 +2477,7 @@ function saveTarea(){
   var barco=document.getElementById('tarea-barco').value.trim();
   var desc=document.getElementById('tarea-desc').value.trim();
   if(!barco||!desc){alert('Embarcación y descripción son obligatorios');return;}
+  var periodica = document.querySelector('input[name="tarea-tipo"]:checked').value === 'periodica';
   var payload={
     action:'saveTarea',
     tarea:{
@@ -2424,7 +2485,10 @@ function saveTarea(){
       embarcacion: barco,
       descripcion: desc,
       fechaTope: document.getElementById('tarea-fecha').value||'',
-      notas: document.getElementById('tarea-notas').value.trim()
+      notas: document.getElementById('tarea-notas').value.trim(),
+      periodica: periodica,
+      intervaloNum: periodica ? parseInt(document.getElementById('tarea-intervalo-num').value)||1 : 0,
+      intervaloUnidad: periodica ? document.getElementById('tarea-intervalo-unidad').value : 'meses'
     }
   };
   closeTareaModal();
@@ -2440,8 +2504,39 @@ function saveTarea(){
 }
 
 function completarTarea(id){
-  if(!confirm('¿Marcar este trabajo como completado?')) return;
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'completarTarea',id:id})})
+  var t = allTareas.find(function(x){return x.id===id;});
+  if(!t) return;
+  // Rellenar select de técnicos
+  var sel = document.getElementById('completar-realizado-por');
+  var tecnicos = allUsuarios.filter(function(u){return u.activo==='SI';}).map(function(u){return u.usuario;}).sort();
+  if(tecnicos.length===0) tecnicos = [];
+  sel.innerHTML = '<option value="">— Seleccionar técnico —</option>'
+    + tecnicos.map(function(u){return '<option value="'+escHtml(u)+'">'+escHtml(u)+'</option>';}).join('');
+  // Mostrar info de periódica
+  var infoPer = document.getElementById('completar-periodica-info');
+  if(t.periodica === true || t.periodica === 'true'){
+    var n = t.intervaloNum||1;
+    var u = t.intervaloUnidad==='dias' ? (n===1?'día':'días') : (n===1?'mes':'meses');
+    infoPer.style.display='';
+    infoPer.innerHTML='🔄 <b>Trabajo periódico:</b> se creará automáticamente el siguiente en <b>'+n+' '+u+'</b>.';
+  } else {
+    infoPer.style.display='none';
+  }
+  document.getElementById('completar-tarea-id').value = id;
+  var modal = document.getElementById('completar-tarea-modal');
+  modal.style.display='flex';
+}
+
+function cerrarCompletarModal(){
+  document.getElementById('completar-tarea-modal').style.display='none';
+}
+
+function confirmarCompletar(){
+  var id = document.getElementById('completar-tarea-id').value;
+  var realizadoPor = document.getElementById('completar-realizado-por').value;
+  if(!realizadoPor){alert('Selecciona quién lo ha hecho');return;}
+  cerrarCompletarModal();
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'completarTarea',id:id,realizadoPor:realizadoPor})})
   .then(function(r){return r.text();})
   .then(function(t){
     try{

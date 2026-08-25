@@ -311,22 +311,69 @@ function doLogin() {
 }
 
 function loadBarcos() {
-  // Carga sugerencias del servidor en segundo plano
-  fetch(SCRIPT_URL+'?action=getBarcos')
-    .then(function(r){return r.text();})
-    .then(function(t){
-      var res; try{res=JSON.parse(t);}catch(e){res={success:false};}
-      var sug = document.getElementById('barco-sugerencias');
-      if(!sug) return;
-      if (res.success && res.barcos && res.barcos.length > 0) {
-        var html='<div style="font-size:11px;font-weight:700;color:#aaa;text-transform:uppercase;margin-bottom:8px">O selecciona uno guardado:</div>';
-        res.barcos.forEach(function(barco){
-          html+='<button onclick="selectBarco(\''+barco+'\')" style="width:100%;padding:11px 14px;margin-bottom:8px;background:#f0f4ff;border:1.5px solid #c5d8ff;border-radius:8px;font-size:14px;font-weight:700;color:#003d82;cursor:pointer;text-align:left">'+barco+'</button>';
-        });
-        sug.innerHTML=html;
-      }
-    })
-    .catch(function(){});
+  var sug = document.getElementById('barco-sugerencias');
+  if(!sug) return;
+  sug.innerHTML='<div style="font-size:12px;color:rgba(255,255,255,.6);text-align:center;padding:8px">Cargando...</div>';
+
+  var limite6m = new Date(); limite6m.setMonth(limite6m.getMonth()-6);
+
+  Promise.all([
+    fetch(SCRIPT_URL+'?action=getBarcos').then(function(r){return r.text();}).catch(function(){return '{}';}),
+    fetch(SCRIPT_URL+'?action=getInventarios').then(function(r){return r.text();}).catch(function(){return '{}';})
+  ]).then(function(results){
+    var resBarcos; try{resBarcos=JSON.parse(results[0]);}catch(e){resBarcos={success:false};}
+    var resInvs;   try{resInvs=JSON.parse(results[1]);}catch(e){resInvs={success:false};}
+
+    // El inventario más reciente por barco dentro de los últimos 6 meses
+    var recientes = {};
+    if(resInvs.success && resInvs.inventarios){
+      resInvs.inventarios.forEach(function(inv){
+        if(!inv.embarcacion) return;
+        var f = new Date(inv.fecha||'');
+        if(f >= limite6m){
+          if(!recientes[inv.embarcacion] || f > new Date(recientes[inv.embarcacion].fecha)){
+            recientes[inv.embarcacion] = inv;
+          }
+        }
+      });
+    }
+
+    var barcosConReciente = Object.keys(recientes).sort();
+
+    // Barcos del sheet que no tienen inventario reciente (para poder iniciar nuevo)
+    var todosBarcos = (resBarcos.success && resBarcos.barcos) ? resBarcos.barcos : [];
+    var barcosSinReciente = todosBarcos.filter(function(b){ return !recientes[b]; }).sort();
+
+    var html = '';
+
+    if(barcosConReciente.length > 0){
+      html += '<div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.75);text-transform:uppercase;margin-bottom:8px;letter-spacing:.5px">📂 Últimos 6 meses — pulsa para continuar</div>';
+      barcosConReciente.forEach(function(barco){
+        var inv = recientes[barco];
+        var fecha = inv.fecha ? new Date(inv.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'2-digit'}) : '-';
+        var por = inv.realizadoPor ? ' · ' + inv.realizadoPor : '';
+        html += '<button onclick="selectBarco(\''+barco.replace(/'/g,"\\'")+'\')" style="width:100%;padding:12px 14px;margin-bottom:8px;background:#fff;border:2.5px solid #ffd54f;border-radius:10px;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px">'
+              + '<div style="font-size:20px;line-height:1">📂</div>'
+              + '<div>'
+              + '<div style="font-size:14px;font-weight:800;color:#003d82">'+barco+'</div>'
+              + '<div style="font-size:11px;color:#888;margin-top:2px">Último: '+fecha+por+'</div>'
+              + '</div>'
+              + '</button>';
+      });
+    }
+
+    if(barcosSinReciente.length > 0){
+      html += '<div style="font-size:11px;font-weight:800;color:rgba(255,255,255,.75);text-transform:uppercase;margin:'+(barcosConReciente.length?'14px':'0')+'px 0 8px;letter-spacing:.5px">➕ Nuevo inventario</div>';
+      barcosSinReciente.forEach(function(barco){
+        html += '<button onclick="selectBarco(\''+barco.replace(/'/g,"\\'")+'\')" style="width:100%;padding:11px 14px;margin-bottom:8px;background:rgba(255,255,255,.12);border:1.5px solid rgba(255,255,255,.3);border-radius:8px;font-size:14px;font-weight:700;color:#fff;cursor:pointer;text-align:left">'+barco+'</button>';
+      });
+    }
+
+    if(!html) html='<div style="font-size:12px;color:rgba(255,255,255,.5);text-align:center;padding:12px">Sin barcos registrados</div>';
+    sug.innerHTML = html;
+  }).catch(function(){
+    sug.innerHTML='<div style="font-size:12px;color:#ffaaaa;text-align:center;padding:8px">Sin conexión al servidor</div>';
+  });
 }
 
 function onAntihumedadesChange() {
