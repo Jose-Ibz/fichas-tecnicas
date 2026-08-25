@@ -380,23 +380,23 @@ tr:hover td{background:#fafbff}
 <div class="stats-grid">
 <div class="stat-card">
 <div class="stat-icon blue">🔍</div>
-<div><div class="stat-value" id="stat-total">-</div><div class="stat-label">Total Inspecciones</div></div>
+<div><div class="stat-value" id="stat-total">-</div><div class="stat-label">Inspecciones</div><div style="font-size:10px;color:#aaa;margin-top:2px">últimos 12 meses</div></div>
 </div>
 <div class="stat-card">
 <div class="stat-icon green">⚓</div>
-<div><div class="stat-value" id="stat-varadas">-</div><div class="stat-label">Varadas</div></div>
+<div><div class="stat-value" id="stat-varadas">-</div><div class="stat-label">Varadas</div><div style="font-size:10px;color:#aaa;margin-top:2px">últimos 12 meses</div></div>
 </div>
 <div class="stat-card">
 <div class="stat-icon orange">🌊</div>
-<div><div class="stat-value" id="stat-botaduras">-</div><div class="stat-label">Botaduras</div></div>
+<div><div class="stat-value" id="stat-botaduras">-</div><div class="stat-label">Botaduras</div><div style="font-size:10px;color:#aaa;margin-top:2px">últimos 12 meses</div></div>
 </div>
 <div class="stat-card">
 <div class="stat-icon purple">📷</div>
-<div><div class="stat-value" id="stat-fotos">-</div><div class="stat-label">Fotos en Drive</div></div>
+<div><div class="stat-value" id="stat-fotos">-</div><div class="stat-label">Fotos en Drive</div><div style="font-size:10px;color:#aaa;margin-top:2px">últimos 12 meses</div></div>
 </div>
 <div class="stat-card" style="cursor:pointer" onclick="showPage('inventarios')">
 <div class="stat-icon" style="background:#e8f5e9">📦</div>
-<div><div class="stat-value" id="stat-inventarios">-</div><div class="stat-label">Inventarios</div></div>
+<div><div class="stat-value" id="stat-inventarios">-</div><div class="stat-label">Inventarios</div><div style="font-size:10px;color:#aaa;margin-top:2px">últimos 12 meses</div></div>
 </div>
 </div>
 <div id="alertas-seguridad" style="display:none;margin-bottom:22px"></div>
@@ -1210,18 +1210,22 @@ try{ return Object.keys(insp._fotos||{}).length; }catch(e){return 0;}
 
 // ====== DASHBOARD ======
 function renderDashboard(){
+var ahora12=new Date(); ahora12.setFullYear(ahora12.getFullYear()-1);
+var insp12=allInspections.filter(function(i){var d=parseDate(i.fecha);return d&&d>=ahora12;});
+var inv12=allInventarios.filter(function(i){var d=parseDate(i.fecha);return d&&d>=ahora12;});
+
 var varadas=0,botaduras=0;
-allInspections.forEach(function(i){
+insp12.forEach(function(i){
   var t=(i.tipo||'').toLowerCase().trim();
   if(t==='varada')varadas++;
   else if(t==='botadura')botaduras++;
 });
-var totalFotos=allInspections.reduce((s,i)=>s+getFotosCount(i),0);
-document.getElementById('stat-total').textContent=allInspections.length;
+var totalFotos=insp12.reduce((s,i)=>s+getFotosCount(i),0);
+document.getElementById('stat-total').textContent=insp12.length;
 document.getElementById('stat-varadas').textContent=varadas;
 document.getElementById('stat-botaduras').textContent=botaduras;
 document.getElementById('stat-fotos').textContent=totalFotos;
-document.getElementById('stat-inventarios').textContent=allInventarios.length||'-';
+document.getElementById('stat-inventarios').textContent=inv12.length||'-';
 
 // Monthly chart (last 6 months)
 var now=new Date();
