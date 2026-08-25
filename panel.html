@@ -1478,7 +1478,7 @@ function renderWidgetAntihumedades(){
       '<td style="padding:7px 4px;font-size:18px;width:28px">'+f.icono+'</td>'+
       '<td style="padding:7px 6px;font-weight:700;color:#1a2e4a">'+escHtml(f.barco)+'</td>'+
       '<td style="padding:7px 6px;font-weight:700;color:'+f.color+';white-space:nowrap">'+estadoTxt+'</td>'+
-      '<td style="padding:4px 2px;white-space:nowrap">'+(invId?'<button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+invId+'\')">📋 Editar</button>':'')+'</td>'+
+      '<td style="padding:4px 2px;white-space:nowrap">'+(invId?'<button class="btn btn-outline btn-xs" onclick="openInvDetail(\''+invId+'\')" style="margin-right:4px">👁️</button><button class="btn btn-xs" style="background:#ffc107;color:#1a2e4a;border:none;font-weight:700" onclick="openInvEdit(\''+invId+'\')">✏️</button>':'')+'</td>'+
       '</tr>';
   });
   html+='</table>';
@@ -3354,7 +3354,7 @@ function renderAntihumedadesTab(){
       html+='<td><strong>'+barco+'</strong></td>';
       html+='<td>'+fechaStr+'</td>';
       html+='<td style="color:#c62828;font-weight:700">'+meses+' mes'+(meses!==1?'es':'')+' ('+dias+' días)</td>';
-      html+='<td><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver y editar</button></td>';
+      html+='<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">👁️ Ver</button> <button class="btn btn-sm" style="background:#ffc107;color:#1a2e4a;border:none;font-weight:700" onclick="openInvEdit(\''+id+'\')">✏️ Editar</button></td>';
       html+='</tr>';
     });
     html+='</tbody></table></div></div>';
@@ -3372,7 +3372,7 @@ function renderAntihumedadesTab(){
       html+='<td><strong>'+barco+'</strong></td>';
       html+='<td>'+escHtml(inv.fecha||'-')+'</td>';
       html+='<td>'+escHtml(inv.realizadoPor||'-')+'</td>';
-      html+='<td><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">📋 Ver y editar</button></td>';
+      html+='<td style="white-space:nowrap"><button class="btn btn-outline btn-sm" onclick="openInvDetail(\''+id+'\')">👁️ Ver</button> <button class="btn btn-sm" style="background:#ffc107;color:#1a2e4a;border:none;font-weight:700" onclick="openInvEdit(\''+id+'\')">✏️ Editar</button></td>';
       html+='</tr>';
     });
     html+='</tbody></table></div></div>';
