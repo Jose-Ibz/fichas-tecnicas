@@ -71,7 +71,7 @@ function doPost(e) {
     } else if (action === 'saveTarea') {
       return handleSaveTarea(data.tarea);
     } else if (action === 'completarTarea') {
-      return handleCompletarTarea(data.id);
+      return handleCompletarTarea(data.id, data.realizadoPor);
     } else if (action === 'saveInventario') {
       return handleSaveInventario(data.data);
     } else if (action === 'uploadInventarioPhotoBatch') {
@@ -291,9 +291,16 @@ function handleSaveInspection(inspData) {
     var ss = SpreadsheetApp.openById(SHEET_ID);
     var inspSheet = ss.getSheetByName(INSPECTIONS_SHEET);
     
-    // Generar ID único
-    var id = 'INS_' + new Date().getTime();
+    // Usar ID enviado por el cliente (para actualizaciones) o generar uno nuevo
+    var id = inspData.id || ('INS_' + new Date().getTime());
     var fecha = new Date(inspData.fecha);
+
+    // Comprobar si ya existe una fila con ese ID → actualizar en lugar de crear
+    var existingRow = -1;
+    var allRows = inspSheet.getDataRange().getValues();
+    for (var ri = 1; ri < allRows.length; ri++) {
+      if (String(allRows[ri][0]) === String(id)) { existingRow = ri + 1; break; }
+    }
     
     // v3.0: Las fotos ya se suben vía uploadPhotoBatch antes de llamar a save.
     // Aquí solo recogemos las URLs que vienen pre-cargadas en inspData.fotosUrls.
@@ -364,9 +371,13 @@ function handleSaveInspection(inspData) {
       JSON.stringify(inspData.seguridad || {})         // AQ(42) - Seguridad JSON
     ];
     
-    // Añadir fila
-    inspSheet.appendRow(row);
-    
+    // Añadir o actualizar fila
+    if (existingRow > 0) {
+      inspSheet.getRange(existingRow, 1, 1, row.length).setValues([row]);
+    } else {
+      inspSheet.appendRow(row);
+    }
+
     // Si es botadura, cerrar varada anterior
     if (inspData.tipo === 'botadura' && inspData.varadaImportada) {
       closeVarada(inspData.varadaImportada);
@@ -873,8 +884,15 @@ function getTareasSheet() {
   var sh = ss.getSheetByName('Trabajos');
   if (!sh) {
     sh = ss.insertSheet('Trabajos');
-    sh.appendRow(['ID','Embarcacion','Descripcion','FechaCreacion','FechaTope','Estado','FechaCompletado','Notas']);
-    sh.getRange(1,1,1,8).setFontWeight('bold');
+    sh.appendRow(['ID','Embarcacion','Descripcion','FechaCreacion','FechaTope','Estado','FechaCompletado','Notas','Periodica','IntervaloNum','IntervaloUnidad','RealizadoPor']);
+    sh.getRange(1,1,1,12).setFontWeight('bold');
+  } else {
+    // Añadir cabeceras nuevas si la hoja ya existía sin ellas
+    var hdr = sh.getRange(1,1,1,sh.getLastColumn()).getValues()[0];
+    if (hdr.length < 9)  sh.getRange(1,9).setValue('Periodica');
+    if (hdr.length < 10) sh.getRange(1,10).setValue('IntervaloNum');
+    if (hdr.length < 11) sh.getRange(1,11).setValue('IntervaloUnidad');
+    if (hdr.length < 12) sh.getRange(1,12).setValue('RealizadoPor');
   }
   return sh;
 }
@@ -895,7 +913,11 @@ function handleGetTareas() {
         fechaTope: r[4] ? Utilities.formatDate(new Date(r[4]), Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
         estado: r[5] || 'PENDIENTE',
         fechaCompletado: r[6] ? Utilities.formatDate(new Date(r[6]), Session.getScriptTimeZone(), 'yyyy-MM-dd') : '',
-        notas: r[7] || ''
+        notas: r[7] || '',
+        periodica: String(r[8]||'').toUpperCase() === 'SI',
+        intervaloNum: r[9] ? Number(r[9]) : 0,
+        intervaloUnidad: r[10] || 'meses',
+        realizadoPor: r[11] || ''
       });
     }
     return ContentService.createTextOutput(JSON.stringify({success:true, tareas:tareas}))
@@ -911,23 +933,27 @@ function handleSaveTarea(t) {
     var sh = getTareasSheet();
     var rows = sh.getDataRange().getValues();
     var fechaTope = t.fechaTope ? new Date(t.fechaTope) : '';
+    var periodica = t.periodica ? 'SI' : 'NO';
+    var intervaloNum = t.intervaloNum ? Number(t.intervaloNum) : 0;
+    var intervaloUnidad = t.intervaloUnidad || 'meses';
 
     if (t.id) {
-      // Editar existente
       for (var i = 1; i < rows.length; i++) {
         if (String(rows[i][0]) === String(t.id)) {
           sh.getRange(i+1, 2).setValue(t.embarcacion || '');
           sh.getRange(i+1, 3).setValue(t.descripcion || '');
           sh.getRange(i+1, 5).setValue(fechaTope);
           sh.getRange(i+1, 8).setValue(t.notas || '');
+          sh.getRange(i+1, 9).setValue(periodica);
+          sh.getRange(i+1, 10).setValue(intervaloNum);
+          sh.getRange(i+1, 11).setValue(intervaloUnidad);
           return ContentService.createTextOutput(JSON.stringify({success:true}))
             .setMimeType(ContentService.MimeType.JSON);
         }
       }
     }
-    // Nueva tarea
     var id = 'TAR_' + new Date().getTime();
-    sh.appendRow([id, t.embarcacion||'', t.descripcion||'', new Date(), fechaTope, 'PENDIENTE', '', t.notas||'']);
+    sh.appendRow([id, t.embarcacion||'', t.descripcion||'', new Date(), fechaTope, 'PENDIENTE', '', t.notas||'', periodica, intervaloNum, intervaloUnidad, '']);
     return ContentService.createTextOutput(JSON.stringify({success:true, id:id}))
       .setMimeType(ContentService.MimeType.JSON);
   } catch(e) {
@@ -936,17 +962,34 @@ function handleSaveTarea(t) {
   }
 }
 
-function handleCompletarTarea(id) {
+function handleCompletarTarea(id, realizadoPor) {
   try {
     var sh = getTareasSheet();
     var rows = sh.getDataRange().getValues();
     for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][0]) === String(id)) {
-        sh.getRange(i+1, 6).setValue('COMPLETADO');
-        sh.getRange(i+1, 7).setValue(new Date());
-        return ContentService.createTextOutput(JSON.stringify({success:true}))
-          .setMimeType(ContentService.MimeType.JSON);
+      if (String(rows[i][0]) !== String(id)) continue;
+      var r = rows[i];
+      var hoy = new Date();
+      sh.getRange(i+1, 6).setValue('COMPLETADO');
+      sh.getRange(i+1, 7).setValue(hoy);
+      sh.getRange(i+1, 12).setValue(realizadoPor || '');
+
+      // Si es periódica, crear la siguiente
+      var periodica = String(r[8]||'').toUpperCase() === 'SI';
+      var intervaloNum = r[9] ? Number(r[9]) : 0;
+      var intervaloUnidad = r[10] || 'meses';
+      if (periodica && intervaloNum > 0) {
+        var siguiente = new Date(hoy);
+        if (intervaloUnidad === 'dias') {
+          siguiente.setDate(siguiente.getDate() + intervaloNum);
+        } else {
+          siguiente.setMonth(siguiente.getMonth() + intervaloNum);
+        }
+        var newId = 'TAR_' + hoy.getTime() + '_sig';
+        sh.appendRow([newId, r[1], r[2], hoy, siguiente, 'PENDIENTE', '', r[7], 'SI', intervaloNum, intervaloUnidad, '']);
       }
+      return ContentService.createTextOutput(JSON.stringify({success:true}))
+        .setMimeType(ContentService.MimeType.JSON);
     }
     return ContentService.createTextOutput(JSON.stringify({success:false, message:'Tarea no encontrada'}))
       .setMimeType(ContentService.MimeType.JSON);

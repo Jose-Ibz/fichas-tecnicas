@@ -1078,6 +1078,7 @@ var syncInterval=null;
 var esContinuacion=false;
 var inheritedFotosUrls={};
 var historyItems=[];
+var currentInspId='INS_'+Date.now(); // ID único para esta sesión de inspección
 
 // ========== UPLOAD STATUS TRACKING ==========
 var uploadStatus = {}; // {photoId: 'pending'|'uploading'|'done'|'error', url: string}
@@ -1754,6 +1755,7 @@ var mc=document.getElementById('mc'+i);if(mc&&mc.value)data.medidoresCentral['mc
 }
 
 var inspData={
+id:currentInspId,
 fecha:new Date().toISOString(),
 tecnico:currentUser,
 embarcacion:boat,
