@@ -1087,6 +1087,11 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
 .then(res=>{
   hideLoading();
   if(res.success){
+    var rol = (res.role||'').toLowerCase();
+    if(rol === 'tecnico'){
+      showLoginError('Acceso restringido. Este panel es solo para administradores y jefes de taller.');
+      return;
+    }
     pcUser={nombre: res.user||u, rol: res.role||'Usuario'};
     document.getElementById('login-page').style.display='none';
     document.getElementById('app').style.display='block';
@@ -1098,7 +1103,7 @@ fetch(SCRIPT_URL+'?action=login&user='+encodeURIComponent(u)+'&pass='+encodeURIC
     loadBarcos();
     loadIncidencias();
     loadPresupuestos();
-    if((res.role||'').toLowerCase()==='administrador'){
+    if(rol === 'administrador'){
       document.getElementById('nav-usuarios').style.display='flex';
       loadUsuarios();
     }
