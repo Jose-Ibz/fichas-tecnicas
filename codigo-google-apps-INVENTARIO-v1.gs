@@ -151,12 +151,12 @@ function handleGetInventario(embarcacion) {
         inventarios.push({
           id: data[i][0],
           embarcacion: data[i][1],
-          fecha: data[i][2],
+          fecha: fmtFecha(data[i][2]),
           realizadoPor: data[i][3],
           items: data[i][4] ? JSON.parse(data[i][4]) : {},
           fotosUrls: data[i][5] ? JSON.parse(data[i][5]) : {},
           notas: data[i][6],
-          fechaCreacion: data[i][7],
+          fechaCreacion: fmtFecha(data[i][7]),
           antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true',
           antihumedadesFecha: data[i][9] ? String(data[i][9]) : ''
         });
@@ -175,6 +175,14 @@ function handleGetInventario(embarcacion) {
   }
 }
 
+function fmtFecha(v) {
+  if (!v) return '';
+  try {
+    var d = v instanceof Date ? v : new Date(v);
+    return isNaN(d.getTime()) ? String(v) : Utilities.formatDate(d, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  } catch(e) { return String(v); }
+}
+
 function handleGetInventarios() {
   try {
     var sh = getInventariosSheet();
@@ -185,12 +193,12 @@ function handleGetInventarios() {
       inventarios.push({
         id: data[i][0],
         embarcacion: data[i][1],
-        fecha: data[i][2],
+        fecha: fmtFecha(data[i][2]),
         realizadoPor: data[i][3],
         items: data[i][4] ? JSON.parse(data[i][4]) : {},
         fotosUrls: data[i][5] ? JSON.parse(data[i][5]) : {},
         notas: data[i][6],
-        fechaCreacion: data[i][7],
+        fechaCreacion: fmtFecha(data[i][7]),
         antihumedades: data[i][8] === true || data[i][8] === 'TRUE' || data[i][8] === 'true',
         antihumedadesFecha: data[i][9] ? String(data[i][9]) : ''
       });
