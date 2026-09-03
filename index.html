@@ -955,6 +955,11 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <label for="photo-f6">📷 Foto Ejes/IPS</label>
 <div id="preview-f6"></div>
 </div>
+<div class="photo-item" id="photo-f7-item" style="border-color:#ff9800;background:#fff8e1">
+<input type="file" id="photo-f7" accept="image/*" onchange="handlePhoto('f7')">
+<label for="photo-f7" style="color:#e65100">📷 Estado del Antifouling</label>
+<div id="preview-f7"></div>
+</div>
 </div>
 </div>
 </div>
@@ -1969,7 +1974,7 @@ function clearForm(){
 document.querySelectorAll('input[type="text"],input[type="date"],input[type="month"],textarea,select').forEach(e=>e.value='');
 document.querySelectorAll('input[type="checkbox"]').forEach(e=>e.checked=false);
 document.querySelectorAll('.check-item').forEach(e=>e.classList.remove('with-note','imported'));
-for(var i=0;i<7;i++)removePhoto('f'+i);
+for(var i=0;i<8;i++)removePhoto('f'+i);
 
 // Limpiar divs de info de varada en verificaciones
 for(var i=0;i<52;i++){
