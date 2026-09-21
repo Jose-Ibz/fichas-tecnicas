@@ -62,6 +62,10 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 .photo-item label{cursor:pointer;display:block;color:#003d82;font-size:14px;font-weight:bold}
 .photo-preview{max-width:100%;max-height:150px;margin-top:10px;border-radius:4px}
 .photo-remove{position:absolute;top:5px;right:5px;background:#f44336;color:white;border:none;border-radius:50%;width:25px;height:25px;cursor:pointer;font-size:12px}
+.photo-label{font-weight:bold;color:#003d82;font-size:14px;margin-bottom:8px}
+.photo-btns{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.photo-btn-cam{flex:1;padding:8px 4px;background:#003d82;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-weight:bold}
+.photo-btn-gal{flex:1;padding:8px 4px;background:#607d8b;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px}
 .medidores-section{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
 .medidor-group{background:white;padding:15px;border-radius:8px;border:1px solid #ddd}
 .medidor-group h4{color:#003d82;margin-bottom:15px;text-align:center;border-bottom:2px solid #003d82;padding-bottom:10px}
@@ -240,7 +244,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v0" onchange="updateCheck('v0')">
 <label for="v0">Fotos, sobre todo lo defectuoso</label>
 <button class="note-btn" onclick="openNoteModal('v0')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v0')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v0','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v0','gal')" title="Galería">🖼️</button>
 <div id="v0-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v0-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -249,7 +253,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v1" onchange="updateCheck('v1')">
 <label for="v1">Limpieza de sentinas</label>
 <button class="note-btn" onclick="openNoteModal('v1')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v1')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v1','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v1','gal')" title="Galería">🖼️</button>
 <div id="v1-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v1-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -258,7 +262,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v2" onchange="updateCheck('v2')">
 <label for="v2">Sistema dirección</label>
 <button class="note-btn" onclick="openNoteModal('v2')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v2')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v2','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v2','gal')" title="Galería">🖼️</button>
 <div id="v2-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v2-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -267,7 +271,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v3" onchange="updateCheck('v3')">
 <label for="v3">Mandos</label>
 <button class="note-btn" onclick="openNoteModal('v3')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v3')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v3','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v3','gal')" title="Galería">🖼️</button>
 <div id="v3-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v3-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -276,7 +280,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v4" onchange="updateCheck('v4')">
 <label for="v4">Presión aceite motor</label>
 <button class="note-btn" onclick="openNoteModal('v4')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v4')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v4','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v4','gal')" title="Galería">🖼️</button>
 <div id="v4-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v4-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -285,7 +289,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v5" onchange="updateCheck('v5')">
 <label for="v5">Presión IPS</label>
 <button class="note-btn" onclick="openNoteModal('v5')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v5')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v5','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v5','gal')" title="Galería">🖼️</button>
 <div id="v5-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v5-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -294,7 +298,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v6" onchange="updateCheck('v6')">
 <label for="v6">Amperímetro</label>
 <button class="note-btn" onclick="openNoteModal('v6')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v6')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v6','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v6','gal')" title="Galería">🖼️</button>
 <div id="v6-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v6-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -303,7 +307,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v7" onchange="updateCheck('v7')">
 <label for="v7">Voltímetro</label>
 <button class="note-btn" onclick="openNoteModal('v7')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v7')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v7','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v7','gal')" title="Galería">🖼️</button>
 <div id="v7-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v7-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -312,7 +316,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v8" onchange="updateCheck('v8')">
 <label for="v8">Temperatura motor</label>
 <button class="note-btn" onclick="openNoteModal('v8')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v8')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v8','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v8','gal')" title="Galería">🖼️</button>
 <div id="v8-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v8-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -321,7 +325,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v9" onchange="updateCheck('v9')">
 <label for="v9">Temperatura IPS</label>
 <button class="note-btn" onclick="openNoteModal('v9')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v9')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v9','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v9','gal')" title="Galería">🖼️</button>
 <div id="v9-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v9-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -330,7 +334,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v10" onchange="updateCheck('v10')">
 <label for="v10">Indicador trim</label>
 <button class="note-btn" onclick="openNoteModal('v10')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v10')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v10','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v10','gal')" title="Galería">🖼️</button>
 <div id="v10-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v10-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -339,7 +343,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v11" onchange="updateCheck('v11')">
 <label for="v11">Power trim</label>
 <button class="note-btn" onclick="openNoteModal('v11')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v11')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v11','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v11','gal')" title="Galería">🖼️</button>
 <div id="v11-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v11-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -348,7 +352,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v12" onchange="updateCheck('v12')">
 <label for="v12">Flaps hidráulicos</label>
 <button class="note-btn" onclick="openNoteModal('v12')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v12')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v12','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v12','gal')" title="Galería">🖼️</button>
 <div id="v12-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v12-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -357,7 +361,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v13" onchange="updateCheck('v13')">
 <label for="v13">Toma tierra y cableado</label>
 <button class="note-btn" onclick="openNoteModal('v13')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v13')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v13','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v13','gal')" title="Galería">🖼️</button>
 <div id="v13-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v13-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -366,7 +370,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v14" onchange="updateCheck('v14')">
 <label for="v14">Instalación 220V</label>
 <button class="note-btn" onclick="openNoteModal('v14')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v14')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v14','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v14','gal')" title="Galería">🖼️</button>
 <div id="v14-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v14-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -375,7 +379,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v15" onchange="updateCheck('v15')">
 <label for="v15">Funcionamiento generador</label>
 <button class="note-btn" onclick="openNoteModal('v15')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v15')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v15','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v15','gal')" title="Galería">🖼️</button>
 <div id="v15-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v15-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -384,7 +388,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v16" onchange="updateCheck('v16')">
 <label for="v16">Velocidad nudos</label>
 <button class="note-btn" onclick="openNoteModal('v16')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v16')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v16','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v16','gal')" title="Galería">🖼️</button>
 <div id="v16-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v16-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -393,7 +397,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v17" onchange="updateCheck('v17')">
 <label for="v17">Iluminación instrumentos</label>
 <button class="note-btn" onclick="openNoteModal('v17')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v17')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v17','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v17','gal')" title="Galería">🖼️</button>
 <div id="v17-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v17-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -402,7 +406,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v18" onchange="updateCheck('v18')">
 <label for="v18">Indicador combustible</label>
 <button class="note-btn" onclick="openNoteModal('v18')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v18')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v18','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v18','gal')" title="Galería">🖼️</button>
 <div id="v18-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v18-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -411,7 +415,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v19" onchange="updateCheck('v19')">
 <label for="v19">Extractor gases</label>
 <button class="note-btn" onclick="openNoteModal('v19')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v19')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v19','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v19','gal')" title="Galería">🖼️</button>
 <div id="v19-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v19-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -420,7 +424,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v20" onchange="updateCheck('v20')">
 <label for="v20">Molinete</label>
 <button class="note-btn" onclick="openNoteModal('v20')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v20')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v20','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v20','gal')" title="Galería">🖼️</button>
 <div id="v20-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v20-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -429,7 +433,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v21" onchange="updateCheck('v21')">
 <label for="v21">Bombas achique y automáticos</label>
 <button class="note-btn" onclick="openNoteModal('v21')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v21')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v21','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v21','gal')" title="Galería">🖼️</button>
 <div id="v21-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v21-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -438,7 +442,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v22" onchange="updateCheck('v22')">
 <label for="v22">Corredera</label>
 <button class="note-btn" onclick="openNoteModal('v22')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v22')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v22','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v22','gal')" title="Galería">🖼️</button>
 <div id="v22-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v22-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -447,7 +451,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v23" onchange="updateCheck('v23')">
 <label for="v23">Funcionamiento aire acondicionado</label>
 <button class="note-btn" onclick="openNoteModal('v23')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v23')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v23','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v23','gal')" title="Galería">🖼️</button>
 <div id="v23-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v23-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -456,7 +460,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v24" onchange="updateCheck('v24')">
 <label for="v24">Baterías</label>
 <button class="note-btn" onclick="openNoteModal('v24')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v24')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v24','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v24','gal')" title="Galería">🖼️</button>
 <div id="v24-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v24-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -465,7 +469,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v25" onchange="updateCheck('v25')">
 <label for="v25">Limpieza motores</label>
 <button class="note-btn" onclick="openNoteModal('v25')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v25')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v25','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v25','gal')" title="Galería">🖼️</button>
 <div id="v25-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v25-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -474,7 +478,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v26" onchange="updateCheck('v26')">
 <label for="v26">Limpiaparabrisas</label>
 <button class="note-btn" onclick="openNoteModal('v26')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v26')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v26','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v26','gal')" title="Galería">🖼️</button>
 <div id="v26-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v26-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -483,7 +487,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v27" onchange="updateCheck('v27')">
 <label for="v27">Funcionamiento WC</label>
 <button class="note-btn" onclick="openNoteModal('v27')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v27')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v27','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v27','gal')" title="Galería">🖼️</button>
 <div id="v27-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v27-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -492,7 +496,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v28" onchange="updateCheck('v28')">
 <label for="v28">Claxon</label>
 <button class="note-btn" onclick="openNoteModal('v28')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v28')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v28','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v28','gal')" title="Galería">🖼️</button>
 <div id="v28-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v28-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -501,7 +505,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v29" onchange="updateCheck('v29')">
 <label for="v29">Grifos de fondo</label>
 <button class="note-btn" onclick="openNoteModal('v29')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v29')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v29','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v29','gal')" title="Galería">🖼️</button>
 <div id="v29-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v29-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -510,7 +514,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v30" onchange="updateCheck('v30')">
 <label for="v30">Grifos y duchas</label>
 <button class="note-btn" onclick="openNoteModal('v30')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v30')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v30','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v30','gal')" title="Galería">🖼️</button>
 <div id="v30-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v30-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -519,7 +523,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v31" onchange="updateCheck('v31')">
 <label for="v31">Nevera/s</label>
 <button class="note-btn" onclick="openNoteModal('v31')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v31')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v31','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v31','gal')" title="Galería">🖼️</button>
 <div id="v31-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v31-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -528,7 +532,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v32" onchange="updateCheck('v32')">
 <label for="v32">Microondas</label>
 <button class="note-btn" onclick="openNoteModal('v32')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v32')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v32','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v32','gal')" title="Galería">🖼️</button>
 <div id="v32-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v32-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -537,7 +541,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v33" onchange="updateCheck('v33')">
 <label for="v33">VHF, música y navegación</label>
 <button class="note-btn" onclick="openNoteModal('v33')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v33')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v33','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v33','gal')" title="Galería">🖼️</button>
 <div id="v33-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v33-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -546,7 +550,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v34" onchange="updateCheck('v34')">
 <label for="v34">Televisor</label>
 <button class="note-btn" onclick="openNoteModal('v34')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v34')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v34','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v34','gal')" title="Galería">🖼️</button>
 <div id="v34-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v34-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -555,7 +559,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v35" onchange="updateCheck('v35')">
 <label for="v35">Cocina</label>
 <button class="note-btn" onclick="openNoteModal('v35')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v35')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v35','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v35','gal')" title="Galería">🖼️</button>
 <div id="v35-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v35-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -564,7 +568,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v36" onchange="updateCheck('v36')">
 <label for="v36">Escotillas</label>
 <button class="note-btn" onclick="openNoteModal('v36')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v36')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v36','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v36','gal')" title="Galería">🖼️</button>
 <div id="v36-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v36-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -573,7 +577,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v37" onchange="updateCheck('v37')">
 <label for="v37">Luces navegación</label>
 <button class="note-btn" onclick="openNoteModal('v37')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v37')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v37','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v37','gal')" title="Galería">🖼️</button>
 <div id="v37-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v37-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -582,7 +586,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v38" onchange="updateCheck('v38')">
 <label for="v38">Luces interior/exterior</label>
 <button class="note-btn" onclick="openNoteModal('v38')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v38')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v38','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v38','gal')" title="Galería">🖼️</button>
 <div id="v38-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v38-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -591,7 +595,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v39" onchange="updateCheck('v39')">
 <label for="v39">Rasguños casco</label>
 <button class="note-btn" onclick="openNoteModal('v39')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v39')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v39','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v39','gal')" title="Galería">🖼️</button>
 <div id="v39-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v39-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -600,7 +604,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v40" onchange="updateCheck('v40')">
 <label for="v40">Moquetas</label>
 <button class="note-btn" onclick="openNoteModal('v40')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v40')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v40','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v40','gal')" title="Galería">🖼️</button>
 <div id="v40-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v40-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -609,7 +613,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v41" onchange="updateCheck('v41')">
 <label for="v41">Toldos y lonas</label>
 <button class="note-btn" onclick="openNoteModal('v41')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v41')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v41','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v41','gal')" title="Galería">🖼️</button>
 <div id="v41-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v41-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -618,7 +622,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v42" onchange="updateCheck('v42')">
 <label for="v42">¿Lleva motor auxiliar?</label>
 <button class="note-btn" onclick="openNoteModal('v42')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v42')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v42','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v42','gal')" title="Galería">🖼️</button>
 <div id="v42-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v42-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -627,7 +631,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v43" onchange="updateCheck('v43')">
 <label for="v43">¿Lleva neumática?</label>
 <button class="note-btn" onclick="openNoteModal('v43')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v43')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v43','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v43','gal')" title="Galería">🖼️</button>
 <div id="v43-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v43-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -636,7 +640,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v44" onchange="updateCheck('v44')">
 <label for="v44">Número de boyas</label>
 <button class="note-btn" onclick="openNoteModal('v44')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v44')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v44','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v44','gal')" title="Galería">🖼️</button>
 <div id="v44-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v44-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -645,7 +649,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v45" onchange="updateCheck('v45')">
 <label for="v45">Detallar cabos amarre/muelles</label>
 <button class="note-btn" onclick="openNoteModal('v45')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v45')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v45','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v45','gal')" title="Galería">🖼️</button>
 <div id="v45-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v45-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -654,7 +658,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v46" onchange="updateCheck('v46')">
 <label for="v46">Escalón pantalán</label>
 <button class="note-btn" onclick="openNoteModal('v46')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v46')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v46','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v46','gal')" title="Galería">🖼️</button>
 <div id="v46-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v46-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -663,7 +667,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v47" onchange="updateCheck('v47')">
 <label for="v47">Pasarela</label>
 <button class="note-btn" onclick="openNoteModal('v47')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v47')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v47','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v47','gal')" title="Galería">🖼️</button>
 <div id="v47-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v47-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -672,7 +676,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v48" onchange="updateCheck('v48')">
 <label for="v48">Pérdidas aceite/agua</label>
 <button class="note-btn" onclick="openNoteModal('v48')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v48')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v48','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v48','gal')" title="Galería">🖼️</button>
 <div id="v48-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v48-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -681,7 +685,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v49" onchange="updateCheck('v49')">
 <label for="v49">Hélice proa</label>
 <button class="note-btn" onclick="openNoteModal('v49')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v49')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v49','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v49','gal')" title="Galería">🖼️</button>
 <div id="v49-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v49-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -690,7 +694,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v50" onchange="updateCheck('v50')">
 <label for="v50">Comprobar próxima ITB</label>
 <button class="note-btn" onclick="openNoteModal('v50')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v50')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v50','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v50','gal')" title="Galería">🖼️</button>
 <div id="v50-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v50-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -699,7 +703,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <input type="checkbox" id="v51" onchange="updateCheck('v51')">
 <label for="v51">Hacer protocolo de servicio</label>
 <button class="note-btn" onclick="openNoteModal('v51')">📝</button>
-<button class="check-photo-btn" onclick="openCheckPhotoModal('v51')">📷</button>
+<button class="check-photo-btn" onclick="openCheckPhotoModal('v51','cam')" title="Cámara">📷</button><button class="check-photo-btn" style="background:#607d8b" onclick="openCheckPhotoModal('v51','gal')" title="Galería">🖼️</button>
 <div id="v51-photo-container" class="check-item-photo-container" style="display:none"></div>
 <div id="v51-varada-info" class="varada-info" style="display:none"></div>
 </div>
@@ -920,39 +924,53 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <div class="section">
 <div class="section-title">Reportaje Fotográfico (Solo Varada)</div>
 <div class="photo-grid">
-<div class="photo-item" id="photo-f0-item">
-<input type="file" id="photo-f0" accept="image/*" onchange="handlePhoto('f0')">
-<label for="photo-f0">📷 Foto Proa</label>
+<div class="photo-item" id="photo-f0-item"📷 Foto Proa>
+<input type="file" id="cam-f0" accept="image/*" capture="environment" onchange="handlePhoto('f0','cam')">
+<input type="file" id="gal-f0" accept="image/*" onchange="handlePhoto('f0','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f0').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f0').click()">🖼️ Galería</button></div>
 <div id="preview-f0"></div>
 </div>
-<div class="photo-item" id="photo-f1-item">
-<input type="file" id="photo-f1" accept="image/*" onchange="handlePhoto('f1')">
-<label for="photo-f1">📷 Foto Amura Babor</label>
+<div class="photo-item" id="photo-f1-item"📷 Foto Amura Babor>
+<input type="file" id="cam-f1" accept="image/*" capture="environment" onchange="handlePhoto('f1','cam')">
+<input type="file" id="gal-f1" accept="image/*" onchange="handlePhoto('f1','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f1').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f1').click()">🖼️ Galería</button></div>
 <div id="preview-f1"></div>
 </div>
-<div class="photo-item" id="photo-f2-item">
-<input type="file" id="photo-f2" accept="image/*" onchange="handlePhoto('f2')">
-<label for="photo-f2">📷 Foto Amura Estribor</label>
+<div class="photo-item" id="photo-f2-item"📷 Foto Amura Estribor>
+<input type="file" id="cam-f2" accept="image/*" capture="environment" onchange="handlePhoto('f2','cam')">
+<input type="file" id="gal-f2" accept="image/*" onchange="handlePhoto('f2','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f2').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f2').click()">🖼️ Galería</button></div>
 <div id="preview-f2"></div>
 </div>
-<div class="photo-item" id="photo-f3-item">
-<input type="file" id="photo-f3" accept="image/*" onchange="handlePhoto('f3')">
-<label for="photo-f3">📷 Foto Aleta Babor</label>
+<div class="photo-item" id="photo-f3-item"📷 Foto Aleta Babor>
+<input type="file" id="cam-f3" accept="image/*" capture="environment" onchange="handlePhoto('f3','cam')">
+<input type="file" id="gal-f3" accept="image/*" onchange="handlePhoto('f3','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f3').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f3').click()">🖼️ Galería</button></div>
 <div id="preview-f3"></div>
 </div>
-<div class="photo-item" id="photo-f4-item">
-<input type="file" id="photo-f4" accept="image/*" onchange="handlePhoto('f4')">
-<label for="photo-f4">📷 Foto Aleta Estribor</label>
+<div class="photo-item" id="photo-f4-item"📷 Foto Aleta Estribor>
+<input type="file" id="cam-f4" accept="image/*" capture="environment" onchange="handlePhoto('f4','cam')">
+<input type="file" id="gal-f4" accept="image/*" onchange="handlePhoto('f4','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f4').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f4').click()">🖼️ Galería</button></div>
 <div id="preview-f4"></div>
 </div>
-<div class="photo-item" id="photo-f5-item">
-<input type="file" id="photo-f5" accept="image/*" onchange="handlePhoto('f5')">
-<label for="photo-f5">📷 Foto Colas</label>
+<div class="photo-item" id="photo-f5-item"📷 Foto Colas>
+<input type="file" id="cam-f5" accept="image/*" capture="environment" onchange="handlePhoto('f5','cam')">
+<input type="file" id="gal-f5" accept="image/*" onchange="handlePhoto('f5','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f5').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f5').click()">🖼️ Galería</button></div>
 <div id="preview-f5"></div>
 </div>
-<div class="photo-item" id="photo-f6-item">
-<input type="file" id="photo-f6" accept="image/*" onchange="handlePhoto('f6')">
-<label for="photo-f6">📷 Foto Ejes/IPS</label>
+<div class="photo-item" id="photo-f6-item"📷 Foto Ejes/IPS>
+<input type="file" id="cam-f6" accept="image/*" capture="environment" onchange="handlePhoto('f6','cam')">
+<input type="file" id="gal-f6" accept="image/*" onchange="handlePhoto('f6','gal')">
+<div class="photo-label"></div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f6').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f6').click()">🖼️ Galería</button></div>
 <div id="preview-f6"></div>
 </div>
 <div class="photo-item" id="photo-f7-item" style="border-color:#ff9800;background:#fff8e1">
@@ -1632,8 +1650,9 @@ if(note){item.classList.add('with-note');}else{item.classList.remove('with-note'
 closeNoteModal();
 }
 
-function handlePhoto(id){
-var input=document.getElementById('photo-'+id);
+function handlePhoto(id,src){
+var inputId=(src==='cam'?'cam-':'gal-')+id;
+var input=document.getElementById(inputId);
 var file=input.files[0];
 if(!file)return;
 // v3.0: Comprimir y guardar como previewUrl + File para subir a Drive
@@ -1650,14 +1669,16 @@ function removePhoto(id){
 data.photoReport[id]=[];
 delete data.photoFiles[id];
 document.getElementById('preview-'+id).innerHTML='';
-document.getElementById('photo-'+id).value='';
+var ci=document.getElementById('cam-'+id); if(ci)ci.value='';
+var gi=document.getElementById('gal-'+id); if(gi)gi.value='';
 document.getElementById('photo-'+id+'-item').classList.remove('has-photo');
 }
 
-function openCheckPhotoModal(id){
+function openCheckPhotoModal(id,src){
 var input=document.createElement('input');
 input.type='file';
 input.accept='image/*';
+if(src==='cam')input.capture='environment';
 input.onchange=function(e){handleCheckPhoto(id,e.target.files[0])};
 input.click();
 }
