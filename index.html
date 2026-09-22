@@ -1105,7 +1105,15 @@ var autoSaveInterval=null;
 var esContinuacion=false;
 var inheritedFotosUrls={};
 var historyItems=[];
-var currentInspId='INS_'+Date.now(); // ID único para esta sesión de inspección
+var currentInspId='INS_'+Date.now();
+// Restaurar ID de sesión anterior si la página se recargó en las últimas 8 horas
+(function(){
+  try{
+    var s=localStorage.getItem('viamar_session_id');
+    if(s){var p=JSON.parse(s);if(p&&p.id&&(Date.now()-p.ts)<28800000)currentInspId=p.id;}
+    localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));
+  }catch(e){}
+})();
 
 // ========== UPLOAD STATUS TRACKING ==========
 var uploadStatus = {}; // {photoId: 'pending'|'uploading'|'done'|'error', url: string}
@@ -1555,7 +1563,7 @@ document.getElementById('horas-central').value=lastVarada.horasCentral||'';
 document.getElementById('horas-generador').value=lastVarada.horasGenerador||'';
 document.getElementById('observaciones').value=lastVarada.observaciones||'';
 updateCharCounter();
-if(lastVarada.id)currentInspId=lastVarada.id;
+if(lastVarada.id){currentInspId=lastVarada.id;try{localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));}catch(e){}}
 esContinuacion=true;
 try{inheritedFotosUrls=JSON.parse(lastVarada.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
 renderDriveFotosEnFormulario(inheritedFotosUrls);
@@ -1737,7 +1745,7 @@ document.getElementById('seg-vhf-bateria').value=seg.vhfBateria||'';
 document.getElementById('seg-vhf-fecha').value=seg.vhfFecha||'';
 }catch(e){}
 lastVarada=insp;
-if(insp.id)currentInspId=insp.id;
+if(insp.id){currentInspId=insp.id;try{localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));}catch(e){}}
 esContinuacion=true;
 try{inheritedFotosUrls=JSON.parse(insp.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
 renderDriveFotosEnFormulario(inheritedFotosUrls);
@@ -2191,6 +2199,7 @@ lastVarada=null;
 esContinuacion=false;
 inheritedFotosUrls={};
 currentInspId='INS_'+Date.now();
+try{localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));}catch(e){}
 document.getElementById('import-section').style.display='none';
 document.getElementById('pdf-btn').style.display='none';
 updateCharCounter();
