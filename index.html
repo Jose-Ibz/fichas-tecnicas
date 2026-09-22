@@ -974,8 +974,10 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <div id="preview-f6"></div>
 </div>
 <div class="photo-item" id="photo-f7-item" style="border-color:#ff9800;background:#fff8e1">
-<input type="file" id="photo-f7" accept="image/*" onchange="handlePhoto('f7')">
-<label for="photo-f7" style="color:#e65100">📷 Estado del Antifouling</label>
+<input type="file" id="cam-f7" accept="image/*" capture="environment" onchange="handlePhoto('f7','cam')">
+<input type="file" id="gal-f7" accept="image/*" onchange="handlePhoto('f7','gal')">
+<div class="photo-label" style="color:#e65100">📷 Estado del Antifouling</div>
+<div class="photo-btns"><button type="button" class="photo-btn-cam" onclick="document.getElementById('cam-f7').click()">📷 Cámara</button><button type="button" class="photo-btn-gal" onclick="document.getElementById('gal-f7').click()">🖼️ Galería</button></div>
 <div id="preview-f7"></div>
 </div>
 </div>
