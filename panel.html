@@ -1818,7 +1818,7 @@ renderGallery(filtered);
 }
 
 function getPhotoLabel(k){
-var map={f0:'Proa',f1:'Amura Babor',f2:'Amura Estribor',f3:'Aleta Babor',f4:'Aleta Estribor',f5:'Colas',f6:'Ejes/IPS'};
+var map={f0:'Proa',f1:'Amura Babor',f2:'Amura Estribor',f3:'Aleta Babor',f4:'Aleta Estribor',f5:'Colas',f6:'Ejes/IPS',f7:'Estado del Antifouling'};
 if(map[k])return map[k];
 if(k.endsWith('_verif')){
   var idx=k.replace('_photo_verif','').replace('_verif','').replace('v','');
@@ -1931,6 +1931,7 @@ _renderDetail(insp);
 }
 
 function _renderDetail(insp){
+try{
 currentInspDetail=insp;
 document.getElementById('modal-title').textContent=insp.embarcacion+' — '+(insp.tipo||'').toUpperCase()+' · '+formatDate(insp.fecha);
 var fotos=insp._fotos||{};
@@ -2049,6 +2050,7 @@ html+=`<div style="text-align:center;padding:24px;color:#aaa;background:#f9f9f9;
 
 document.getElementById('modal-body').innerHTML=html;
 document.getElementById('detail-modal').classList.add('active');
+}catch(err){alert('Error al abrir la ficha: '+err.message+'\n\nID: '+(insp&&insp.id));console.error('_renderDetail error:',err);}
 }
 
 function dr(label,val){
