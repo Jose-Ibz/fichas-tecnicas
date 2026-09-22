@@ -1434,6 +1434,7 @@ document.getElementById('horas-central').value=lastVarada.horasCentral||'';
 document.getElementById('horas-generador').value=lastVarada.horasGenerador||'';
 document.getElementById('observaciones').value=lastVarada.observaciones||'';
 updateCharCounter();
+if(lastVarada.id)currentInspId=lastVarada.id;
 esContinuacion=true;
 try{inheritedFotosUrls=JSON.parse(lastVarada.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
 renderDriveFotosEnFormulario(inheritedFotosUrls);
@@ -1606,6 +1607,7 @@ document.getElementById('seg-vhf-bateria').value=seg.vhfBateria||'';
 document.getElementById('seg-vhf-fecha').value=seg.vhfFecha||'';
 }catch(e){}
 lastVarada=insp;
+if(insp.id)currentInspId=insp.id;
 esContinuacion=true;
 try{inheritedFotosUrls=JSON.parse(insp.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
 renderDriveFotosEnFormulario(inheritedFotosUrls);
