@@ -1810,6 +1810,7 @@ compressImage(file, 1000, 0.72, function(blob, previewUrl) {
 function removePhoto(id){
 data.photoReport[id]=[];
 delete data.photoFiles[id];
+delete inheritedFotosUrls[id]; // evita que la URL antigua persista al guardar
 document.getElementById('preview-'+id).innerHTML='';
 var ci=document.getElementById('cam-'+id); if(ci)ci.value='';
 var gi=document.getElementById('gal-'+id); if(gi)gi.value='';
@@ -1859,8 +1860,11 @@ container.style.display='block';
 }
 
 function removeCheckPhoto(id,idx){
+// limpiar URLs heredadas de Drive para este item (evita duplicados)
+Object.keys(inheritedFotosUrls).forEach(function(k){
+  if(k===id+'_verif'||k.startsWith(id+'_')&&k.endsWith('_verif'))delete inheritedFotosUrls[k];
+});
 if(idx===undefined){
-  // compatibilidad con llamadas antiguas sin índice
   if(data.verificaciones)delete data.verificaciones[id+'_photo'];
   Object.keys(data.verificationPhotoFiles).forEach(function(k){if(k===id||k.startsWith(id+'_'))delete data.verificationPhotoFiles[k];});
   var c=document.getElementById(id+'-photo-container');if(c){c.innerHTML='';c.style.display='none';}
@@ -1989,7 +1993,17 @@ medidoresBabor:data.medidoresBabor,
 medidoresEstribor:data.medidoresEstribor,
 medidoresCentral:data.medidoresCentral,
 photoReport:{}, // v3.0: sin base64
-fotosUrls:Object.assign({},inheritedFotosUrls),
+fotosUrls:(function(){
+  var urls=Object.assign({},inheritedFotosUrls);
+  // quitar claves heredadas que van a ser resubidas (evita duplicados por clave distinta)
+  Object.keys(data.photoFiles).forEach(function(k){delete urls[k];});
+  Object.keys(data.verificationPhotoFiles).forEach(function(k){
+    var base=k.replace(/_\d+$/,''); // v3_0 → v3
+    delete urls[base+'_verif'];
+    Object.keys(urls).forEach(function(uk){if(uk.startsWith(base+'_')&&uk.endsWith('_verif'))delete urls[uk];});
+  });
+  return urls;
+})(),
 varadaImportada:lastVarada?lastVarada.id:'',
 esContinuacion:esContinuacion,
 estadoInspeccion:estado,
