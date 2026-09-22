@@ -113,6 +113,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <button id="sync-btn" class="sync-btn" style="display:none" onclick="syncPendingInspections()">SINCRONIZAR</button>
 <button id="clear-pending-btn" class="sync-btn" style="display:none;background:rgba(255,80,80,0.4)" onclick="clearPendingQueue()">🗑 BORRAR COLA</button>
 </div>
+<div id="autosave-toast" style="position:fixed;top:70px;right:20px;background:#37474f;color:white;padding:7px 14px;border-radius:16px;font-size:11px;z-index:999;opacity:0;transition:opacity .5s;pointer-events:none">💾 Borrador guardado</div>
 
 <div id="login-section">
 <div class="section">
@@ -1100,6 +1101,7 @@ var data={checklistPrevio:{},verificaciones:{},notas:{},medidoresBabor:{},medido
 var currentNoteId='';
 var isOnline=navigator.onLine;
 var syncInterval=null;
+var autoSaveInterval=null;
 var esContinuacion=false;
 var inheritedFotosUrls={};
 var historyItems=[];
@@ -1119,6 +1121,121 @@ function showUploadProgress(total, done, errors) {
     + (errors>0 ? '<div style="color:#f44336;font-size:12px;margin-top:4px">⚠️ '+errors+' foto(s) no se pudieron subir - se guardará inspección sin ellas</div>' : '');
 }
 
+// ========== AUTO-GUARDADO DE BORRADOR ==========
+
+function collectDraftData(){
+var boat=document.getElementById('boat-name').value.trim();
+if(!boat)return null;
+return {
+  _draftId: currentInspId,
+  _draftTs: new Date().toISOString(),
+  embarcacion: boat,
+  tipo: document.getElementById('inspection-type').value,
+  modelo: document.getElementById('modelo').value,
+  cliente: document.getElementById('cliente').value,
+  motores: document.getElementById('motores').value,
+  colas: document.getElementById('colas').value,
+  motorBabor: document.getElementById('motor-babor').value,
+  motorEstribor: document.getElementById('motor-estribor').value,
+  motorCentral: document.getElementById('motor-central').value,
+  motorAuxiliarNum: document.getElementById('motor-aux-num').value,
+  motorAuxiliarModelo: document.getElementById('motor-aux-modelo').value,
+  llaves: document.getElementById('llaves').value,
+  cabina: document.getElementById('cabina').value,
+  amarre: document.getElementById('amarre').value,
+  pasoHelice: document.getElementById('paso-helice').value,
+  fechaVarada: document.getElementById('date-varada').value,
+  horasBabor: document.getElementById('horas-babor').value,
+  horasEstribor: document.getElementById('horas-estribor').value,
+  horasCentral: document.getElementById('horas-central').value,
+  horasGenerador: document.getElementById('horas-generador').value,
+  observaciones: document.getElementById('observaciones').value,
+  checklistPrevio: data.checklistPrevio,
+  verificaciones: data.verificaciones,
+  notas: data.notas,
+  medidoresBabor: data.medidoresBabor,
+  medidoresEstribor: data.medidoresEstribor,
+  medidoresCentral: data.medidoresCentral
+};
+}
+
+function autoSaveDraft(){
+try{
+  var draft=collectDraftData();
+  if(!draft)return;
+  localStorage.setItem('viamar_draft',JSON.stringify(draft));
+  var el=document.getElementById('autosave-toast');
+  if(el){el.style.opacity='1';setTimeout(function(){el.style.opacity='0';},1800);}
+}catch(e){}
+}
+
+function clearDraft(){
+try{localStorage.removeItem('viamar_draft');}catch(e){}
+}
+
+function checkAndOfferDraftRestore(){
+try{
+  var raw=localStorage.getItem('viamar_draft');
+  if(!raw)return;
+  var draft=JSON.parse(raw);
+  if(!draft||!draft.embarcacion)return;
+  var age=Math.round((Date.now()-new Date(draft._draftTs).getTime())/60000);
+  if(age>480){clearDraft();return;} // descartar borradores de más de 8 horas
+  var banner=document.createElement('div');
+  banner.id='draft-restore-banner';
+  banner.style.cssText='position:fixed;bottom:0;left:0;right:0;background:#e65100;color:white;padding:14px 16px;z-index:9999;font-size:14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;box-shadow:0 -2px 10px rgba(0,0,0,.3)';
+  banner.innerHTML='<span style="flex:1">⚠️ Borrador sin guardar: <strong>'+draft.embarcacion+'</strong> (hace '+age+' min)</span>'
+    +'<button onclick="restoreDraft()" style="background:white;color:#e65100;border:none;border-radius:6px;padding:8px 14px;font-weight:bold;cursor:pointer">↩️ Restaurar</button>'
+    +'<button onclick="discardDraft()" style="background:rgba(255,255,255,.2);color:white;border:none;border-radius:6px;padding:8px 10px;cursor:pointer">✕</button>';
+  document.body.appendChild(banner);
+}catch(e){}
+}
+
+function restoreDraft(){
+try{
+  var raw=localStorage.getItem('viamar_draft');
+  if(!raw)return;
+  var d=JSON.parse(raw);
+  currentInspId=d._draftId||currentInspId;
+  document.getElementById('boat-name').value=d.embarcacion||'';
+  document.getElementById('inspection-type').value=d.tipo||'a_flote';
+  document.getElementById('modelo').value=d.modelo||'';
+  document.getElementById('cliente').value=d.cliente||'';
+  document.getElementById('motores').value=d.motores||'';
+  document.getElementById('colas').value=d.colas||'';
+  document.getElementById('motor-babor').value=d.motorBabor||'';
+  document.getElementById('motor-estribor').value=d.motorEstribor||'';
+  document.getElementById('motor-central').value=d.motorCentral||'';
+  document.getElementById('motor-aux-num').value=d.motorAuxiliarNum||'';
+  document.getElementById('motor-aux-modelo').value=d.motorAuxiliarModelo||'';
+  document.getElementById('llaves').value=d.llaves||'';
+  document.getElementById('cabina').value=d.cabina||'';
+  document.getElementById('amarre').value=d.amarre||'';
+  document.getElementById('paso-helice').value=d.pasoHelice||'';
+  document.getElementById('date-varada').value=d.fechaVarada||'';
+  document.getElementById('horas-babor').value=d.horasBabor||'';
+  document.getElementById('horas-estribor').value=d.horasEstribor||'';
+  document.getElementById('horas-central').value=d.horasCentral||'';
+  document.getElementById('horas-generador').value=d.horasGenerador||'';
+  document.getElementById('observaciones').value=d.observaciones||'';
+  if(d.checklistPrevio){data.checklistPrevio=d.checklistPrevio;for(var k in d.checklistPrevio){var el=document.getElementById(k);if(el)el.checked=!!d.checklistPrevio[k];}}
+  if(d.verificaciones){data.verificaciones=d.verificaciones;for(var k in d.verificaciones){if(!String(k).endsWith('_photo')){var el=document.getElementById(k);if(el)el.checked=!!d.verificaciones[k];}}}
+  if(d.notas){data.notas=d.notas;for(var k in d.notas){if(d.notas[k]){var it=document.getElementById(k+'-item');if(it)it.classList.add('with-note');}}}
+  if(d.medidoresBabor){data.medidoresBabor=d.medidoresBabor;for(var k in d.medidoresBabor){var el=document.getElementById(k);if(el)el.value=d.medidoresBabor[k]||'';}}
+  if(d.medidoresEstribor){data.medidoresEstribor=d.medidoresEstribor;for(var k in d.medidoresEstribor){var el=document.getElementById(k);if(el)el.value=d.medidoresEstribor[k]||'';}}
+  if(d.medidoresCentral){data.medidoresCentral=d.medidoresCentral;for(var k in d.medidoresCentral){var el=document.getElementById(k);if(el)el.value=d.medidoresCentral[k]||'';}}
+  discardDraft();
+  document.getElementById('inspection-type').dispatchEvent(new Event('change'));
+  showMsg('message-area','↩️ Borrador restaurado. Revisa y pulsa Guardar.','success');
+}catch(e){discardDraft();}
+}
+
+function discardDraft(){
+clearDraft();
+var b=document.getElementById('draft-restore-banner');
+if(b)b.remove();
+}
+
 // ========== SISTEMA OFFLINE ==========
 
 function initOfflineSystem(){
@@ -1134,7 +1251,11 @@ updateSyncStatus();
 });
 // Iniciar sincronización automática cada 30 segundos
 syncInterval=setInterval(syncPendingInspections,30000);
+// Auto-guardado de borrador cada 45 segundos
+autoSaveInterval=setInterval(autoSaveDraft,45000);
 updateSyncStatus();
+// Ofrecer restaurar borrador si lo hay
+setTimeout(checkAndOfferDraftRestore,1500);
 }
 
 function updateSyncStatus(){
@@ -1969,6 +2090,7 @@ body:JSON.stringify({action:'save',data:inspData})
     hideLoading();
     try{ document.getElementById('upload-progress').style.display='none'; }catch(e){}
     var fotosCount=Object.keys(inspData.fotosUrls||{}).length;
+    clearDraft();
     showMsg('message-area','✅ Inspección guardada. '+fotosCount+' foto(s). ('+estado+' - '+pctCompleto+'%).','success');
     try{ document.getElementById('pdf-btn').style.display='inline-block'; }catch(e){}
   }else{
