@@ -1672,8 +1672,17 @@ if(preview)preview.innerHTML=(thumbUrl?'<a href="'+url+'" target="_blank"><img s
 if(item)item.classList.add('has-photo');
 }else if(k.endsWith('_verif')){
 var verifId=k.replace('_verif','');
-var container=document.getElementById(verifId+'-photo-container');
-if(container){container.innerHTML=(thumbUrl?'<a href="'+url+'" target="_blank"><img src="'+thumbUrl+'" class="check-item-photo" onerror="this.style.display=\'none\'"></a>':'<a href="'+url+'" target="_blank" style="font-size:10px;color:#003d82">🔗 Drive</a>')+'<div style="font-size:10px;color:#888">📂 Drive</div>';container.style.display='block';}
+// soportar claves indexadas: v3_0 → item v3, v3_1 → item v3, etc.
+var baseId=verifId.replace(/_\d+$/,'');
+var containerId=(document.getElementById(verifId+'-photo-container')?verifId:baseId)+'-photo-container';
+var container=document.getElementById(containerId);
+if(container){
+  var thumb=thumbUrl?'<a href="'+url+'" target="_blank"><img src="'+thumbUrl+'" class="check-item-photo" style="max-width:80px;max-height:80px" onerror="this.style.display=\'none\'"></a>':'<a href="'+url+'" target="_blank" style="font-size:10px;color:#003d82">🔗 Drive</a>';
+  if(container.style.display==='none'||!container.innerHTML){container.innerHTML='<div class="check-drive-photos" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div><div style="font-size:10px;color:#888">📂 Drive</div>';}
+  var grid=container.querySelector('.check-drive-photos');
+  if(grid)grid.insertAdjacentHTML('beforeend','<div style="display:inline-block;position:relative">'+thumb+'</div>');
+  container.style.display='block';
+}
 }
 });
 }catch(e){console.warn('Error renderizando fotos Drive:',e);}
@@ -1812,20 +1821,54 @@ function handleCheckPhoto(id,file){
 if(!file)return;
 compressImage(file, 700, 0.68, function(blob, previewUrl) {
   if(!data.verificaciones)data.verificaciones={};
-  data.verificaciones[id+'_photo']=[previewUrl];
-  data.verificationPhotoFiles[id]=blob;
-  var container=document.getElementById(id+'-photo-container');
-  container.innerHTML='<img src="'+previewUrl+'" class="check-item-photo"><div style="font-size:10px;color:#4caf50">📤 Drive</div><button class="check-item-photo-remove" onclick="removeCheckPhoto(\''+id+'\')">×</button>';
-  container.style.display='block';
+  // buscar siguiente índice libre
+  var idx=0;
+  while(data.verificationPhotoFiles[id+'_'+idx]!==undefined)idx++;
+  data.verificationPhotoFiles[id+'_'+idx]=blob;
+  if(!Array.isArray(data.verificaciones[id+'_photo']))data.verificaciones[id+'_photo']=[];
+  data.verificaciones[id+'_photo'][idx]=previewUrl;
+  renderCheckPhotos(id);
 });
 }
 
-function removeCheckPhoto(id){
-if(data.verificaciones)delete data.verificaciones[id+'_photo'];
-delete data.verificationPhotoFiles[id];
+function renderCheckPhotos(id){
 var container=document.getElementById(id+'-photo-container');
-container.innerHTML='';
-container.style.display='none';
+if(!container)return;
+var previews=data.verificaciones&&Array.isArray(data.verificaciones[id+'_photo'])?data.verificaciones[id+'_photo']:[];
+var hasPhotos=previews.filter(Boolean).length>0;
+if(!hasPhotos){container.innerHTML='';container.style.display='none';return;}
+var html='<div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px">';
+previews.forEach(function(url,i){
+  if(!url)return;
+  html+='<div style="position:relative;display:inline-block">'
+    +'<img src="'+url+'" class="check-item-photo" style="max-width:80px;max-height:80px">'
+    +'<button class="check-item-photo-remove" onclick="removeCheckPhoto(\''+id+'\','+i+')" style="width:18px;height:18px;font-size:9px">×</button>'
+    +'</div>';
+});
+html+='</div><div style="font-size:10px;color:#4caf50;margin-top:2px">📤 '+previews.filter(Boolean).length+' foto(s) → Drive</div>';
+container.innerHTML=html;
+container.style.display='block';
+}
+
+function removeCheckPhoto(id,idx){
+if(idx===undefined){
+  // compatibilidad con llamadas antiguas sin índice
+  if(data.verificaciones)delete data.verificaciones[id+'_photo'];
+  Object.keys(data.verificationPhotoFiles).forEach(function(k){if(k===id||k.startsWith(id+'_'))delete data.verificationPhotoFiles[k];});
+  var c=document.getElementById(id+'-photo-container');if(c){c.innerHTML='';c.style.display='none';}
+  return;
+}
+delete data.verificationPhotoFiles[id+'_'+idx];
+if(Array.isArray(data.verificaciones&&data.verificaciones[id+'_photo']))data.verificaciones[id+'_photo'][idx]=null;
+// recompactar índices
+var blobs=[];var urls=[];
+var i=0;while(i<20){
+  if(data.verificationPhotoFiles[id+'_'+i]!==undefined){blobs.push(data.verificationPhotoFiles[id+'_'+i]);urls.push((data.verificaciones[id+'_photo']||[])[i]||null);}
+  delete data.verificationPhotoFiles[id+'_'+i];i++;
+}
+blobs.forEach(function(b,j){data.verificationPhotoFiles[id+'_'+j]=b;});
+data.verificaciones[id+'_photo']=urls;
+renderCheckPhotos(id);
 }
 
 // ========== COMPRESIÓN DE IMÁGENES ==========
