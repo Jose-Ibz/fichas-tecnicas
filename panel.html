@@ -1044,8 +1044,12 @@ tr:hover td{background:#fafbff}
       <option value="">— Seleccionar técnico —</option>
     </select>
   </div>
+  <div style="margin-bottom:14px">
+    <label style="font-size:12px;font-weight:700;color:#555;display:block;margin-bottom:6px">Fecha en que se realizó *</label>
+    <input type="date" id="completar-fecha" style="width:100%;padding:9px 12px;border:1.5px solid #ccd4e0;border-radius:8px;font-size:14px;box-sizing:border-box">
+  </div>
   <div id="completar-periodica-info" style="display:none;background:#e3f0ff;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;color:#003d82">
-    🔄 <b>Trabajo periódico:</b> se creará automáticamente el siguiente para la fecha indicada.
+    🔄 <b>Trabajo periódico:</b> la siguiente cita se calculará desde la fecha indicada arriba.
   </div>
   <div style="display:flex;gap:10px;margin-top:6px">
     <button onclick="confirmarCompletar()" class="btn btn-success" style="flex:1">✓ Confirmar</button>
@@ -2530,6 +2534,9 @@ function completarTarea(id){
     infoPer.style.display='none';
   }
   document.getElementById('completar-tarea-id').value = id;
+  // Fecha por defecto: hoy (editable)
+  var hoyStr = new Date().toISOString().split('T')[0];
+  document.getElementById('completar-fecha').value = hoyStr;
   var modal = document.getElementById('completar-tarea-modal');
   modal.style.display='flex';
 }
@@ -2541,9 +2548,11 @@ function cerrarCompletarModal(){
 function confirmarCompletar(){
   var id = document.getElementById('completar-tarea-id').value;
   var realizadoPor = document.getElementById('completar-realizado-por').value;
+  var fechaRealizado = document.getElementById('completar-fecha').value;
   if(!realizadoPor){alert('Selecciona quién lo ha hecho');return;}
+  if(!fechaRealizado){alert('Indica la fecha en que se realizó');return;}
   cerrarCompletarModal();
-  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'completarTarea',id:id,realizadoPor:realizadoPor})})
+  fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'completarTarea',id:id,realizadoPor:realizadoPor,fechaRealizado:fechaRealizado})})
   .then(function(r){return r.text();})
   .then(function(t){
     try{
