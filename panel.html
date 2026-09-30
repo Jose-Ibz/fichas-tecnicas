@@ -1323,7 +1323,7 @@ var monthHtml=months.map(m=>`
 document.getElementById('chart-monthly').innerHTML=monthHtml;
 
 // Recent table
-var recent=allInspections.slice(-10).reverse();
+var recent=allInspections.slice(0,10);
 document.getElementById('recent-table').innerHTML=recent.map(i=>rowHtml(i)).join('');
 
 // ---- ALERTAS DE SEGURIDAD ----
