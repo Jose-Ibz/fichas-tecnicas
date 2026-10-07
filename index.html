@@ -1961,6 +1961,8 @@ function saveInspection(){
 var boat=document.getElementById('boat-name').value.trim();
 var type=document.getElementById('inspection-type').value;
 if(!boat||!type){showMsg('message-area','Embarcación y tipo son obligatorios','error');return}
+var _saveBtn=document.querySelector('button[onclick="saveInspection()"]');
+if(_saveBtn){_saveBtn.disabled=true;_saveBtn.textContent='💾 Guardando…';}
 
 // Calcular estado
 var totalVerif=52,marcadosVerif=0;
@@ -2159,6 +2161,7 @@ photoIds.forEach(function(photoId) {
 });
 }
 
+function _reenableSaveBtn(){var b=document.querySelector('button[onclick="saveInspection()"]');if(b){b.disabled=false;b.textContent='💾 GUARDAR INSPECCIÓN';}}
 function _doSaveInspection(inspData, estado, pctCompleto, _retry){
 var retry = _retry || 0;
 fetch(SCRIPT_URL,{
@@ -2180,6 +2183,7 @@ body:JSON.stringify({action:'save',data:inspData})
     inheritedFotosUrls={};
     lastVarada=null;
     try{localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));}catch(e){}
+    _reenableSaveBtn();
     showMsg('message-area','✅ Inspección guardada. '+fotosCount+' foto(s). ('+estado+' - '+pctCompleto+'%).','success');
     try{ document.getElementById('pdf-btn').style.display='inline-block'; }catch(e){}
   }else{
@@ -2189,6 +2193,7 @@ body:JSON.stringify({action:'save',data:inspData})
     }else{
       hideLoading();
       try{ document.getElementById('upload-progress').style.display='none'; }catch(e){}
+      _reenableSaveBtn();
       savePendingInspection(inspData);
       showMsg('message-area','⚠️ Error: '+(result.message||'sin detalle')+' — Guardado LOCAL.','error');
     }
@@ -2200,6 +2205,7 @@ body:JSON.stringify({action:'save',data:inspData})
   }else{
     hideLoading();
     try{ document.getElementById('upload-progress').style.display='none'; }catch(e){}
+    _reenableSaveBtn();
     savePendingInspection(inspData);
     showMsg('message-area','⚠️ Error de red: '+err.message+' — Guardado LOCAL.','error');
   }
