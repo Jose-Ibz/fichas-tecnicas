@@ -1344,10 +1344,12 @@ try{
 }
 
 function removePendingInspection(id){
+try{
 var pending=getPendingInspections();
 pending=pending.filter(function(item){return item.id!==id});
 localStorage.setItem('pendingInspections',JSON.stringify(pending));
 updateSyncStatus();
+}catch(e){console.warn('No se pudo limpiar la cola de pendientes:',e);}
 }
 
 function syncPendingInspections(){
@@ -1443,6 +1445,8 @@ showMsg('login-message',result.message||'Error de login','error');
 }
 
 function logout(){
+if(syncInterval){clearInterval(syncInterval);syncInterval=null;}
+if(autoSaveInterval){clearInterval(autoSaveInterval);autoSaveInterval=null;}
 currentUser=null;
 // Limpiar sesión y borrador para que el siguiente técnico no herede datos de este
 try{localStorage.removeItem('viamar_session_id');}catch(e){}
