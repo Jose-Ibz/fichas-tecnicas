@@ -1323,9 +1323,24 @@ function savePendingInspection(inspData){
 var pending=getPendingInspections();
 var id='PENDING_'+Date.now();
 pending.push({id:id,data:inspData,timestamp:new Date().toISOString()});
-localStorage.setItem('pendingInspections',JSON.stringify(pending));
-updateSyncStatus();
-return id;
+try{
+  localStorage.setItem('pendingInspections',JSON.stringify(pending));
+  updateSyncStatus();
+  return id;
+}catch(e){
+  // localStorage lleno u otro error — avisar al técnico con todo el detalle
+  var fotosGuardadas=Object.keys(inspData.fotosUrls||{}).length;
+  var msg='⚠️ NO SE PUDO GUARDAR LA FICHA EN EL DISPOSITIVO (almacenamiento lleno).\n\n'
+    +'Barco: '+(inspData.embarcacion||'—')+'\n'
+    +'Tipo: '+(inspData.tipo||'—')+'\n'
+    +'Técnico: '+(inspData.tecnico||'—')+'\n';
+  if(fotosGuardadas>0){
+    msg+='Las '+fotosGuardadas+' foto(s) SÍ están en Drive. Anota este ID de inspección para recuperarlas:\n'+inspData.id;
+  }
+  msg+='\n\nHaz una captura de pantalla de este mensaje antes de cerrar.';
+  alert(msg);
+  return null;
+}
 }
 
 function removePendingInspection(id){
