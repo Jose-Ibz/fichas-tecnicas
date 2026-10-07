@@ -1428,6 +1428,13 @@ showMsg('login-message',result.message||'Error de login','error');
 
 function logout(){
 currentUser=null;
+// Limpiar sesión y borrador para que el siguiente técnico no herede datos de este
+try{localStorage.removeItem('viamar_session_id');}catch(e){}
+clearDraft();
+currentInspId='INS_'+Date.now();
+esContinuacion=false;
+inheritedFotosUrls={};
+lastVarada=null;
 document.getElementById('login-section').style.display='block';
 document.getElementById('main-section').style.display='none';
 document.getElementById('username').value='';
