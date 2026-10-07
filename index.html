@@ -1085,6 +1085,7 @@ h1{color:#003d82;margin-bottom:20px;text-align:center}
 <span class="modal-close" onclick="closeNoteModal()">&times;</span>
 <h2 id="modal-title"></h2>
 <textarea id="modal-note" rows="5" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:4px;margin:20px 0"></textarea>
+<div id="modal-varada-ref" style="display:none;background:#f0f4fa;border-left:3px solid #003d82;border-radius:4px;padding:8px 12px;margin-bottom:14px;font-size:12px;color:#003d82"></div>
 <button class="btn btn-primary" onclick="saveNote()">Guardar</button>
 <button class="btn btn-secondary" onclick="closeNoteModal()">Cancelar</button>
 </div>
@@ -1786,15 +1787,14 @@ currentNoteId=id;
 var itemText=document.querySelector('label[for="'+id+'"]').textContent;
 document.getElementById('modal-title').textContent='Nota: '+itemText;
 document.getElementById('modal-note').value=data.notas[id]||'';
-if(varadaRef.gaugesBabor&&varadaRef.gaugesBabor[id]){
-document.getElementById('modal-note').value+='\n[VARADA] Medidor Babor: '+varadaRef.gaugesBabor[id];
-}
-if(varadaRef.gaugesEstribor&&varadaRef.gaugesEstribor[id]){
-document.getElementById('modal-note').value+='\n[VARADA] Medidor Estribor: '+varadaRef.gaugesEstribor[id];
-}
-if(varadaRef.gaugesCentral&&varadaRef.gaugesCentral[id]){
-document.getElementById('modal-note').value+='\n[VARADA] Medidor Central: '+varadaRef.gaugesCentral[id];
-}
+// Datos de varada anterior: solo lectura, nunca en el textarea
+var refLines=[];
+if(varadaRef.gaugesBabor&&varadaRef.gaugesBabor[id]) refLines.push('Medidor Babor (varada): '+varadaRef.gaugesBabor[id]);
+if(varadaRef.gaugesEstribor&&varadaRef.gaugesEstribor[id]) refLines.push('Medidor Estribor (varada): '+varadaRef.gaugesEstribor[id]);
+if(varadaRef.gaugesCentral&&varadaRef.gaugesCentral[id]) refLines.push('Medidor Central (varada): '+varadaRef.gaugesCentral[id]);
+var refDiv=document.getElementById('modal-varada-ref');
+if(refLines.length){refDiv.style.display='block';refDiv.innerHTML='📋 Referencia varada anterior:<br>'+refLines.join('<br>');}
+else{refDiv.style.display='none';}
 document.getElementById('noteModal').style.display='block';
 }
 
