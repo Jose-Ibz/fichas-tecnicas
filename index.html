@@ -2156,6 +2156,12 @@ body:JSON.stringify({action:'save',data:inspData})
     try{ document.getElementById('upload-progress').style.display='none'; }catch(e){}
     var fotosCount=Object.keys(inspData.fotosUrls||{}).length;
     clearDraft();
+    // Regenerar ID y limpiar estado para que la próxima inspección no sobreescriba esta fila
+    currentInspId='INS_'+Date.now();
+    esContinuacion=false;
+    inheritedFotosUrls={};
+    lastVarada=null;
+    try{localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));}catch(e){}
     showMsg('message-area','✅ Inspección guardada. '+fotosCount+' foto(s). ('+estado+' - '+pctCompleto+'%).','success');
     try{ document.getElementById('pdf-btn').style.display='inline-block'; }catch(e){}
   }else{
