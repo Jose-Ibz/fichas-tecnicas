@@ -1572,6 +1572,17 @@ document.getElementById('observaciones').value=lastVarada.observaciones||'';
 updateCharCounter();
 if(lastVarada.id){currentInspId=lastVarada.id;try{localStorage.setItem('viamar_session_id',JSON.stringify({id:currentInspId,ts:Date.now()}));}catch(e){}}
 esContinuacion=true;
+try{var seg=JSON.parse(lastVarada.seguridadJson||'{}');
+document.getElementById('seg-itb-fecha').value=seg.itbFecha||'';
+document.getElementById('seg-pirotecnia-fecha').value=seg.pirotecniaFecha||'';
+document.getElementById('seg-balsa-tiene').value=seg.balsaTiene||'';
+document.getElementById('seg-balsa-fecha').value=seg.balsaFecha||'';
+document.getElementById('seg-radiobaliza-tiene').value=seg.radiobalizaTiene||'';
+document.getElementById('seg-radiobaliza-fecha').value=seg.radiobalizaFecha||'';
+document.getElementById('seg-vhf-tiene').value=seg.vhfTiene||'';
+document.getElementById('seg-vhf-bateria').value=seg.vhfBateria||'';
+document.getElementById('seg-vhf-fecha').value=seg.vhfFecha||'';
+}catch(e){}
 try{inheritedFotosUrls=JSON.parse(lastVarada.fotosUrlsJson||'{}');}catch(e){inheritedFotosUrls={};}
 renderDriveFotosEnFormulario(inheritedFotosUrls);
 showMsg('message-area','Varada cargada. Puedes continuar trabajando.','success');
