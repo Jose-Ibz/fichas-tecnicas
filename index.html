@@ -2284,7 +2284,7 @@ fetch(SCRIPT_URL+'?action=getHistory&user='+encodeURIComponent(currentUser)+'&us
 .then(result=>{
 hideLoading();
 if(result.success){
-historyItems=(result.inspections||result.data||[]).slice().reverse();
+historyItems=(result.inspections||result.data||[]).slice();
 var searchEl=document.getElementById('history-search');
 if(searchEl)searchEl.value='';
 renderHistoryList(historyItems);
