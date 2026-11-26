@@ -1788,7 +1788,7 @@ function rowHtml(i){
 var fotos=getFotosCount(i);
 var fechaStr=formatDate(i.fecha);
 var estadoBadge=i.estado==='CERRADA'?'badge-completed':i.estado==='ACTIVA'?'badge-partial':'badge-partial';
-return `<tr>
+return `<tr style="cursor:pointer" onclick="openInspDetail('${i.id}')">
 <td style="font-family:monospace;font-size:11px;color:#888">${(i.id||'').substr(0,12)}</td>
 <td>${fechaStr}</td>
 <td><strong>${i.embarcacion||'—'}</strong>${i.modelo?'<br><span style="font-size:11px;color:#aaa">'+i.modelo+'</span>':''}</td>
@@ -1796,7 +1796,7 @@ return `<tr>
 <td>${i.tecnico||'—'}</td>
 <td><span class="badge ${estadoBadge}">${i.estado||'—'}</span></td>
 <td>${fotos>0?'<span style="color:#4caf50;font-weight:700">📷 '+fotos+'</span>':'<span style="color:#ccc">—</span>'}</td>
-<td style="display:flex;gap:4px">
+<td style="white-space:nowrap" onclick="event.stopPropagation()">
 <button class="btn btn-outline btn-xs" onclick="openInspDetail('${i.id}')">Ver</button>
 ${i.tipo==='botadura'?'<button class="btn btn-xs" style="background:#e3f2fd;color:#1565c0;border:1px solid #90caf9" onclick="pdfBotadura(\''+i.id+'\',event)">📋 Inf.</button>':''}
 </td>
