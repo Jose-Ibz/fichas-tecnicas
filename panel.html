@@ -1067,10 +1067,68 @@ tr:hover td{background:#fafbff}
 <h2 id="modal-title">Inspección</h2>
 <div style="display:flex;gap:10px;align-items:center">
 <button class="btn btn-success btn-sm" onclick="generateInspPDF()" style="background:#4caf50;padding:8px 16px;font-size:13px">📄 Descargar PDF</button>
+<button class="btn btn-sm" onclick="openEditInspModal()" style="background:#ff9800;color:white;padding:8px 16px;font-size:13px;border:none;border-radius:7px;cursor:pointer">✏ Editar</button>
 <button class="modal-close" onclick="closeModal()" style="font-size:28px;line-height:1;background:none;border:none;color:white;cursor:pointer">×</button>
 </div>
 </div>
 <div class="modal-body" id="modal-body"></div>
+</div>
+</div>
+
+<!-- MODAL EDITAR INSPECCIÓN -->
+<div id="edit-insp-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center">
+<div style="background:white;border-radius:14px;width:100%;max-width:500px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.3);margin:20px">
+<div style="background:#ff9800;color:white;padding:18px 22px;display:flex;justify-content:space-between;align-items:center">
+  <h3 style="margin:0;font-size:16px;font-weight:700">✏ Editar datos de la ficha</h3>
+  <button onclick="closeEditInspModal()" style="background:rgba(255,255,255,.2);border:none;color:white;border-radius:8px;padding:6px 12px;cursor:pointer;font-size:16px">✕</button>
+</div>
+<div style="padding:22px">
+  <div style="background:#fff8e1;border-left:3px solid #ff9800;border-radius:4px;padding:10px 14px;margin-bottom:18px;font-size:12px;color:#555">
+    Solo se modifican los campos que cambies. El resto de la ficha (checklist, fotos, medidores) no se toca.
+  </div>
+  <div style="margin-bottom:14px">
+    <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Nombre del barco *</label>
+    <input type="text" id="edit-embarcacion" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box">
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+    <div>
+      <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Fecha</label>
+      <input type="date" id="edit-fecha" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box">
+    </div>
+    <div>
+      <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Tipo</label>
+      <select id="edit-tipo" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box">
+        <option value="varada">Varada</option>
+        <option value="botadura">Botadura</option>
+        <option value="revision">Revisión</option>
+        <option value="mantenimiento">Mantenimiento</option>
+      </select>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+    <div>
+      <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Técnico</label>
+      <input type="text" id="edit-tecnico" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box">
+    </div>
+    <div>
+      <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Cliente</label>
+      <input type="text" id="edit-cliente" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box">
+    </div>
+  </div>
+  <div style="margin-bottom:14px">
+    <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Modelo del barco</label>
+    <input type="text" id="edit-modelo" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box">
+  </div>
+  <div style="margin-bottom:20px">
+    <label style="display:block;font-size:11px;font-weight:700;color:#555;text-transform:uppercase;margin-bottom:5px">Observaciones</label>
+    <textarea id="edit-observaciones" rows="3" style="width:100%;padding:9px 12px;border:1.5px solid #ddd;border-radius:7px;font-size:14px;box-sizing:border-box;resize:vertical;font-family:inherit"></textarea>
+  </div>
+  <div id="edit-insp-msg" style="margin-bottom:12px;font-size:13px;min-height:16px;text-align:center"></div>
+  <div style="display:flex;gap:10px">
+    <button onclick="saveEditInsp()" style="flex:1;background:#003d82;color:white;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer">💾 Guardar cambios</button>
+    <button onclick="closeEditInspModal()" style="background:#eee;color:#333;border:none;border-radius:8px;padding:12px 18px;font-size:14px;cursor:pointer">Cancelar</button>
+  </div>
+</div>
 </div>
 </div>
 
@@ -2070,6 +2128,69 @@ return `<div style="background:#f0f4fa;border-radius:8px;padding:12px;text-align
 function closeModal(){
 document.getElementById('detail-modal').classList.remove('active');
 currentInspDetail=null;
+}
+
+function openEditInspModal(){
+if(!currentInspDetail){return;}
+var insp=currentInspDetail;
+document.getElementById('edit-embarcacion').value=insp.embarcacion||'';
+document.getElementById('edit-fecha').value=(insp.fecha?String(insp.fecha).split('T')[0].split(' ')[0]:'');
+document.getElementById('edit-tipo').value=(insp.tipo||'varada').toLowerCase();
+document.getElementById('edit-tecnico').value=insp.tecnico||'';
+document.getElementById('edit-cliente').value=insp.cliente||'';
+document.getElementById('edit-modelo').value=insp.modelo||'';
+document.getElementById('edit-observaciones').value=insp.observaciones||'';
+document.getElementById('edit-insp-msg').textContent='';
+document.getElementById('edit-insp-modal').style.display='flex';
+}
+
+function closeEditInspModal(){
+document.getElementById('edit-insp-modal').style.display='none';
+}
+
+function saveEditInsp(){
+if(!currentInspDetail){return;}
+var embarcacion=document.getElementById('edit-embarcacion').value.trim();
+if(!embarcacion){alert('El nombre del barco no puede estar vacío');return;}
+var fields={
+  embarcacion:embarcacion,
+  fecha:document.getElementById('edit-fecha').value,
+  tipo:document.getElementById('edit-tipo').value,
+  tecnico:document.getElementById('edit-tecnico').value.trim(),
+  cliente:document.getElementById('edit-cliente').value.trim(),
+  modelo:document.getElementById('edit-modelo').value.trim(),
+  observaciones:document.getElementById('edit-observaciones').value.trim()
+};
+var msg=document.getElementById('edit-insp-msg');
+msg.style.color='#555';
+msg.textContent='Guardando…';
+fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateInspectionFields',id:currentInspDetail.id,fields:fields})})
+.then(function(r){return r.json();})
+.then(function(result){
+  if(result.success){
+    msg.style.color='green';
+    msg.textContent='✅ Guardado correctamente';
+    // Actualizar datos en memoria para que el modal de detalle refleje el cambio
+    currentInspDetail.embarcacion=fields.embarcacion;
+    currentInspDetail.fecha=fields.fecha;
+    currentInspDetail.tipo=fields.tipo;
+    currentInspDetail.tecnico=fields.tecnico;
+    currentInspDetail.cliente=fields.cliente;
+    currentInspDetail.modelo=fields.modelo;
+    currentInspDetail.observaciones=fields.observaciones;
+    // Actualizar título del modal de detalle
+    document.getElementById('modal-title').textContent=fields.embarcacion+' — '+fields.tipo.toUpperCase()+' · '+formatDate(fields.fecha);
+    // Actualizar la lista de inspecciones en memoria
+    allInspections.forEach(function(i){if(i.id===currentInspDetail.id){i.embarcacion=fields.embarcacion;i.fecha=fields.fecha;i.tipo=fields.tipo;i.tecnico=fields.tecnico;}});
+    filteredInspections.forEach(function(i){if(i.id===currentInspDetail.id){i.embarcacion=fields.embarcacion;i.fecha=fields.fecha;i.tipo=fields.tipo;i.tecnico=fields.tecnico;}});
+    renderInspTable();
+    setTimeout(function(){closeEditInspModal();},1200);
+  }else{
+    msg.style.color='red';
+    msg.textContent='Error: '+(result.message||'No se pudo guardar');
+  }
+})
+.catch(function(){msg.style.color='red';msg.textContent='Error de conexión';});
 }
 
 // ====== PDF GENERATION ======
