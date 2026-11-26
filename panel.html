@@ -2165,8 +2165,9 @@ var msg=document.getElementById('edit-insp-msg');
 msg.style.color='#555';
 msg.textContent='Guardando…';
 fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateInspectionFields',id:currentInspDetail.id,fields:fields})})
-.then(function(r){return r.json();})
-.then(function(result){
+.then(function(r){return r.text();})
+.then(function(t){
+  var result;try{result=JSON.parse(t);}catch(e){msg.style.color='red';msg.textContent='Respuesta inesperada: '+t.substring(0,120);return;}
   if(result.success){
     msg.style.color='green';
     msg.textContent='✅ Guardado correctamente';
